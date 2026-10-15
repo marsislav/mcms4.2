@@ -27,7 +27,7 @@ class LanguageController extends Controller
         $this->flush();
         audit('language.create', $lang->code);
 
-        return back()->with('status', 'Language added. Translate the interface under “Translations”.');
+        return back()->with('status', 'Езикът е добавен. Преведете интерфейса от „Преводи“.');
     }
 
     public function update(Request $request, Language $language)
@@ -60,12 +60,12 @@ class LanguageController extends Controller
         $this->flush();
         audit('language.update', $language->code);
 
-        return back()->with('status', 'Language updated.');
+        return back()->with('status', 'Езикът е обновен.');
     }
 
     public function destroy(Language $language)
     {
-        abort_if($language->is_default, 422, 'The default language cannot be deleted.');
+        abort_if($language->is_default, 422, 'Основният език не може да се изтрие.');
 
         Translation::where('locale', $language->code)->delete();
         \App\Models\ContentTranslation::where('locale', $language->code)->delete();
@@ -74,7 +74,7 @@ class LanguageController extends Controller
         $this->flush();
         audit('language.delete', $language->code);
 
-        return back()->with('status', 'The language and its content have been deleted.');
+        return back()->with('status', 'Езикът и неговото съдържание са изтрити.');
     }
 
     private function flush(): void

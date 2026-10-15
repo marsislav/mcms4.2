@@ -38,7 +38,7 @@ class ProfileController extends Controller
         $user->save();
         audit('profile.update');
 
-        return back()->with('status', 'Profile updated.');
+        return back()->with('status', 'Профилът е обновен.');
     }
 
     public function updatePassword(Request $request)
@@ -58,7 +58,7 @@ class ProfileController extends Controller
         Auth::logoutOtherDevices($data['password']);
         audit('password.change');
 
-        return back()->with('status', 'Password changed. Other sessions have been terminated.');
+        return back()->with('status', 'Паролата е променена. Другите сесии са прекратени.');
     }
 
     public function startTwoFactor(Request $request)
@@ -77,7 +77,7 @@ class ProfileController extends Controller
 
         $step = $secret ? Totp::verify($secret, $data['code']) : null;
         if ($step === null) {
-            return back()->withErrors(['code' => 'Invalid code. Check the time on your phone.']);
+            return back()->withErrors(['code' => 'Невалиден код. Проверете часа на телефона си.']);
         }
 
         $plain = $this->newRecoveryCodes();
@@ -91,7 +91,7 @@ class ProfileController extends Controller
         $request->session()->put('mcms_new_recovery', $plain);
         audit('2fa.enabled');
 
-        return redirect()->route('admin.profile')->with('status', '2FA is enabled. Save your recovery codes!');
+        return redirect()->route('admin.profile')->with('status', '2FA е активирана. Запазете кодовете за възстановяване!');
     }
 
     public function regenerateRecovery(Request $request)
@@ -117,19 +117,19 @@ class ProfileController extends Controller
         $this->requirePassword($user, $data['current_password']);
 
         if (! $user->totp_enabled || Totp::verify((string) $user->totp_secret, $data['code']) === null) {
-            return back()->withErrors(['code' => 'Invalid code.']);
+            return back()->withErrors(['code' => 'Невалиден код.']);
         }
 
         $user->forceFill(['totp_enabled' => false, 'totp_secret' => null, 'recovery_codes' => null, 'totp_last_step' => 0])->save();
         audit('2fa.disabled');
 
-        return back()->with('status', '2FA is disabled.');
+        return back()->with('status', '2FA е изключена.');
     }
 
     private function requirePassword($user, string $password): void
     {
         if (! Hash::check($password, $user->password)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => 'Incorrect current password.']);
+            throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => 'Грешна текуща парола.']);
         }
     }
 

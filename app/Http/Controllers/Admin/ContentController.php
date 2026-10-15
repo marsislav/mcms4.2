@@ -60,7 +60,7 @@ class ContentController extends Controller
         $content = ContentSaver::save(null, $type, $this->validated($request), $request->input('tr', []), $request->user()->id);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
-        return redirect()->route("admin.{$type}s.edit", $content)->with('status', 'Saved.');
+        return redirect()->route("admin.{$type}s.edit", $content)->with('status', 'Записано.');
     }
 
     public function edit(Request $request, Content $content)
@@ -82,19 +82,19 @@ class ContentController extends Controller
         ContentSaver::save($content, $content->type, $this->validated($request), $request->input('tr', []), $request->user()->id);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
-        return back()->with('status', 'Changes saved.');
+        return back()->with('status', 'Промените са записани.');
     }
 
     public function destroy(Request $request, Content $content)
     {
         $this->authorize($request, $content);
-        abort_if($content->is_home, 422, 'The home page cannot be deleted. Set another one first.');
+        abort_if($content->is_home, 422, 'Началната страница не може да се изтрие. Първо задайте друга.');
         $title = $content->adminTitle();
         $type = $content->type;
         $content->delete();
         audit($type.'.delete', (string) $content->id, $title);
 
-        return redirect()->route("admin.{$type}s.index")->with('status', 'Deleted.');
+        return redirect()->route("admin.{$type}s.index")->with('status', 'Изтрито.');
     }
 
     public function restore(Request $request, Revision $revision)
@@ -112,7 +112,7 @@ class ContentController extends Controller
         $translation->update(['title' => $revision->title, 'body' => $revision->body]);
         audit('revision.restore', (string) $translation->content_id);
 
-        return back()->with('status', 'Revision restored.');
+        return back()->with('status', 'Версията е възстановена.');
     }
 
     private function validated(Request $request): array

@@ -17,10 +17,10 @@ class DashboardController extends Controller
         $user = $request->user();
 
         $stats = [
-            ['Pages', Content::where('type', 'page')->count(), route('admin.pages.index')],
-            ['Posts', Content::where('type', 'post')->count(), route('admin.posts.index')],
-            ['Media files', Media::count(), route('admin.media.index')],
-            ['New messages', Message::whereNull('read_at')->count(), route('admin.messages.index')],
+            ['Страници', Content::where('type', 'page')->count(), route('admin.pages.index')],
+            ['Публикации', Content::where('type', 'post')->count(), route('admin.posts.index')],
+            ['Медия файлове', Media::count(), route('admin.media.index')],
+            ['Нови съобщения', Message::whereNull('read_at')->count(), route('admin.messages.index')],
         ];
 
         return view('admin.dashboard', [
@@ -38,15 +38,15 @@ class DashboardController extends Controller
     private function health(User $user): array
     {
         return [
-            ['APP_DEBUG is off', ! config('app.debug'), 'Set APP_DEBUG=false in .env'],
-            ['The site is served over HTTPS', request()->isSecure(), 'Enable SSL and redirect to https'],
-            ['2FA is enabled for your profile', (bool) $user->totp_enabled, 'Profile → Two-factor authentication'],
-            ['The admin path is not “panel”', config('mcms.admin_path') !== 'panel', 'Change MCMS_ADMIN_PATH in .env'],
-            ['public/uploads blocks PHP execution', is_file(public_path('uploads/.htaccess')), 'public/uploads/.htaccess is missing'],
-            ['.env is not accessible from the web', true, 'The document root must point to /public'],
-            ['PHP version ≥ 8.2', version_compare(PHP_VERSION, '8.2.0', '>='), 'Upgrade PHP from cPanel'],
-            ['The installer is locked', mcms_installed(), ''],
-            ['A recent database backup exists', collect(\App\Support\Backup::list())->contains(fn ($b) => str_starts_with($b['name'], 'db-') && $b['time'] > time() - 7 * 86400), 'Create a backup under “Backups”'],
+            ['APP_DEBUG е изключен', ! config('app.debug'), 'Задайте APP_DEBUG=false в .env'],
+            ['Сайтът работи през HTTPS', request()->isSecure(), 'Включете SSL и пренасочване към https'],
+            ['2FA е активна за вашия профил', (bool) $user->totp_enabled, 'Профил → Двуфакторна защита'],
+            ['Административният път не е „panel“', config('mcms.admin_path') !== 'panel', 'Сменете MCMS_ADMIN_PATH в .env'],
+            ['public/uploads блокира изпълнение на PHP', is_file(public_path('uploads/.htaccess')), 'Липсва public/uploads/.htaccess'],
+            ['.env не е достъпен през уеб', true, 'Document root трябва да сочи към /public'],
+            ['PHP версия ≥ 8.2', version_compare(PHP_VERSION, '8.2.0', '>='), 'Обновете PHP от cPanel'],
+            ['Инсталаторът е заключен', mcms_installed(), ''],
+            ['Има скорошен архив на базата', collect(\App\Support\Backup::list())->contains(fn ($b) => str_starts_with($b['name'], 'db-') && $b['time'] > time() - 7 * 86400), 'Направете архив от „Архиви“'],
         ];
     }
 }

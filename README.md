@@ -1,89 +1,92 @@
 # mCMS 4.2
 
-A secure multilingual CMS built on **Laravel 12** (PHP 8.2+), designed for **shared hosting without SSH**.
-No external packages besides Laravel itself: two-factor authentication, sanitizer, translations, plugins, backups — all in-house code.
+Сигурна многоезична CMS на **Laravel 12** (PHP 8.2+), проектирана за **споделен хостинг без SSH**.
+Без външни пакети освен самия Laravel: двуфакторна защита, sanitizer, превод, плъгини, архиви — всичко е собствен код.
 
-## Features
+## Функции
 
-**Content** — pages and posts, categories, media library (with image processing), menus (2 levels), scheduled publishing, drafts, revision history (last 20, one-click restore), home page, per-page noindex, search, RSS, sitemap.xml with hreflang, robots.txt, 301/302 redirects, SEO/Open Graph/canonical.
-**Multilingual (in the database)** — languages and UI translations are managed from the admin panel (`t('key')`), content has a translation per language, `/en/...` prefixes, hreflang, language switcher.
-**Administration** — roles (administrator/editor/author), users, audit log, settings (logo, favicon, social networks, SMTP from the panel), maintenance mode, database and file backups, security health check on the dashboard.
-**Extensibility** — plugins with hooks (`add_action`/`add_filter`), a sample `schema-org` plugin, `php artisan mcms:*` commands.
-**Contact form** — honeypot + timing protection + rate limit, stored in the panel and sent by email.
+**Съдържание** — страници и публикации, категории, медиа библиотека (с обработка на снимки), менюта (2 нива), насрочено публикуване, чернови, история на версиите (последни 20, възстановяване с един клик), начална страница, noindex по страница, търсене, RSS, sitemap.xml с hreflang, robots.txt, 301/302 пренасочвания, SEO/Open Graph/canonical.
+**Многоезичност (в базата данни)** — езици и UI преводи се управляват от панела (`t('ключ')`), съдържанието има превод на всеки език, `/en/...` префикси, hreflang, превключвател на езика.
+**Администрация** — роли (администратор/редактор/автор), потребители, журнал на действията, настройки (лого, favicon, социални мрежи, SMTP от панела), режим „профилактика“, архиви на БД и файлове, здравен контрол на сигурността в таблото.
+**Разширяемост** — плъгини с hooks (`add_action`/`add_filter`), примерен плъгин `schema-org`, команди `php artisan mcms:*`.
+**Контакт форма** — honeypot + времева защита + rate limit, запис в панела и имейл.
 
-## Security
+## Сигурност
 
-| Area | Measures |
+| Област | Мерки |
 |---|---|
-| Sign in | bcrypt, rate limit per email+IP and per IP, account lockout (8 failures → 15 min), constant timing for non-existent emails, session regeneration |
-| 2FA | TOTP (RFC 6238), code reuse protection, 8 recovery codes (hashes only), optional "required for administrators" policy |
-| Sessions | encrypted, HttpOnly, SameSite=Lax, Secure on HTTPS, idle timeout, User-Agent binding, other sessions terminated on password change |
-| Admin path | configurable (`MCMS_ADMIN_PATH`), `noindex`, `no-store`, not mentioned in robots.txt |
-| Headers | strict CSP with nonce (no inline scripts/styles), HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP |
-| Content | allow-list HTML sanitizer (DOM), javascript:/data: URL blocking, iframes only for YouTube/Vimeo, `rel=noopener` |
-| Uploads | content-based MIME (finfo), random names, **GD reprocessing** (strips EXIF/payloads), pixel/size limits, `.htaccess` without PHP execution |
-| Installer | requires a one-time key from `.env`, rate limit, locked after installation, never deletes existing data |
-| Data | Eloquent/prepared statements, mass-assignment protection (role/2FA are not fillable), SMTP password is encrypted |
-| Plugins | installed via FTP only (not through the web), a failing plugin does not take the site down |
-| Audit | all important actions are logged (180 days) |
+| Вход | bcrypt, rate limit по имейл+IP и по IP, заключване на акаунт (8 грешки → 15 мин), еднакво време за несъществуващ имейл, регенериране на сесията |
+| 2FA | TOTP (RFC 6238), защита от повторно използване на код, 8 кода за възстановяване (само хешове), опция „задължителна за администратори“ |
+| Сесии | криптирани, HttpOnly, SameSite=Lax, Secure при HTTPS, изтичане при неактивност, обвързване с User-Agent, прекратяване на другите сесии при смяна на парола |
+| Админ път | конфигурируем (`MCMS_ADMIN_PATH`), `noindex`, `no-store`, не се споменава в robots.txt |
+| Заглавки | строг CSP с nonce (без inline скриптове/стилове), HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP |
+| Съдържание | allow-list HTML sanitizer (DOM), блокиране на javascript:/data: URL, iframe само YouTube/Vimeo, `rel=noopener` |
+| Качване | MIME по съдържание (finfo), случайни имена, **преобработка с GD** (маха EXIF/payload), ограничение на пиксели/размер, `.htaccess` без PHP изпълнение |
+| Инсталатор | изисква еднократен ключ от `.env`, rate limit, заключва се след инсталация, не изтрива чужди данни |
+| Данни | Eloquent/prepared statements, mass-assignment защита (роля/2FA не са fillable), SMTP паролата е криптирана |
+| Плъгини | само по FTP (не през уеб), грешка в плъгин не сваля сайта |
+| Одит | всички важни действия се записват (180 дни) |
 
-## Installation on shared hosting (no SSH)
+## Инсталация на споделен хостинг (без SSH)
 
-You need, once, a computer with **PHP 8.2+ and Composer** — `vendor/` is not included in the archive.
+Нужен е еднократно компютър с **PHP 8.2+ и Composer** — `vendor/` не е включена в архива.
 
-1. Unzip the project and run in its folder:
+1. Разархивирайте проекта и в папката му изпълнете:
    ```bash
    composer install --no-dev --optimize-autoloader
-   php tests/standalone.php        # optional: security self-check
+   php tests/standalone.php        # по желание: самопроверка на сигурността
    ```
-2. Upload the **whole** folder (including `vendor/`) to the hosting, **outside** the public directory if possible (e.g. `/home/user/mcms42`).
-3. Point the domain's document root to `mcms42/public` (cPanel → Domains → Document Root).
-   *If you cannot:* upload everything into `public_html` — the root `.htaccess` redirects to `public/` and blocks the internal folders (less recommended).
-4. Give write permission to `storage/`, `bootstrap/cache/` and `public/uploads/` (755/775).
-5. Open `https://your-domain/install`. On first load a `.env` file is created with `MCMS_INSTALL_KEY` — copy the key from that file (File Manager) into the form.
-6. Fill in the MySQL, site and administrator details. After installation `/install` returns 404.
-7. Sign in at `https://your-domain/panel/login`, immediately enable **2FA** (Profile) and change `MCMS_ADMIN_PATH` in `.env`.
+2. Качете **цялата** папка (с `vendor/`) на хостинга, **извън** публичната директория, ако е възможно (напр. `/home/user/mcms42`).
+3. Насочете document root на домейна към `mcms42/public` (cPanel → Domains → Document Root).
+   *Ако не можете:* качете всичко в `public_html` — корневият `.htaccess` пренасочва към `public/` и блокира вътрешните папки (по-слабо препоръчително).
+4. Дайте права за запис на `storage/`, `bootstrap/cache/` и `public/uploads/` (755/775).
+5. Отворете `https://вашият-домейн/install`. При първото зареждане се създава `.env` с `MCMS_INSTALL_KEY` — копирайте ключа от файла (File Manager) във формата.
+6. Попълнете данните за MySQL, сайта и администратора. След инсталация `/install` връща 404.
+7. Влезте на `https://вашият-домейн/panel/login`, веднага активирайте **2FA** (Профил) и сменете `MCMS_ADMIN_PATH` в `.env`.
 
-### After installation
-- In `.env`: `APP_DEBUG=false`, `TRUSTED_PROXIES=*` if you are behind Cloudflare.
-- Set up SPF/DKIM for the domain or use SMTP (Settings → Outgoing mail (SMTP) → "Send me a test email").
-- Create backups from Panel → Backups (database + files) and download them off the server.
+### След инсталация
+- В `.env`: `APP_DEBUG=false`, `TRUSTED_PROXIES=*` ако сте зад Cloudflare.
+- Вкарайте SPF/DKIM за домейна или ползвайте SMTP (Настройки → Изпращане на поща → „тестово писмо“).
+- Правете архив от Панел → Архиви (БД + файлове) и го теглете извън сървъра.
 
-## Common problems
+## Чести проблеми
 
-- **`ext-gd` missing (XAMPP):** in `C:\xampp\php\php.ini` uncomment `extension=gd` (remove the `;`), restart and verify with `php -m`. The same applies to `zip`, `intl`, `exif`, `fileinfo`, `mbstring`, `pdo_mysql` if missing.
-- **Composer blocks Laravel because of advisories:** use the project's current version (Laravel 12). Do not disable `block-insecure`.
+- **`ext-gd` липсва (XAMPP):** в `C:\xampp\php\php.ini` разкоментирайте `extension=gd` (махнете `;`), рестартирайте и проверете с `php -m`. Същото за `zip`, `intl`, `exif`, `fileinfo`, `mbstring`, `pdo_mysql` ако липсват.
+- **Composer блокира Laravel заради advisories:** ползвайте текущата версия на проекта (Laravel 12). Не изключвайте `block-insecure`.
 
-## Structure
+## Структура
 
 ```
-app/Http/Controllers/Admin/*   the admin panel   app/Support/*   Sanitizer, Totp, Uploader, Backup, Hooks...
-app/Http/Controllers/Site*     the public site   app/Models/*    Eloquent models
-resources/views/{admin,site}   Blade views       plugins/*       plugins
-database/migrations            schema            lang/bg, lang/en  validation messages
-public/assets                  CSS/JS            tests/          self-tests
+app/Http/Controllers/Admin/*   панелът          app/Support/*   Sanitizer, Totp, Uploader, Backup, Hooks...
+app/Http/Controllers/Site*     публичният сайт  app/Models/*    Eloquent модели
+resources/views/{admin,site}   Blade изгледи    plugins/*       плъгини
+database/migrations            схема            lang/bg         български съобщения за валидация
+public/assets                  CSS/JS           tests/          самотестове
 ```
 
-## Plugins
+## Плъгини
 
-`plugins/<name>/plugin.json` + `plugins/<name>/plugin.php`. Enable them from Panel → Plugins.
+`plugins/<име>/plugin.json` + `plugins/<име>/plugin.php`. Активират се от Панел → Плъгини.
 
 ```php
 add_action('head', fn () => print '<meta name="x" content="y">');
 add_filter('content.body', fn ($html, $content) => $html);
 add_action('contact.received', fn ($message) => null);
 ```
-Hooks: `head`, `footer`, `content.body`, `content.saved`, `contact.received`, `user.login`, `admin.menu`, `site.menu`.
+Куки: `head`, `footer`, `content.body`, `content.saved`, `contact.received`, `user.login`, `admin.menu`, `site.menu`.
 
-## Commands (only if you have a terminal)
+## Команди (само ако имате терминал)
 
-`php artisan mcms:backup` · `mcms:unlock email` · `mcms:reset-2fa email` · `mcms:version`
+`php artisan mcms:backup` · `mcms:unlock имейл` · `mcms:reset-2fa имейл` · `mcms:version`
 
-## Notes
+## Бележки
 
-- Mail sending uses Symfony Mailer (the Laravel 12 standard; Swift_Mailer is discontinued).
-- Built-in backup supports MySQL/MariaDB. Restore via phpMyAdmin (import the `.sql.gz`).
-- Not tested on a live server in the development environment (no Packagist access) — preview `/install` against a test database before production.
+- Изпращането на поща ползва Symfony Mailer (стандартът на Laravel 12; Swift_Mailer е прекратен).
+- Вграденото архивиране е за MySQL/MariaDB. Възстановяване — през phpMyAdmin (импорт на `.sql.gz`).
+- Не е тествано на живо сървър в средата на разработка (липсва достъп до Packagist) — направете преглед на `/install` в тестова база преди продукция.
 
-## Documentation
-Full beginner-friendly description in English: the [`docs/`](docs/README.md) folder.
+## Документация
+Пълно описание за начинаещи на български: папка [`docs/`](docs/README.md).
+
+## Редактор
+CKEditor 5 (GPL, безплатни плъгини) — вижте `docs/08-kak-da-promenyam.md`, раздел 12.

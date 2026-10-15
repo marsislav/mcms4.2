@@ -1,19 +1,19 @@
 @extends('admin.layout')
-@section('title', 'Audit log')
+@section('title', 'Журнал на действията')
 
 @section('content')
 <form class="filters" method="get">
-    <input name="action" value="{{ request('action') }}" placeholder="Action (e.g. login, page.)" maxlength="40">
+    <input name="action" value="{{ request('action') }}" placeholder="Действие (напр. login, page.)" maxlength="40">
     <select name="user">
-        <option value="">All users</option>
+        <option value="">Всички потребители</option>
         @foreach ($users as $u)<option value="{{ $u->id }}" @selected((int) request('user') === $u->id)>{{ $u->name }}</option>@endforeach
     </select>
-    <button class="btn">Filter</button>
+    <button class="btn">Филтрирай</button>
 </form>
 
 <div class="table-wrap">
 <table class="table compact">
-    <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Object</th><th>Details</th><th>IP</th></tr></thead>
+    <thead><tr><th>Време</th><th>Потребител</th><th>Действие</th><th>Обект</th><th>Детайли</th><th>IP</th></tr></thead>
     <tbody>
     @forelse ($logs as $l)
         <tr>
@@ -25,11 +25,11 @@
             <td class="muted">{{ $l->ip }}</td>
         </tr>
     @empty
-        <tr><td colspan="6" class="muted center">No records.</td></tr>
+        <tr><td colspan="6" class="muted center">Няма записи.</td></tr>
     @endforelse
     </tbody>
 </table>
 </div>
 {{ $logs->links() }}
-<p class="muted">Entries are kept for 180 days.</p>
+<p class="muted">Записите се пазят 180 дни.</p>
 @endsection

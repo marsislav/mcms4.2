@@ -6,7 +6,7 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
     'timezone' => 'Europe/Sofia',
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'bg'),
     // Framework strings (validation etc.) fall back to English; site UI strings use the DB (t()).
     'fallback_locale' => 'en',
     'faker_locale' => 'bg_BG',

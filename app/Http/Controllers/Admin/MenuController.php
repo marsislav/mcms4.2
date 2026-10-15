@@ -73,7 +73,7 @@ class MenuController extends Controller
                 } else {
                     $url = trim((string) ($row['url'] ?? ''));
                     if (! $this->safeUrl($url)) {
-                        throw ValidationException::withMessages(["items.$key.url" => 'Invalid URL. Allowed: /path, #anchor, http(s)://, mailto:, tel:']);
+                        throw ValidationException::withMessages(["items.$key.url" => 'Невалиден адрес. Позволени: /път, #котва, http(s)://, mailto:, tel:']);
                     }
                 }
 
@@ -123,7 +123,7 @@ class MenuController extends Controller
 
         audit('menu.update', $menu->location);
 
-        return back()->with('status', 'Menu saved.');
+        return back()->with('status', 'Менюто е записано.');
     }
 
     private function safeUrl(string $url): bool

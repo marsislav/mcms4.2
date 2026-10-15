@@ -1,76 +1,76 @@
 @extends('admin.layout')
-@section('title', 'My profile')
+@section('title', 'Моят профил')
 
 @section('content')
 @if ($recovery)
 <section class="card warn-card">
-    <h2>Recovery codes</h2>
-    <p>Store them somewhere safe. Each code works <strong>only once</strong> and they will not be shown again.</p>
+    <h2>Кодове за възстановяване</h2>
+    <p>Запишете ги на сигурно място. Всеки код работи <strong>само веднъж</strong> и няма да бъдат показани отново.</p>
     <pre class="codes">{{ implode("\n", $recovery) }}</pre>
 </section>
 @endif
 
 <div class="cols">
     <section class="card">
-        <h2>Details</h2>
+        <h2>Данни</h2>
         <form method="post" action="{{ route('admin.profile.info') }}" class="stack">
             @csrf
-            <label>Name <input name="name" value="{{ old('name', $user->name) }}" required maxlength="100"></label>
-            <label>Email <input value="{{ $user->email }}" disabled></label>
-            <label>Current password (for confirmation) <input type="password" name="current_password" required autocomplete="current-password"></label>
-            <button class="btn primary">Save</button>
+            <label>Име <input name="name" value="{{ old('name', $user->name) }}" required maxlength="100"></label>
+            <label>Имейл <input value="{{ $user->email }}" disabled></label>
+            <label>Текуща парола (за потвърждение) <input type="password" name="current_password" required autocomplete="current-password"></label>
+            <button class="btn primary">Запази</button>
         </form>
     </section>
 
     <section class="card">
-        <h2>Change password</h2>
+        <h2>Смяна на парола</h2>
         <form method="post" action="{{ route('admin.profile.password') }}" class="stack">
             @csrf
-            <label>Current password <input type="password" name="current_password" required autocomplete="current-password"></label>
-            <label>New password <input type="password" name="password" required minlength="12" autocomplete="new-password"></label>
-            <label>Repeat <input type="password" name="password_confirmation" required minlength="12" autocomplete="new-password"></label>
-            <small class="muted">At least 12 characters, with lowercase and uppercase letters and a digit. Your other sessions will be signed out.</small>
-            <button class="btn primary">Change password</button>
+            <label>Текуща парола <input type="password" name="current_password" required autocomplete="current-password"></label>
+            <label>Нова парола <input type="password" name="password" required minlength="12" autocomplete="new-password"></label>
+            <label>Повторете <input type="password" name="password_confirmation" required minlength="12" autocomplete="new-password"></label>
+            <small class="muted">Минимум 12 знака, малки и главни букви, цифра. Другите ви сесии ще бъдат прекратени.</small>
+            <button class="btn primary">Смени паролата</button>
         </form>
     </section>
 
     <section class="card">
-        <h2>Two-factor authentication (2FA)</h2>
+        <h2>Двуфакторна защита (2FA)</h2>
         @if ($user->totp_enabled)
-            <p class="ok-text">✓ Active. Signing in requires a code from an authenticator app (Google Authenticator, Aegis, 2FAS…).</p>
-            <form method="post" action="{{ route('admin.profile.2fa.recovery') }}" class="stack" data-confirm="The old codes will stop working. Continue?">
+            <p class="ok-text">✓ Активна. Входът изисква код от приложение (Google Authenticator, Aegis, 2FAS…).</p>
+            <form method="post" action="{{ route('admin.profile.2fa.recovery') }}" class="stack" data-confirm="Старите кодове ще спрат да работят. Продължавате ли?">
                 @csrf
-                <label>Password <input type="password" name="current_password" required autocomplete="current-password"></label>
-                <button class="btn">New recovery codes</button>
+                <label>Парола <input type="password" name="current_password" required autocomplete="current-password"></label>
+                <button class="btn">Нови кодове за възстановяване</button>
             </form>
             <hr>
-            <form method="post" action="{{ route('admin.profile.2fa.disable') }}" class="stack" data-confirm="Disabling 2FA reduces security. Are you sure?">
+            <form method="post" action="{{ route('admin.profile.2fa.disable') }}" class="stack" data-confirm="Изключване на 2FA намалява сигурността. Сигурни ли сте?">
                 @csrf
-                <label>Password <input type="password" name="current_password" required autocomplete="current-password"></label>
-                <label>Current 6-digit code <input name="code" required inputmode="numeric" maxlength="10" autocomplete="one-time-code"></label>
-                <button class="btn danger">Disable 2FA</button>
+                <label>Парола <input type="password" name="current_password" required autocomplete="current-password"></label>
+                <label>Текущ 6-цифрен код <input name="code" required inputmode="numeric" maxlength="10" autocomplete="one-time-code"></label>
+                <button class="btn danger">Изключи 2FA</button>
             </form>
         @elseif ($secret)
-            <p>1. In your app choose “Add account → enter a key” and enter:</p>
+            <p>1. В приложението изберете „Добави акаунт → въвеждане на ключ“ и въведете:</p>
             <pre class="codes">{{ trim(chunk_split($secret, 4, ' ')) }}</pre>
-            <p class="muted">Type: time-based (TOTP), 6 digits, 30 s. On a mobile device: <a href="{{ $otpauth }}">open in the app</a>.</p>
-            <p>2. Confirm with the current code:</p>
+            <p class="muted">Тип: базиран на време (TOTP), 6 цифри, 30 сек. Мобилно устройство: <a href="{{ $otpauth }}">отвори в приложението</a>.</p>
+            <p>2. Потвърдете с текущия код:</p>
             <form method="post" action="{{ route('admin.profile.2fa.confirm') }}" class="stack">
                 @csrf
-                <label>6-digit code <input name="code" required inputmode="numeric" maxlength="10" autocomplete="one-time-code"></label>
-                <label>Password <input type="password" name="current_password" required autocomplete="current-password"></label>
-                <button class="btn primary">Enable 2FA</button>
+                <label>6-цифрен код <input name="code" required inputmode="numeric" maxlength="10" autocomplete="one-time-code"></label>
+                <label>Парола <input type="password" name="current_password" required autocomplete="current-password"></label>
+                <button class="btn primary">Активирай 2FA</button>
             </form>
         @else
-            <p>Adds a second factor at sign-in — even a leaked password will not be enough to get in.</p>
-            <form method="post" action="{{ route('admin.profile.2fa.start') }}">@csrf<button class="btn primary">Set up 2FA</button></form>
+            <p>Добавя втори фактор при вход — дори изтекла парола няма да е достатъчна за влизане.</p>
+            <form method="post" action="{{ route('admin.profile.2fa.start') }}">@csrf<button class="btn primary">Настрой 2FA</button></form>
         @endif
     </section>
 
     <section class="card">
-        <h2>Session</h2>
-        <p class="muted">Last sign-in: {{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }} from {{ $user->last_login_ip ?? '—' }}</p>
-        <p class="muted">Automatic sign-out after {{ config('mcms.idle_minutes') }} min of inactivity.</p>
+        <h2>Сесия</h2>
+        <p class="muted">Последен вход: {{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }} от {{ $user->last_login_ip ?? '—' }}</p>
+        <p class="muted">Автоматичен изход след {{ config('mcms.idle_minutes') }} мин. неактивност.</p>
     </section>
 </div>
 @endsection

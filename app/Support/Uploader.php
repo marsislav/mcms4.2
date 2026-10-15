@@ -26,25 +26,25 @@ class Uploader
     public static function store(UploadedFile $file, ?int $userId = null): Media
     {
         if (! $file->isValid()) {
-            throw new RuntimeException('Upload failed.');
+            throw new RuntimeException('Качването е неуспешно.');
         }
 
         $max = config('mcms.max_upload_mb') * 1024 * 1024;
         if ($file->getSize() > $max) {
-            throw new RuntimeException('File is too large (max. '.config('mcms.max_upload_mb').' MB).');
+            throw new RuntimeException('Файлът е твърде голям (макс. '.config('mcms.max_upload_mb').' MB).');
         }
 
         $real = $file->getRealPath();
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($real);
         if (! isset(self::TYPES[$mime])) {
-            throw new RuntimeException('File type not allowed. Allowed: JPG, PNG, WebP, GIF, PDF.');
+            throw new RuntimeException('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF.');
         }
         $ext = self::TYPES[$mime];
 
         $sub = date('Y/m');
         $dir = public_path('uploads/'.$sub);
         if (! is_dir($dir) && ! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
-            throw new RuntimeException('The upload directory is not writable.');
+            throw new RuntimeException('Директорията за качване не е записваема.');
         }
 
         $name = bin2hex(random_bytes(12));
@@ -56,11 +56,11 @@ class Uploader
         if (str_starts_with($mime, 'image/')) {
             $info = @getimagesize($real);
             if (! $info || $info[0] < 1 || $info[1] < 1) {
-                throw new RuntimeException('Invalid image.');
+                throw new RuntimeException('Невалидно изображение.');
             }
             [$w, $h] = $info;
             if ($w * $h > 40_000_000) {
-                throw new RuntimeException('The image resolution is too high.');
+                throw new RuntimeException('Изображението е с твърде голяма резолюция.');
             }
 
             if ($mime === 'image/gif') {
@@ -71,10 +71,10 @@ class Uploader
             }
         } else { // pdf
             if (! str_starts_with((string) file_get_contents($real, false, null, 0, 5), '%PDF-')) {
-                throw new RuntimeException('Invalid PDF file.');
+                throw new RuntimeException('Невалиден PDF файл.');
             }
             if (! @move_uploaded_file($real, $abs) && ! @copy($real, $abs)) {
-                throw new RuntimeException('The file could not be saved.');
+                throw new RuntimeException('Файлът не може да бъде записан.');
             }
         }
 
@@ -110,10 +110,10 @@ class Uploader
     private static function passThrough(string $from, string $to): void
     {
         if (preg_match('/<\?(php|=)|<script/i', (string) file_get_contents($from))) {
-            throw new RuntimeException('The file contains forbidden content.');
+            throw new RuntimeException('Файлът съдържа забранено съдържание.');
         }
         if (! @copy($from, $to)) {
-            throw new RuntimeException('The file could not be saved.');
+            throw new RuntimeException('Файлът не може да бъде записан.');
         }
     }
 
@@ -121,7 +121,7 @@ class Uploader
     private static function reencode(string $from, string $to, string $mime): array
     {
         if (! function_exists('imagecreatetruecolor')) {
-            throw new RuntimeException('The PHP GD extension is not available.');
+            throw new RuntimeException('PHP GD разширението не е налично.');
         }
         self::ensureMemory();
 
@@ -132,7 +132,7 @@ class Uploader
             default => false,
         };
         if (! $img) {
-            throw new RuntimeException('The image could not be processed.');
+            throw new RuntimeException('Изображението не може да бъде обработено.');
         }
 
         if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
@@ -213,7 +213,7 @@ class Uploader
             default => false,
         };
         if (! $ok) {
-            throw new RuntimeException('The image could not be saved.');
+            throw new RuntimeException('Изображението не може да бъде записано.');
         }
     }
 

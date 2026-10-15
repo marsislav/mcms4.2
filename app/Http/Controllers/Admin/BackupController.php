@@ -22,11 +22,11 @@ class BackupController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->with('error', 'Backup failed: '.mb_substr($e->getMessage(), 0, 200));
+            return back()->with('error', 'Архивирането неуспешно: '.mb_substr($e->getMessage(), 0, 200));
         }
         audit('backup.create', $name);
 
-        return back()->with('status', "Backup $name created.");
+        return back()->with('status', "Архивът $name е създаден.");
     }
 
     public function download(string $name)
@@ -43,6 +43,6 @@ class BackupController extends Controller
         abort_unless(Backup::delete($name), 404);
         audit('backup.delete', $name);
 
-        return back()->with('status', 'Backup deleted.');
+        return back()->with('status', 'Архивът е изтрит.');
     }
 }

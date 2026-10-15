@@ -76,23 +76,23 @@ class SettingController extends Controller
         Setting::putMany($values);
         audit('settings.update', null, ['maintenance' => $values['maintenance_mode'], '2fa_required' => $values['require_2fa_admin']]);
 
-        return back()->with('status', 'Settings saved.');
+        return back()->with('status', 'Настройките са записани.');
     }
 
     public function testMail(Request $request)
     {
         $to = $request->user()->email;
         try {
-            Mail::raw('Test message from '.setting('site_name', 'mCMS').'. Mail is working.', function ($m) use ($to) {
-                $m->to($to)->subject('mCMS — email test');
+            Mail::raw('Тестово съобщение от '.setting('site_name', 'mCMS').'. Пощата работи.', function ($m) use ($to) {
+                $m->to($to)->subject('mCMS — тест на имейл');
             });
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->with('error', 'Sending failed: '.mb_substr($e->getMessage(), 0, 200));
+            return back()->with('error', 'Изпращането неуспешно: '.mb_substr($e->getMessage(), 0, 200));
         }
 
-        return back()->with('status', "Test email sent to $to.");
+        return back()->with('status', "Тестово писмо е изпратено до $to.");
     }
 
     private function clean(mixed $v): ?string

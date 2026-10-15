@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Sign in — {{ setting('site_name', 'mCMS') }}</title>
+    <title>Вход — {{ setting('site_name', 'mCMS') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}?v={{ config('mcms.version') }}">
 </head>
 <body class="auth">
@@ -17,13 +17,13 @@
     @if (session('error'))<div class="flash err">{{ session('error') }}</div>@endif
     @error('email')<div class="flash err">{{ $message }}</div>@enderror
 
-    <label>Email
+    <label>Имейл
         <input type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" maxlength="190">
     </label>
-    <label>Password
+    <label>Парола
         <input type="password" name="password" required autocomplete="current-password" maxlength="200">
     </label>
-    <button class="btn primary block">Sign in</button>
+    <button class="btn primary block">Вход</button>
 </form>
 <script src="{{ asset('assets/js/admin.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
 </body>

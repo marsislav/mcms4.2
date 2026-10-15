@@ -38,7 +38,7 @@ class AuthController extends Controller
             $wait = max(RateLimiter::availableIn($throttle), RateLimiter::availableIn($ipThrottle));
 
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => "Too many attempts. Try again in {$wait} sec."]);
+                ->withErrors(['email' => "Твърде много опити. Опитайте отново след {$wait} сек."]);
         }
 
         $user = User::where('email', $email)->first();
@@ -66,7 +66,7 @@ class AuthController extends Controller
             audit('login.failed', $email);
 
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => 'Invalid credentials.']);
+                ->withErrors(['email' => 'Невалидни данни за вход.']);
         }
 
         RateLimiter::clear($throttle);
@@ -90,7 +90,7 @@ class AuthController extends Controller
     {
         $pending = $this->pending($request);
         if (! $pending) {
-            return redirect()->route('admin.login')->with('error', 'The confirmation time has expired.');
+            return redirect()->route('admin.login')->with('error', 'Времето за потвърждение изтече.');
         }
 
         $request->validate(['code' => 'required|string|max:32']);
@@ -100,7 +100,7 @@ class AuthController extends Controller
         if (! $user || RateLimiter::tooManyAttempts($key, 10)) {
             $request->session()->forget('mcms_2fa');
 
-            return redirect()->route('admin.login')->with('error', 'Too many attempts.');
+            return redirect()->route('admin.login')->with('error', 'Твърде много опити.');
         }
 
         $code = trim($request->input('code'));
@@ -123,11 +123,11 @@ class AuthController extends Controller
             if ($pending['tries'] >= 5) {
                 $request->session()->forget('mcms_2fa');
 
-                return redirect()->route('admin.login')->with('error', 'Too many wrong codes. Sign in again.');
+                return redirect()->route('admin.login')->with('error', 'Твърде много грешни кодове. Влезте отново.');
             }
             $request->session()->put('mcms_2fa', $pending);
 
-            return back()->withErrors(['code' => 'Invalid code.']);
+            return back()->withErrors(['code' => 'Невалиден код.']);
         }
 
         $user->save();
@@ -143,7 +143,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login')->with('status', 'You have been signed out.');
+        return redirect()->route('admin.login')->with('status', 'Излязохте успешно.');
     }
 
     private function pending(Request $request): ?array

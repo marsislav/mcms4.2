@@ -6,32 +6,33 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="mcms-admin" content="{{ admin_url() }}">
-    <title>@yield('title', 'Dashboard') — {{ setting('site_name', 'mCMS') }}</title>
+    <title>@yield('title', 'Табло') — {{ setting('site_name', 'mCMS') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}?v={{ config('mcms.version') }}">
+    @stack('styles')
 </head>
 <body class="admin">
 @php
     $me = auth()->user();
     $unread = $me->allows('messages') ? \App\Models\Message::whereNull('read_at')->count() : 0;
     $nav = [
-        ['admin.dashboard', 'Dashboard', null, null],
-        ['—', 'Content'],
-        ['admin.pages.index', 'Pages', 'content', null],
-        ['admin.posts.index', 'Posts', 'content', null],
-        ['admin.categories.index', 'Categories', 'categories', null],
-        ['admin.media.index', 'Media', 'media', null],
-        ['admin.menus.index', 'Menus', 'menus', null],
-        ['admin.messages.index', 'Messages', 'messages', $unread],
-        ['—', 'Site'],
-        ['admin.translations.index', 'Translations', 'translations', null],
-        ['admin.languages.index', 'Languages', 'languages', null],
-        ['admin.redirects.index', 'Redirects', 'redirects', null],
-        ['admin.settings', 'Settings', 'settings', null],
-        ['—', 'System'],
-        ['admin.users.index', 'Users', 'users', null],
-        ['admin.audit', 'Audit log', 'audit', null],
-        ['admin.backups.index', 'Backups', 'backups', null],
-        ['admin.plugins.index', 'Plugins', 'plugins', null],
+        ['admin.dashboard', 'Табло', null, null],
+        ['—', 'Съдържание'],
+        ['admin.pages.index', 'Страници', 'content', null],
+        ['admin.posts.index', 'Публикации', 'content', null],
+        ['admin.categories.index', 'Категории', 'categories', null],
+        ['admin.media.index', 'Медия', 'media', null],
+        ['admin.menus.index', 'Менюта', 'menus', null],
+        ['admin.messages.index', 'Съобщения', 'messages', $unread],
+        ['—', 'Сайт'],
+        ['admin.translations.index', 'Преводи', 'translations', null],
+        ['admin.languages.index', 'Езици', 'languages', null],
+        ['admin.redirects.index', 'Пренасочвания', 'redirects', null],
+        ['admin.settings', 'Настройки', 'settings', null],
+        ['—', 'Система'],
+        ['admin.users.index', 'Потребители', 'users', null],
+        ['admin.audit', 'Журнал', 'audit', null],
+        ['admin.backups.index', 'Архиви', 'backups', null],
+        ['admin.plugins.index', 'Плъгини', 'plugins', null],
     ];
     $nav = apply_filters('admin.menu', $nav);
 @endphp
@@ -55,15 +56,15 @@
     <div class="sidebar-foot">
         <a href="{{ route('admin.profile') }}">{{ $me->name }}</a>
         <small>{{ $me->roleLabel() }}</small>
-        <a href="{{ lroute('home') }}" target="_blank" rel="noopener">View site ↗</a>
-        <form method="post" action="{{ route('admin.logout') }}">@csrf<button class="link">Sign out</button></form>
+        <a href="{{ lroute('home') }}" target="_blank" rel="noopener">Виж сайта ↗</a>
+        <form method="post" action="{{ route('admin.logout') }}">@csrf<button class="link">Изход</button></form>
     </div>
 </aside>
 
 <main class="main">
     <header class="topbar">
-        <label for="nav-toggle" class="burger" aria-label="Menu">☰</label>
-        <h1>@yield('title', 'Dashboard')</h1>
+        <label for="nav-toggle" class="burger" aria-label="Меню">☰</label>
+        <h1>@yield('title', 'Табло')</h1>
         <div class="topbar-actions">@yield('actions')</div>
     </header>
 
@@ -72,7 +73,7 @@
         @if (session('error'))<div class="flash err" role="alert">{{ session('error') }}</div>@endif
         @if ($errors->any())
             <div class="flash err" role="alert">
-                <strong>Please correct the following:</strong>
+                <strong>Моля, коригирайте:</strong>
                 <ul>@foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
             </div>
         @endif
@@ -82,5 +83,6 @@
 </main>
 
 <script src="{{ asset('assets/js/admin.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
+@stack('scripts')
 </body>
 </html>

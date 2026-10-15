@@ -1,19 +1,19 @@
 @extends('admin.layout')
-@section('title', 'Media')
+@section('title', 'Медия')
 
 @section('content')
 <section class="card">
     <form method="post" action="{{ route('admin.media.store') }}" enctype="multipart/form-data" class="upload-form">
         @csrf
         <input type="file" name="files[]" multiple required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
-        <button class="btn primary">Upload</button>
-        <small class="muted">JPG, PNG, WebP, GIF, PDF · up to {{ config('mcms.max_upload_mb') }} MB · images are processed and stripped of metadata</small>
+        <button class="btn primary">Качи</button>
+        <small class="muted">JPG, PNG, WebP, GIF, PDF · до {{ config('mcms.max_upload_mb') }} MB · изображенията се обработват и почистват от метаданни</small>
     </form>
 </section>
 
 <form class="filters" method="get">
-    <input type="search" name="q" value="{{ request('q') }}" placeholder="Search by name…" maxlength="80">
-    <button class="btn">Search</button>
+    <input type="search" name="q" value="{{ request('q') }}" placeholder="Търсене по име…" maxlength="80">
+    <button class="btn">Търси</button>
 </form>
 
 <div class="media-grid">
@@ -30,16 +30,16 @@
                 <input class="copy-url" readonly value="{{ $m->url() }}" aria-label="URL">
                 <form method="post" action="{{ route('admin.media.update', $m) }}" class="inline-form">
                     @csrf @method('PUT')
-                    <input name="alt" value="{{ $m->alt }}" placeholder="Alt text" maxlength="190">
+                    <input name="alt" value="{{ $m->alt }}" placeholder="Alt текст" maxlength="190">
                     <button class="btn sm">✓</button>
                 </form>
-                <form method="post" action="{{ route('admin.media.destroy', $m) }}" data-confirm="Delete this file?">
-                    @csrf @method('DELETE')<button class="btn sm danger">Delete</button>
+                <form method="post" action="{{ route('admin.media.destroy', $m) }}" data-confirm="Да изтрия ли файла?">
+                    @csrf @method('DELETE')<button class="btn sm danger">Изтрий</button>
                 </form>
             </figcaption>
         </figure>
     @empty
-        <p class="muted">No files yet.</p>
+        <p class="muted">Все още няма файлове.</p>
     @endforelse
 </div>
 {{ $items->links() }}

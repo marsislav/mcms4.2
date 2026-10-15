@@ -42,7 +42,7 @@ if (! function_exists('mcms_default_locale')) {
 
         return $langs->firstWhere('is_default', true)->code
             ?? $langs->first()->code
-            ?? config('app.locale', 'en');
+            ?? config('app.locale', 'bg');
     }
 }
 
@@ -200,5 +200,13 @@ if (! function_exists('apply_filters')) {
     function apply_filters(string $tag, mixed $value, mixed ...$args): mixed
     {
         return Hooks::applyFilters($tag, $value, ...$args);
+    }
+}
+
+if (! function_exists('mcms_body')) {
+    /** Final HTML of a page/post body: plugin filters + <oembed> → responsive iframe. */
+    function mcms_body(?string $html, mixed $content = null): string
+    {
+        return \App\Support\Sanitizer::renderEmbeds((string) apply_filters('content.body', (string) $html, $content));
     }
 }

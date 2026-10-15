@@ -239,9 +239,9 @@ class SiteController extends Controller
 
         if ($to = setting('contact_email')) {
             try {
-                Mail::raw("From: $name <{$data['email']}>\n\n".strip_tags($data['message']), function ($m) use ($to, $data, $name, $subject) {
+                Mail::raw("От: $name <{$data['email']}>\n\n".strip_tags($data['message']), function ($m) use ($to, $data, $name, $subject) {
                     $m->to($to)->replyTo($data['email'], $name)
-                        ->subject('['.setting('site_name', 'mCMS').'] '.($subject ?: 'New message'));
+                        ->subject('['.setting('site_name', 'mCMS').'] '.($subject ?: 'Ново съобщение'));
                 });
             } catch (\Throwable $e) {
                 report($e); // the message is safely stored in the panel anyway

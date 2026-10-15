@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@section('title', 'Dashboard')
+@section('title', 'Табло')
 
 @section('content')
 <div class="stats">
@@ -10,18 +10,18 @@
 
 <div class="cols">
     <section class="card">
-        <h2>Drafts</h2>
+        <h2>Чернови</h2>
         @forelse ($drafts as $d)
             <p><a href="{{ route($d->type === 'post' ? 'admin.posts.edit' : 'admin.pages.edit', $d) }}">{{ $d->adminTitle() }}</a>
-                <small class="muted">· {{ $d->type === 'post' ? 'post' : 'page' }} · {{ $d->updated_at->diffForHumans() }}</small></p>
+                <small class="muted">· {{ $d->type === 'post' ? 'публикация' : 'страница' }} · {{ $d->updated_at->diffForHumans() }}</small></p>
         @empty
-            <p class="muted">No drafts.</p>
+            <p class="muted">Няма чернови.</p>
         @endforelse
     </section>
 
     @if ($messages->isNotEmpty())
     <section class="card">
-        <h2>Recent messages</h2>
+        <h2>Последни съобщения</h2>
         @foreach ($messages as $m)
             <p><a href="{{ route('admin.messages.show', $m) }}">{{ $m->read_at ? '' : '● ' }}{{ $m->name }}</a>
                 <small class="muted">· {{ $m->created_at->diffForHumans() }}</small></p>
@@ -31,7 +31,7 @@
 
     @if (count($health))
     <section class="card">
-        <h2>Health and security</h2>
+        <h2>Здраве и сигурност</h2>
         <ul class="health">
             @foreach ($health as [$label, $ok, $hint])
                 <li class="{{ $ok ? 'ok' : 'warn' }}">
@@ -45,7 +45,7 @@
 
     @if ($audit->isNotEmpty())
     <section class="card">
-        <h2>Recent activity</h2>
+        <h2>Последни действия</h2>
         <table class="table compact">
             @foreach ($audit as $a)
                 <tr><td>{{ $a->action }}</td><td class="muted">{{ $a->user?->name ?? '—' }}</td><td class="muted">{{ $a->created_at->diffForHumans() }}</td></tr>

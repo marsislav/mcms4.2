@@ -19,6 +19,7 @@ class SecurityHeaders
             "default-src 'self'",
             "script-src 'self' 'nonce-{$nonce}'",
             "style-src 'self'",
+            "style-src-attr 'unsafe-inline'", // style="" from the rich-text editor (values allow-listed by Sanitizer)
             "img-src 'self' data: https:",
             "font-src 'self'",
             "connect-src 'self'",

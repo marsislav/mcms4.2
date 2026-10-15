@@ -32,12 +32,12 @@ class ContentSaver
                 continue;
             }
             if ($title === '') {
-                throw ValidationException::withMessages(["tr.$loc.title" => 'The title is required.']);
+                throw ValidationException::withMessages(["tr.$loc.title" => 'Заглавието е задължително.']);
             }
             $clean[$loc] = $row + ['title' => $title];
         }
         if (! isset($clean[$default])) {
-            throw ValidationException::withMessages(["tr.$default.title" => 'A title in the default language is required.']);
+            throw ValidationException::withMessages(["tr.$default.title" => 'Заглавие на основния език е задължително.']);
         }
 
         return DB::transaction(function () use ($content, $type, $data, $clean, $userId) {
@@ -87,7 +87,7 @@ class ContentSaver
                             'title' => $existing->title,
                             'body' => $existing->body,
                         ]);
-                        $keep = Revision::where('content_translation_id', $existing->id)->orderByDesc('id')->skip(20)->pluck('id');
+                        $keep = Revision::where('content_translation_id', $existing->id)->orderByDesc('id')->offset(20)->limit(PHP_INT_MAX)->pluck('id');
                         if ($keep->isNotEmpty()) {
                             Revision::whereIn('id', $keep)->delete();
                         }

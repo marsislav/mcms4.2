@@ -29,9 +29,9 @@ return [
     ],
 
     'role_labels' => [
-        'admin' => 'Administrator',
-        'editor' => 'Editor',
-        'author' => 'Author',
+        'admin' => 'Администратор',
+        'editor' => 'Редактор',
+        'author' => 'Автор',
     ],
 
     'embed_hosts' => ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'],

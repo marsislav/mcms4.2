@@ -1,4 +1,4 @@
 @extends('errors.layout')
 @section('code', '404')
-@section('title', t('error.404.title', 'Page not found'))
-@section('message', t('error.404.text', 'The address does not exist or has been moved.'))
+@section('title', t('error.404.title', 'Страницата не е намерена'))
+@section('message', t('error.404.text', 'Адресът не съществува или е преместен.'))

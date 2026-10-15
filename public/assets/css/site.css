@@ -114,3 +114,32 @@ input:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--accent) 45%
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media print{.site-header,.site-footer,.skip{display:none}body{background:#fff;color:#000}}
+
+/* ---- rich-text editor (CKEditor 5) output ---- */
+.prose .text-left{text-align:left}.prose .text-center{text-align:center}.prose .text-right{text-align:right}.prose .text-justify{text-align:justify}
+.prose mark{background:none;color:inherit;padding:0 .1em}
+.prose .marker-yellow{background:#fdfd77}.prose .marker-green{background:#63f963}.prose .marker-pink{background:#fc5c7c}.prose .marker-blue{background:#72ccfd}
+.prose .pen-red{color:#e71313;background:none}.prose .pen-green{color:#128a00;background:none}
+.prose figure.image{display:table;clear:both;text-align:center;margin:1.5rem auto;max-width:100%}
+.prose figure.image img{display:block;margin:0 auto;max-width:100%;min-width:50px;height:auto}
+.prose figure.image>figcaption{display:table-caption;caption-side:bottom;word-break:break-word}
+.prose figure.image_resized{display:block;box-sizing:border-box}
+.prose figure.image_resized img{width:100%}
+.prose img.image_resized{height:auto}
+.prose .image-style-block-align-left{margin-left:0;margin-right:auto}
+.prose .image-style-block-align-right{margin-right:0;margin-left:auto}
+.prose .image-style-align-left{float:left;margin:.3rem 1.5rem 1rem 0}
+.prose .image-style-align-right{float:right;margin:.3rem 0 1rem 1.5rem}
+.prose .image-style-side{float:right;margin:.3rem 0 1rem 1.5rem;max-width:50%}
+.prose img.image-style-align-left,.prose img.image-style-align-right{display:block}
+.prose figure.table{margin:1.5rem 0;overflow-x:auto;max-width:100%}
+.prose figure.table>table{width:100%}
+.prose figure.table>figcaption{caption-side:bottom;text-align:center}
+.prose .page-break{height:0;margin:0}
+.prose .embed-responsive{position:relative;margin:1.5rem 0}
+.prose .embed-responsive iframe{display:block;width:100%;aspect-ratio:16/9;height:auto}
+.prose figure.media{margin:1.5rem 0}
+.prose ul,.prose ol{padding-inline-start:1.6em}
+.prose::after{content:"";display:table;clear:both}
+@media (max-width:600px){.prose .image-style-align-left,.prose .image-style-align-right,.prose .image-style-side{float:none;margin:1rem auto;max-width:100%}}
+.prose .page-break span{display:none}

@@ -1,50 +1,50 @@
-# mCMS 4.2 Documentation (for beginners)
+# Документация на mCMS 4.2 (за начинаещи)
 
-This folder explains **in plain words** how the program is written, how it works and what depends on what.
-You do not need to know PHP beforehand. Wherever a new word appears, it is explained here or in the [glossary](10-glossary.md).
+Тази папка обяснява **с прости думи** как е написана програмата, как работи и кое от кое зависи.
+Не е нужно да знаете PHP отпреди. Където се появи нова дума, тя е обяснена тук или в [речника](10-rechnik.md).
 
-## In what order to read
+## В какъв ред да четете
 
-| # | File | What it covers | When to read it |
-|---|------|----------------|-----------------|
-| 1 | [01-basic-concepts.md](01-basic-concepts.md) | What a website, server, PHP, Laravel and a database are. Explained with a restaurant example | **First** |
-| 2 | [02-folder-structure.md](02-folder-structure.md) | What each folder is for | Second |
-| 3 | [03-request-lifecycle.md](03-request-lifecycle.md) | What happens when someone opens a page, step by step | **The most important one** |
-| 4 | [04-database.md](04-database.md) | All the tables and how they are connected | After 3 |
-| 5 | [05-dependencies.md](05-dependencies.md) | What depends on what, and what breaks if we remove something | After 4 |
-| 6 | [06-security.md](06-security.md) | Every protection: what it does and where it is in the code | Optional |
-| 7 | [07-file-reference.md](07-file-reference.md) | A description of **every** file | As a reference |
-| 8 | [08-how-to-change-things.md](08-how-to-change-things.md) | Ready-made recipes: how to add a field, a section, a language, a plugin… | When you start making changes |
-| 9 | [09-installation-and-troubleshooting.md](09-installation-and-troubleshooting.md) | Installation, hosting, common errors | When something does not work |
-| 10 | [10-glossary.md](10-glossary.md) | Glossary of terms | Always at hand |
+| № | Файл | За какво е | Кога да го четете |
+|---|------|-----------|-------------------|
+| 1 | [01-osnovni-ponyatiya.md](01-osnovni-ponyatiya.md) | Какво е сайт, сървър, PHP, Laravel, база данни. Обяснено с пример от ресторант | **Първо** |
+| 2 | [02-struktura-na-papkite.md](02-struktura-na-papkite.md) | Коя папка за какво служи | Второ |
+| 3 | [03-patyat-na-zayavkata.md](03-patyat-na-zayavkata.md) | Какво се случва, когато някой отвори страница. Стъпка по стъпка | **Най-важният** |
+| 4 | [04-baza-danni.md](04-baza-danni.md) | Всички таблици и как са свързани | След 3 |
+| 5 | [05-zavisimosti.md](05-zavisimosti.md) | Кое от кое зависи и какво се чупи, ако махнем нещо | След 4 |
+| 6 | [06-sigurnost.md](06-sigurnost.md) | Всяка защита: какво прави и къде е в кода | По желание |
+| 7 | [07-spravochnik-fajlove.md](07-spravochnik-fajlove.md) | Описание на **всеки** файл | Като справочник |
+| 8 | [08-kak-da-promenyam.md](08-kak-da-promenyam.md) | Готови рецепти: как да добавя поле, секция, език, плъгин… | Когато започнете да променяте |
+| 9 | [09-instalaciya-i-problemi.md](09-instalaciya-i-problemi.md) | Инсталация, хостинг, чести грешки | Когато нещо не тръгва |
+| 10 | [10-rechnik.md](10-rechnik.md) | Речник на термините | Винаги под ръка |
 
-## The shortest explanation
+## Най-краткото обяснение
 
-mCMS is a program that lets a person **with no programming knowledge** manage a website:
-write pages and articles, upload pictures, build menus and translate into several languages.
-All of this is done through an **admin panel** (address `/panel`), while visitors see the
-finished **public site**.
+mCMS е програма, която позволява на човек **без знания по програмиране** да управлява сайт:
+да пише страници и статии, да качва снимки, да прави менюта и да превежда на няколко езика.
+Всичко това става през **административен панел** (адрес `/panel`), а посетителите виждат
+готовия **публичен сайт**.
 
-The program is written in the **PHP** language with the help of **Laravel** (a ready-made set of tools).
-The data (texts, users, settings) is stored in a **MySQL database**.
+Програмата е написана на езика **PHP** с помощта на **Laravel** (готов набор от инструменти).
+Данните (текстове, потребители, настройки) се пазят в **база данни MySQL**.
 
 ```
-Visitor ──► public site ──┐
-                          ├──► program (PHP/Laravel) ──► database (MySQL)
-Administrator ──► panel ──┘                         └──► folder with uploaded files
+Посетител ──► публичен сайт ──┐
+                              ├──► програма (PHP/Laravel) ──► база данни (MySQL)
+Администратор ──► панел ──────┘                         └──► папка с качени файлове
 ```
 
-## How to read the code itself (recommended path)
+## Как да четете самия код (препоръчителен път)
 
-1. Open `routes/web.php` — this is the "map" of the site: which address leads where.
-2. Find `Route::get('{slug}', [SiteController::class, 'page'])` and open `app/Http/Controllers/SiteController.php`, method `page`.
-3. Follow how it finds the page in the database (model `ContentTranslation`) and how it displays it (`resources/views/site/page.blade.php`).
-4. Repeat the same for the admin panel: `routes/web.php` → `Admin/ContentController.php` → `resources/views/admin/content/form.blade.php`.
-5. When you meet an unfamiliar function such as `t()`, `setting()` or `lroute()`, look it up in `app/helpers.php`.
+1. Отворете `routes/web.php` — това е „картата“ на сайта: кой адрес къде води.
+2. Намерете `Route::get('{slug}', [SiteController::class, 'page'])` и отворете `app/Http/Controllers/SiteController.php`, метод `page`.
+3. Проследете как намира страницата в базата (модел `ContentTranslation`) и как я показва (`resources/views/site/page.blade.php`).
+4. Повторете същото за админ панела: `routes/web.php` → `Admin/ContentController.php` → `resources/views/admin/content/form.blade.php`.
+5. Когато срещнете непозната функция като `t()`, `setting()` или `lroute()`, потърсете я в `app/helpers.php`.
 
-## An honest note
+## Важна бележка за честност
 
-The code has been checked for syntax errors, and the security helper classes have automated tests
-(`php tests/standalone.php`). However, the whole program has **not yet been run on a live server with Laravel**,
-so small errors may appear on the first launch. [09](09-installation-and-troubleshooting.md)
-describes how to find and fix them.
+Кодът е проверен за синтактични грешки и сигурностните помощни класове имат автоматични тестове
+(`php tests/standalone.php`). Цялата програма обаче **още не е стартирана на жив сървър с Laravel**,
+затова при първо пускане е възможно да излязат дребни грешки. В [09](09-instalaciya-i-problemi.md)
+е описано как да ги намерите и поправите.

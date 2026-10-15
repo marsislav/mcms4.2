@@ -22,11 +22,10 @@ class InstallController extends Controller
     {
         $throttle = 'install:'.$request->ip();
         if (RateLimiter::tooManyAttempts($throttle, 10)) {
-            return back()->withErrors(['install_key' => 'Too many attempts. Wait a few minutes.'])->withInput();
+            return back()->withErrors(['install_key' => 'Твърде много опити. Изчакайте няколко минути.'])->withInput();
         }
         RateLimiter::hit($throttle, 600);
 
-        $request->mergeIfMissing(['default_lang' => 'en']);
         $data = $request->validate([
             'install_key' => 'required|string|max:100',
             'db_host' => 'required|string|max:190',
@@ -43,12 +42,12 @@ class InstallController extends Controller
 
         $key = (string) config('mcms.install_key');
         if ($key === '' || ! hash_equals($key, trim($data['install_key']))) {
-            return back()->withErrors(['install_key' => 'Invalid install key. Find MCMS_INSTALL_KEY in the .env file on the server.'])->withInput();
+            return back()->withErrors(['install_key' => 'Невалиден инсталационен ключ. Намерете MCMS_INSTALL_KEY във файла .env на сървъра.'])->withInput();
         }
 
         foreach ($this->requirements() as $check) {
             if ($check['required'] && ! $check['ok']) {
-                return back()->withErrors(['install_key' => 'The server does not meet the requirements: '.$check['label']])->withInput();
+                return back()->withErrors(['install_key' => 'Сървърът не покрива изискванията: '.$check['label']])->withInput();
             }
         }
 
@@ -61,7 +60,7 @@ class InstallController extends Controller
                 [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION, \PDO::ATTR_TIMEOUT => 8]
             );
         } catch (\Throwable $e) {
-            return back()->withErrors(['db_host' => 'Could not connect to the database. Check the host, name, user and password.'])->withInput();
+            return back()->withErrors(['db_host' => 'Неуспешна връзка с базата данни. Проверете хост, име, потребител и парола.'])->withInput();
         }
 
         // 2) Apply connection at runtime and migrate (never "fresh": we must not wipe foreign data)
@@ -77,7 +76,7 @@ class InstallController extends Controller
 
         try {
             if (Schema::hasTable('users') && DB::table('users')->exists()) {
-                return back()->withErrors(['db_name' => 'This database already contains mCMS data. Choose an empty database.'])->withInput();
+                return back()->withErrors(['db_name' => 'Тази база вече съдържа данни на mCMS. Изберете празна база.'])->withInput();
             }
 
             Artisan::call('migrate', ['--force' => true]);
@@ -85,7 +84,7 @@ class InstallController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->withErrors(['db_host' => 'Installation failed. See storage/logs for details. The database can be reused.'])->withInput();
+            return back()->withErrors(['db_host' => 'Инсталацията се провали. Детайли има в storage/logs. Базата може да се използва повторно.'])->withInput();
         }
 
         // 3) Persist configuration and lock the installer
@@ -106,7 +105,7 @@ class InstallController extends Controller
         ]);
         file_put_contents(storage_path('installed.lock'), date('c')."\n", LOCK_EX);
 
-        return redirect('/'.config('mcms.admin_path').'/login')->with('status', 'Installation successful. Sign in with your credentials.');
+        return redirect('/'.config('mcms.admin_path').'/login')->with('status', 'Инсталацията е успешна. Влезте с вашите данни.');
     }
 
     /** @return array<int, array{label:string,ok:bool,required:bool}> */
@@ -114,20 +113,20 @@ class InstallController extends Controller
     {
         $writable = fn ($p) => is_dir($p) && is_writable($p);
         $checks = [
-            ['PHP ≥ 8.2 (current: '.PHP_VERSION.')', version_compare(PHP_VERSION, '8.2.0', '>='), true],
+            ['PHP ≥ 8.2 (текуща: '.PHP_VERSION.')', version_compare(PHP_VERSION, '8.2.0', '>='), true],
             ['pdo_mysql', extension_loaded('pdo_mysql'), true],
             ['mbstring', extension_loaded('mbstring'), true],
             ['openssl', extension_loaded('openssl'), true],
             ['fileinfo', extension_loaded('fileinfo'), true],
             ['dom / libxml', extension_loaded('dom'), true],
-            ['gd (image processing)', extension_loaded('gd'), true],
+            ['gd (обработка на изображения)', extension_loaded('gd'), true],
             ['intl', extension_loaded('intl'), false],
-            ['zip (archiving of uploaded files)', extension_loaded('zip'), false],
-            ['exif (automatic photo rotation)', extension_loaded('exif'), false],
-            ['storage/ is writable', $writable(storage_path()), true],
-            ['bootstrap/cache is writable', $writable(base_path('bootstrap/cache')), true],
-            ['public/uploads is writable', $writable(public_path('uploads')), true],
-            ['.env is writable', is_writable(base_path('.env')), true],
+            ['zip (архив на качените файлове)', extension_loaded('zip'), false],
+            ['exif (автоматично завъртане на снимки)', extension_loaded('exif'), false],
+            ['storage/ е записваема', $writable(storage_path()), true],
+            ['bootstrap/cache е записваема', $writable(base_path('bootstrap/cache')), true],
+            ['public/uploads е записваема', $writable(public_path('uploads')), true],
+            ['.env е записваем', is_writable(base_path('.env')), true],
         ];
 
         return array_map(fn ($c) => ['label' => $c[0], 'ok' => $c[1], 'required' => $c[2]], $checks);

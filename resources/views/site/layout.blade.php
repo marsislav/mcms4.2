@@ -38,6 +38,7 @@
     <link rel="alternate" type="application/rss+xml" title="{{ t('site.rss') }}" href="{{ lroute('feed') }}">
     @if($favicon)<link rel="icon" href="{{ $favicon->url() }}">@endif
     <link rel="stylesheet" href="{{ asset('assets/css/site.css') }}?v={{ config('mcms.version') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/grid.css') }}?v={{ config('mcms.version') }}">
     @php(do_action('head'))
 </head>
 <body>

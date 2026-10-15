@@ -2,7 +2,7 @@
 
 @section('content')
 <article class="entry">
-    @if($preview)<div class="preview-banner">Preview — this post is not publicly visible yet.</div>@endif
+    @if($preview)<div class="preview-banner">Преглед — тази публикация още не е публично видима.</div>@endif
     <header>
         @if($content->category && ($ct = $content->category->tr()))
             <a class="kicker" href="{{ $ct->url() }}">{{ $ct->name }}</a>
@@ -13,7 +13,7 @@
     @if($content->featured)
         <img class="hero" src="{{ $content->featured->url() }}" alt="{{ $content->featured->alt ?: $tr->title }}" @if($content->featured->width) width="{{ $content->featured->width }}" height="{{ $content->featured->height }}" @endif>
     @endif
-    <div class="prose">{!! apply_filters('content.body', $tr->body, $content) !!}</div>
+    <div class="prose">{!! mcms_body($tr->body, $content) !!}</div>
 </article>
 
 @if($related->isNotEmpty())

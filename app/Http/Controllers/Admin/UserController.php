@@ -44,7 +44,7 @@ class UserController extends Controller
         $user->save();
         audit('user.create', $user->email, ['role' => $user->role]);
 
-        return redirect()->route('admin.users.index')->with('status', 'User created.');
+        return redirect()->route('admin.users.index')->with('status', 'Потребителят е създаден.');
     }
 
     public function edit(User $user)
@@ -70,7 +70,7 @@ class UserController extends Controller
 
         if ($user->isAdmin() && ($role !== 'admin' || ! $active)
             && User::where('role', 'admin')->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
-            return back()->withErrors(['role' => 'At least one active administrator must remain.']);
+            return back()->withErrors(['role' => 'Трябва да остане поне един активен администратор.']);
         }
 
         $user->name = strip_tags($data['name']);
@@ -95,17 +95,17 @@ class UserController extends Controller
         $user->save();
         audit('user.update', $user->email, ['role' => $user->role, 'active' => $user->active]);
 
-        return redirect()->route('admin.users.index')->with('status', 'User updated.');
+        return redirect()->route('admin.users.index')->with('status', 'Потребителят е обновен.');
     }
 
     public function destroy(Request $request, User $user)
     {
-        abort_if($user->id === $request->user()->id, 422, 'You cannot delete yourself.');
-        abort_if($user->isAdmin() && User::where('role', 'admin')->where('id', '!=', $user->id)->doesntExist(), 422, 'The last administrator cannot be deleted.');
+        abort_if($user->id === $request->user()->id, 422, 'Не можете да изтриете себе си.');
+        abort_if($user->isAdmin() && User::where('role', 'admin')->where('id', '!=', $user->id)->doesntExist(), 422, 'Последният администратор не може да се изтрие.');
 
         audit('user.delete', $user->email);
         $user->delete();
 
-        return back()->with('status', 'User deleted.');
+        return back()->with('status', 'Потребителят е изтрит.');
     }
 }

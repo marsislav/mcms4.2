@@ -1,11 +1,11 @@
 @extends('admin.layout')
-@section('title', 'Menu: '.$menu->name)
+@section('title', 'Меню: '.$menu->name)
 
-@section('actions')<a class="btn" href="{{ route('admin.menus.index') }}">← Menus</a>@endsection
+@section('actions')<a class="btn" href="{{ route('admin.menus.index') }}">← Менюта</a>@endsection
 
 @section('content')
 @php
-    $contentLabel = fn ($c) => ($c->type === 'post' ? '[post] ' : '[page] ').$c->adminTitle();
+    $contentLabel = fn ($c) => ($c->type === 'post' ? '[публикация] ' : '[страница] ').$c->adminTitle();
     $rows = $items->map(fn ($i) => $i)->all();
     // two blank rows for adding new items
     $rows[] = new \App\Models\MenuItem(['type' => 'content']);
@@ -15,20 +15,20 @@
 
 <form method="post" action="{{ route('admin.menus.update', $menu) }}">
     @csrf @method('PUT')
-    <p class="muted">Maximum 2 levels. Items pointing to missing or unpublished content are not shown. Leave the label empty to generate it automatically.</p>
+    <p class="muted">Максимум 2 нива. Елементи към несъществуващо/непубликувано съдържание не се показват. Оставете етикета празен за автоматичен.</p>
 
     <div class="table-wrap">
     <table class="table menu-table">
-        <thead><tr><th>Type</th><th>Target</th><th>Labels</th><th>Parent</th><th>#</th><th>New window</th><th>Delete</th></tr></thead>
+        <thead><tr><th>Тип</th><th>Цел</th><th>Етикети</th><th>Родител</th><th>№</th><th>Нов прозорец</th><th>Изтрий</th></tr></thead>
         <tbody>
         @foreach ($rows as $k => $item)
             <tr>
                 <td>
                     <input type="hidden" name="items[{{ $k }}][id]" value="{{ $item->id }}">
                     <select name="items[{{ $k }}][type]" data-menu-type>
-                        <option value="content" @selected($item->type === 'content')>Content</option>
-                        <option value="builtin" @selected($item->type === 'builtin')>Built-in</option>
-                        <option value="custom" @selected($item->type === 'custom')>Link</option>
+                        <option value="content" @selected($item->type === 'content')>Съдържание</option>
+                        <option value="builtin" @selected($item->type === 'builtin')>Вграден</option>
+                        <option value="custom" @selected($item->type === 'custom')>Линк</option>
                     </select>
                 </td>
                 <td>
@@ -40,7 +40,7 @@
                         <option value="">—</option>
                         @foreach ($builtin as $b)<option value="{{ $b }}" @selected($item->type === 'builtin' && $item->url === $b)>{{ $b }}</option>@endforeach
                     </select>
-                    <input name="items[{{ $k }}][url]" data-for="custom" placeholder="/path or https://…" maxlength="500" value="{{ $item->type === 'custom' ? $item->url : '' }}">
+                    <input name="items[{{ $k }}][url]" data-for="custom" placeholder="/път или https://…" maxlength="500" value="{{ $item->type === 'custom' ? $item->url : '' }}">
                 </td>
                 <td>
                     @foreach ($languages as $lang)
@@ -51,7 +51,7 @@
                     <select name="items[{{ $k }}][parent_id]">
                         <option value="">—</option>
                         @foreach ($parents as $p)
-                            @if($p->id !== $item->id)<option value="{{ $p->id }}" @selected($item->parent_id === $p->id)>#{{ $p->id }} {{ $p->label(mcms_default_locale()) ?? ($p->url ?? 'item') }}</option>@endif
+                            @if($p->id !== $item->id)<option value="{{ $p->id }}" @selected($item->parent_id === $p->id)>#{{ $p->id }} {{ $p->label(mcms_default_locale()) ?? ($p->url ?? 'елемент') }}</option>@endif
                         @endforeach
                     </select>
                 </td>
@@ -63,7 +63,7 @@
         </tbody>
     </table>
     </div>
-    <button class="btn primary">Save menu</button>
-    <p class="muted">Need more rows? Save and reopen the page — two new empty rows are added.</p>
+    <button class="btn primary">Запази менюто</button>
+    <p class="muted">Нужни още редове? Запазете и отворете страницата отново — добавят се два нови празни реда.</p>
 </form>
 @endsection

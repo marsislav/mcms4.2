@@ -1,4 +1,4 @@
 @extends('errors.layout')
 @section('code', '419')
-@section('title', 'Session expired')
-@section('message', 'The form has expired. Reload the page and try again.')
+@section('title', 'Сесията изтече')
+@section('message', 'Формулярът е изтекъл. Презаредете страницата и опитайте отново.')

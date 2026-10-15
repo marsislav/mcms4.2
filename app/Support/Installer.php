@@ -91,8 +91,8 @@ class Installer
             ]);
 
             // Menus
-            $header = Menu::create(['location' => 'header', 'name' => 'Main menu']);
-            $footer = Menu::create(['location' => 'footer', 'name' => 'Footer menu']);
+            $header = Menu::create(['location' => 'header', 'name' => 'Главно меню']);
+            $footer = Menu::create(['location' => 'footer', 'name' => 'Меню във футъра']);
 
             $sort = 0;
             foreach ([['content', $home->id], ['content', $about->id], ['builtin', 'blog'], ['builtin', 'contact']] as [$type, $ref]) {

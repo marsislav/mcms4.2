@@ -18,18 +18,18 @@ class AdminGuard
         $user = Auth::user();
 
         if (! $user || ! $user->active) {
-            return $this->kick($request, $user ? 'The account has been deactivated.' : null);
+            return $this->kick($request, $user ? 'Профилът е деактивиран.' : null);
         }
 
         $session = $request->session();
 
         if (hash('sha256', (string) $request->userAgent()) !== $session->get('mcms_ua')) {
-            return $this->kick($request, 'The session is invalid. Sign in again.');
+            return $this->kick($request, 'Сесията е невалидна. Влезте отново.');
         }
 
         $last = (int) $session->get('mcms_last_activity', 0);
         if ($last && time() - $last > config('mcms.idle_minutes') * 60) {
-            return $this->kick($request, 'The session expired due to inactivity.');
+            return $this->kick($request, 'Сесията изтече поради неактивност.');
         }
         $session->put('mcms_last_activity', time());
 
@@ -40,7 +40,7 @@ class AdminGuard
         if (setting('require_2fa_admin') === '1' && $user->isAdmin() && ! $user->totp_enabled
             && ! $request->routeIs('admin.profile*', 'admin.logout')) {
             return redirect()->route('admin.profile')
-                ->with('error', 'Policy requires two-factor authentication (2FA) for administrators. Enable it to continue.');
+                ->with('error', 'Политиката изисква двуфакторна защита (2FA) за администратори. Активирайте я, за да продължите.');
         }
 
         return $next($request);

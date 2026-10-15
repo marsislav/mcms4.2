@@ -58,11 +58,11 @@
     var wrap = document.createElement('div');
     wrap.className = 'modal'; wrap.hidden = true;
     wrap.innerHTML =
-      '<div class="modal-box" role="dialog" aria-modal="true" aria-label="Media">' +
-      '<div class="modal-head"><strong>Choose a file</strong>' +
-      '<input type="search" placeholder="Search…" class="picker-q"><button type="button" class="btn sm picker-close">✕</button></div>' +
+      '<div class="modal-box" role="dialog" aria-modal="true" aria-label="Медия">' +
+      '<div class="modal-head"><strong>Избор на файл</strong>' +
+      '<input type="search" placeholder="Търсене…" class="picker-q"><button type="button" class="btn sm picker-close">✕</button></div>' +
       '<div class="picker-grid"></div>' +
-      '<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>More…</button></div></div>';
+      '<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>Още…</button></div></div>';
     document.body.appendChild(wrap);
 
     var state = { next: null, onPick: null, imagesOnly: false, timer: null };
@@ -81,10 +81,10 @@
             b.addEventListener('click', function () { var cb = state.onPick; close(); if (cb) { cb(m); } });
             grid.appendChild(b);
           });
-          if (!res.data.length && replace) { grid.textContent = 'No files.'; }
+          if (!res.data.length && replace) { grid.textContent = 'Няма файлове.'; }
           state.next = res.next; more.hidden = !res.next;
         })
-        .catch(function () { grid.textContent = 'Error while loading.'; });
+        .catch(function () { grid.textContent = 'Грешка при зареждане.'; });
     }
     function query() {
       var u = adminBase + '/media/picker?q=' + encodeURIComponent(q.value) + (state.imagesOnly ? '&images=1' : '');
@@ -117,49 +117,19 @@
     });
   });
 
-  /* ---- minimal HTML editor toolbar ---- */
-  var tools = [
-    ['B', 'Bold', ['<strong>', '</strong>']],
-    ['I', 'Italic', ['<em>', '</em>']],
-    ['H2', 'Heading 2', ['<h2>', '</h2>']],
-    ['H3', 'Heading 3', ['<h3>', '</h3>']],
-    ['¶', 'Paragraph', ['<p>', '</p>']],
-    ['• List', 'Unordered list', ['<ul>\n  <li>', '</li>\n</ul>']],
-    ['1. List', 'Ordered list', ['<ol>\n  <li>', '</li>\n</ol>']],
-    ['❝', 'Quote', ['<blockquote>', '</blockquote>']],
-    ['</>', 'Code', ['<code>', '</code>']],
-    ['—', 'Divider', ['<hr>', '']],
-    ['Link', 'Insert link', 'link'],
-    ['Image', 'Insert image from media', 'image']
-  ];
+  /* rich-text editor (CKEditor 5, assets/js/editor.js) uses the same media picker */
+  window.mcmsOpenPicker = openPicker;
 
-  function wrapSel(ta, before, after) {
-    var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;
-    ta.value = v.slice(0, s) + before + v.slice(s, e) + after + v.slice(e);
-    ta.focus();
-    ta.selectionStart = s + before.length; ta.selectionEnd = e + before.length;
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-  function esc(s) { return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
-
-  $$('textarea[data-editor]').forEach(function (ta) {
-    var bar = document.createElement('div'); bar.className = 'editor-bar';
-    tools.forEach(function (t) {
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn sm'; b.textContent = t[0]; b.title = t[1];
-      b.addEventListener('click', function () {
-        if (t[2] === 'link') {
-          var url = window.prompt('Address (https://… or /path):', 'https://');
-          if (url) { wrapSel(ta, '<a href="' + esc(url) + '">', '</a>'); }
-        } else if (t[2] === 'image') {
-          openPicker(function (m) {
-            var alt = m.alt || '';
-            var tag = m.image ? '<img src="' + esc(m.url) + '" alt="' + esc(alt) + '">' : '<a href="' + esc(m.url) + '">' + esc(m.name) + '</a>';
-            wrapSel(ta, tag, '');
-          }, false);
-        } else { wrapSel(ta, t[2][0], t[2][1]); }
+  /* visible warning if the rich-text editor did not start (missing files, blocked script…) */
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      $$('textarea[data-editor]').forEach(function (ta) {
+        if (ta.getAttribute('data-editor-ready')) { return; }
+        var n = document.createElement('div');
+        n.className = 'flash err';
+        n.textContent = 'Редакторът CKEditor не е зареден (полето работи като обикновен HTML). Проверете дали public/assets/vendor/ckeditor5/ckeditor5.umd.js е качен (≈1.9 MB), опреснете с Ctrl+F5 и вижте конзолата (F12).';
+        ta.parentNode.insertBefore(n, ta);
       });
-      bar.appendChild(b);
-    });
-    ta.parentNode.insertBefore(bar, ta);
+    }, 4000);
   });
 })();

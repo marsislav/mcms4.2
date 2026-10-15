@@ -36,7 +36,7 @@ class MediaController extends Controller
 
         $redirect = back();
         if ($ok) {
-            $redirect->with('status', "Files uploaded: $ok.");
+            $redirect->with('status', "Качени файлове: $ok.");
         }
 
         return $errors ? $redirect->with('error', implode(' | ', $errors)) : $redirect;
@@ -47,7 +47,7 @@ class MediaController extends Controller
         $data = $request->validate(['alt' => 'nullable|string|max:190']);
         $media->update(['alt' => $data['alt'] ? strip_tags($data['alt']) : null]);
 
-        return back()->with('status', 'Saved.');
+        return back()->with('status', 'Записано.');
     }
 
     public function destroy(Media $media)
@@ -55,7 +55,7 @@ class MediaController extends Controller
         audit('media.delete', (string) $media->id, $media->original_name);
         Uploader::delete($media);
 
-        return back()->with('status', 'File deleted.');
+        return back()->with('status', 'Файлът е изтрит.');
     }
 
     /** JSON feed for the in-editor media picker. */

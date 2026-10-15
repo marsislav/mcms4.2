@@ -165,3 +165,12 @@ body.auth.wide{align-items:start}
   .editor-grid{grid-template-columns:1fr}
   .content{padding:1rem}
 }
+
+/* ---- CKEditor 5 ---- */
+.ck-editor{margin:.3rem 0 .2rem}
+.ck-editor__editable_inline{min-height:420px;max-height:75vh}
+.ck-content{font-size:1rem;line-height:1.6}
+.ck-content .text-left{text-align:left}.ck-content .text-center{text-align:center}.ck-content .text-right{text-align:right}.ck-content .text-justify{text-align:justify}
+.editor-count{font-size:.8rem;color:var(--muted,#667);margin:.2rem 0 1rem;text-align:right}
+.ck.ck-editor__editable:not(.ck-editor__nested-editable).ck-focused{box-shadow:none}
+.ck.ck-balloon-panel,.ck.ck-dialog-overlay,.ck.ck-fullscreen__main-wrapper{z-index:1000}

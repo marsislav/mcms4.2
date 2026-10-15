@@ -25,7 +25,7 @@ class CategoryController extends Controller
         $category = $this->persist(new Category, $request);
         audit('category.create', (string) $category->id);
 
-        return back()->with('status', 'Category added.');
+        return back()->with('status', 'Категорията е добавена.');
     }
 
     public function update(Request $request, Category $category)
@@ -33,7 +33,7 @@ class CategoryController extends Controller
         $this->persist($category, $request);
         audit('category.update', (string) $category->id);
 
-        return back()->with('status', 'Category updated.');
+        return back()->with('status', 'Категорията е обновена.');
     }
 
     public function destroy(Category $category)
@@ -41,7 +41,7 @@ class CategoryController extends Controller
         audit('category.delete', (string) $category->id, $category->adminName());
         $category->delete(); // posts keep existing (category_id -> NULL)
 
-        return back()->with('status', 'Category deleted.');
+        return back()->with('status', 'Категорията е изтрита.');
     }
 
     private function persist(Category $category, Request $request): Category
@@ -57,7 +57,7 @@ class CategoryController extends Controller
         $default = mcms_default_locale();
         $tr = $request->input('tr', []);
         if (trim((string) ($tr[$default]['name'] ?? '')) === '') {
-            throw ValidationException::withMessages(["tr.$default.name" => 'A name in the default language is required.']);
+            throw ValidationException::withMessages(["tr.$default.name" => 'Името на основния език е задължително.']);
         }
 
         return DB::transaction(function () use ($category, $request, $tr) {
