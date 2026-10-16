@@ -77,6 +77,8 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::get('/', [Admin\MediaController::class, 'index'])->name('index');
             Route::get('picker', [Admin\MediaController::class, 'picker'])->name('picker');
             Route::post('/', [Admin\MediaController::class, 'store'])->name('store');
+            Route::post('upload', [Admin\MediaController::class, 'upload'])->middleware('throttle:60,1')->name('upload');
+            Route::post('editor-upload', [Admin\MediaController::class, 'editorUpload'])->middleware('throttle:90,1')->name('editor-upload');
             Route::put('{media}', [Admin\MediaController::class, 'update'])->whereNumber('media')->name('update');
             Route::delete('{media}', [Admin\MediaController::class, 'destroy'])->whereNumber('media')->name('destroy');
         });

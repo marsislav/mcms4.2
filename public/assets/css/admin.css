@@ -204,3 +204,9 @@ button.chip:hover{border-color:var(--accent,#2a6df4)}
 .tb-fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:.6rem 1rem .2rem;margin:.8rem 0}
 .tb-fieldset legend{font-weight:600;padding:0 .4rem}
 [data-spanel][hidden],[data-topbar-box][hidden],[data-topbar-col][hidden]{display:none}
+
+/* uploads */
+.picker-msg{padding:.4rem 1rem;font-size:.88rem;background:var(--bg);border-bottom:1px solid var(--line)}
+.picker-msg.bad{color:var(--danger)}
+.modal-box.drop,.media-field.drop{outline:3px dashed var(--accent);outline-offset:-6px}
+.modal-head .picker-upload{flex:none}

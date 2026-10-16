@@ -39,7 +39,7 @@
 
   /* ---- plugin list: everything free in the ckeditor5 package that makes sense here ----
    * Not included on purpose: Emoji (loads its data from a CDN), premium/cloud (CKBox, EasyImage, AI, comments…), upload adapters
-   * (we use the media library), HtmlEmbed / GeneralHtmlSupport (raw HTML is sanitised server-side anyway),
+   * (replaced by SimpleUploadAdapter -> our own /media/editor-upload endpoint), HtmlEmbed / GeneralHtmlSupport (raw HTML is sanitised server-side anyway),
    * TodoList / Bookmark (need <input> / id which the sanitiser strips), Markdown. */
   var names = [
     'Essentials', 'Paragraph', 'Heading', 'Autoformat', 'TextTransformation', 'PasteFromOffice', 'SelectAll', 'Undo',
@@ -51,6 +51,7 @@
     'Table', 'TableToolbar', 'TableProperties', 'TableCellProperties', 'TableColumnResize', 'TableCaption',
     'Image', 'ImageBlock', 'ImageInline', 'ImageCaption', 'ImageStyle', 'ImageToolbar', 'ImageResize',
     'ImageTextAlternative', 'ImageInsert', 'ImageInsertViaUrl', 'AutoImage',
+    'ImageUpload', 'ImageUploadUI', 'ImageUploadEditing', 'ImageUploadProgress', 'SimpleUploadAdapter',
     'MediaEmbed', 'AutoMediaEmbed',
     'SpecialCharacters', 'SpecialCharactersEssentials', 'SpecialCharactersArrows', 'SpecialCharactersCurrency',
     'SpecialCharactersLatin', 'SpecialCharactersMathematical', 'SpecialCharactersText',
@@ -64,19 +65,25 @@
   if (window.McmsFontAwesome) { plugins.push(window.McmsFontAwesome); }
   if (missing.length && window.console) { console.warn('CKEditor: липсват плъгини:', missing.join(', ')); }
 
+  var meta = function (n) { var m = document.querySelector('meta[name="' + n + '"]'); return m ? m.content : ''; };
   var cls = function (name, className, title) { return { name: name, className: className, title: title }; };
 
   var config = {
     licenseKey: 'GPL',
     language: 'bg',
     plugins: plugins,
+    /* Image upload (drag & drop, paste, toolbar button): stored in the media library by the server (re-encoded, random name) */
+    simpleUpload: {
+      uploadUrl: meta('mcms-admin') + '/media/editor-upload',
+      headers: { 'X-CSRF-TOKEN': meta('csrf-token'), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    },
     toolbar: {
       shouldNotGroupWhenFull: false,
       items: [
         'undo', 'redo', '|', 'heading', '|',
         'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'removeFormat', '|',
         'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
-        'link', 'mediaLibrary', 'insertImage', 'mediaEmbed', 'insertTable', 'gridLayout', 'gridColSpan', 'gridAddCol', 'gridRemoveCol', 'gridRemoveRow', '|',
+        'link', 'mediaLibrary', 'uploadImage', 'insertImage', 'mediaEmbed', 'insertTable', 'gridLayout', 'gridColSpan', 'gridAddCol', 'gridRemoveCol', 'gridRemoveRow', '|',
         'bulletedList', 'numberedList', 'outdent', 'indent', 'alignment', '|',
         'blockQuote', 'codeBlock', 'horizontalLine', 'pageBreak', 'specialCharacters', 'faIcons', '|',
         'findAndReplace', 'selectAll', 'showBlocks', 'sourceEditing', 'fullscreen', 'accessibilityHelp'
@@ -114,7 +121,8 @@
         'imageStyle:inline', 'imageStyle:block', 'imageStyle:alignLeft', 'imageStyle:alignRight', 'imageStyle:side', '|',
         'resizeImage', 'linkImage'
       ],
-      insert: { integrations: ['url'], type: 'auto' }
+      upload: { types: ['jpeg', 'png', 'gif', 'webp'] },
+      insert: { integrations: ['upload', 'url'], type: 'auto' }
     },
     table: {
       contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties', 'toggleTableCaption']

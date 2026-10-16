@@ -42,6 +42,52 @@ class MediaController extends Controller
         return $errors ? $redirect->with('error', implode(' | ', $errors)) : $redirect;
     }
 
+    private function item(Media $m): array
+    {
+        return ['id' => $m->id, 'name' => $m->original_name, 'url' => $m->url(), 'thumb' => $m->thumbUrl(), 'image' => $m->isImage(), 'alt' => $m->alt];
+    }
+
+    /** AJAX upload from the media picker / featured-image field. Accepts files[] (or a single file). */
+    public function upload(Request $request)
+    {
+        $request->validate(['files' => 'required|array|max:20', 'files.*' => 'file']);
+
+        $items = [];
+        $errors = [];
+        foreach ($request->file('files') as $file) {
+            try {
+                $media = Uploader::store($file, $request->user()->id);
+                audit('media.upload', (string) $media->id, $media->original_name);
+                $items[] = $this->item($media);
+            } catch (\Throwable $e) {
+                $errors[] = $file->getClientOriginalName().': '.$e->getMessage();
+            }
+        }
+
+        return response()->json(['data' => $items, 'errors' => $errors], $items ? 200 : 422);
+    }
+
+    /** CKEditor 5 SimpleUploadAdapter endpoint: field "upload" -> {url} or {error:{message}}. */
+    public function editorUpload(Request $request)
+    {
+        $file = $request->file('upload');
+        try {
+            if (! $file || ! $file->isValid()) {
+                throw new \RuntimeException('Качването е неуспешно.');
+            }
+            $real = $file->getRealPath();
+            if (! $real || ! str_starts_with((string) (new \finfo(FILEINFO_MIME_TYPE))->file($real), 'image/')) {
+                throw new \RuntimeException('В текста могат да се качват само изображения (JPG, PNG, WebP, GIF).');
+            }
+            $media = Uploader::store($file, $request->user()->id);
+            audit('media.upload', (string) $media->id, $media->original_name);
+
+            return response()->json(['url' => $media->url(), 'id' => $media->id]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => ['message' => $e->getMessage()]], 422);
+        }
+    }
+
     public function update(Request $request, Media $media)
     {
         $data = $request->validate(['alt' => 'nullable|string|max:190']);

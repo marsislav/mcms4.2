@@ -97,6 +97,26 @@
     window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   }
 
+  /* ---- media upload (AJAX) ---- */
+  var csrf = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+  /** Upload File objects to the media library; resolves {data:[media…], errors:[…]}. */
+  function uploadFiles(files) {
+    var fd = new FormData();
+    Array.prototype.forEach.call(files, function (f) { fd.append('files[]', f); });
+    return fetch(adminBase + '/media/upload', {
+      method: 'POST', body: fd, credentials: 'same-origin',
+      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (r.status === 419) { throw new Error('Сесията е изтекла — презаредете страницата.'); }
+        if (r.status === 413) { throw new Error('Файлът е твърде голям за сървъра.'); }
+        if (!r.ok && !(j.errors && j.errors.length)) { throw new Error((j.message) || ('Грешка ' + r.status)); }
+        return { data: j.data || [], errors: j.errors || [] };
+      });
+    });
+  }
+  window.mcmsUploadFiles = uploadFiles;
+
   /* ---- media picker ---- */
   var picker = null;
 
@@ -106,7 +126,10 @@
     wrap.innerHTML =
       '<div class="modal-box" role="dialog" aria-modal="true" aria-label="Медия">' +
       '<div class="modal-head"><strong>Избор на файл</strong>' +
-      '<input type="search" placeholder="Търсене…" class="picker-q"><button type="button" class="btn sm picker-close">✕</button></div>' +
+      '<input type="search" placeholder="Търсене…" class="picker-q">' +
+      '<button type="button" class="btn sm primary picker-upload">⬆ Качи</button><input type="file" class="picker-file" multiple hidden>' +
+      '<button type="button" class="btn sm picker-close">✕</button></div>' +
+      '<div class="picker-msg" role="status" hidden></div>' +
       '<div class="picker-grid"></div>' +
       '<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>Още…</button></div></div>';
     document.body.appendChild(wrap);
@@ -138,6 +161,26 @@
     }
     function close() { wrap.hidden = true; document.body.classList.remove('modal-open'); }
 
+    /* upload from the picker: one file chosen -> use it at once; several -> refresh the grid */
+    var msg = $('.picker-msg', wrap), fileIn = $('.picker-file', wrap), upBtn = $('.picker-upload', wrap), box = $('.modal-box', wrap);
+    function say(text, bad) { msg.hidden = !text; msg.textContent = text || ''; msg.className = 'picker-msg' + (bad ? ' bad' : ''); }
+    function doUpload(files) {
+      files = Array.prototype.filter.call(files, function (f) { return !state.imagesOnly || /^image\//.test(f.type); });
+      if (!files.length) { say(state.imagesOnly ? 'Тук се качват само изображения.' : '', true); return; }
+      say('Качване…'); upBtn.disabled = true;
+      uploadFiles(files).then(function (res) {
+        upBtn.disabled = false;
+        if (res.errors.length) { say(res.errors.join(' | '), true); } else { say(''); }
+        if (res.data.length === 1 && !res.errors.length) { var cb = state.onPick; close(); if (cb) { cb(res.data[0]); } return; }
+        if (res.data.length) { query(); }
+      }).catch(function (e) { upBtn.disabled = false; say(e.message || 'Качването е неуспешно.', true); });
+    }
+    upBtn.addEventListener('click', function () { fileIn.click(); });
+    fileIn.addEventListener('change', function () { if (fileIn.files.length) { doUpload(fileIn.files); } fileIn.value = ''; });
+    ['dragenter', 'dragover'].forEach(function (ev) { box.addEventListener(ev, function (e) { e.preventDefault(); box.classList.add('drop'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { box.addEventListener(ev, function (e) { e.preventDefault(); box.classList.remove('drop'); }); });
+    box.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files.length) { doUpload(e.dataTransfer.files); } });
+
     q.addEventListener('input', function () { clearTimeout(state.timer); state.timer = setTimeout(query, 250); });
     more.addEventListener('click', function () { if (state.next) { load(state.next, false); } });
     $('.picker-close', wrap).addEventListener('click', close);
@@ -146,7 +189,7 @@
 
     return {
       open: function (onPick, imagesOnly) {
-        state.onPick = onPick; state.imagesOnly = !!imagesOnly; q.value = '';
+        state.onPick = onPick; state.imagesOnly = !!imagesOnly; q.value = ''; say('');
         wrap.hidden = false; document.body.classList.add('modal-open'); query(); q.focus();
       }
     };
@@ -158,6 +201,29 @@
     $('[data-media-choose]', f).addEventListener('click', function () {
       openPicker(function (m) { input.value = m.id; img.src = m.thumb; img.hidden = false; input.dispatchEvent(new Event('input', { bubbles: true })); }, true);
     });
+    var up = $('[data-media-upload]', f);
+    if (up) {
+      var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/jpeg,image/png,image/webp,image/gif'; fi.hidden = true; f.appendChild(fi);
+      var note = document.createElement('small'); note.className = 'muted'; note.hidden = true; f.appendChild(note);
+      var set = function (m) { input.value = m.id; img.src = m.thumb; img.hidden = false; input.dispatchEvent(new Event('input', { bubbles: true })); };
+      var go = function (file) {
+        if (!file) { return; }
+        note.hidden = false; note.textContent = 'Качване…'; up.disabled = true;
+        uploadFiles([file]).then(function (res) {
+          up.disabled = false;
+          if (res.data.length) { set(res.data[0]); note.hidden = true; } else { note.textContent = res.errors.join(' | ') || 'Качването е неуспешно.'; }
+        }).catch(function (e) { up.disabled = false; note.textContent = e.message || 'Качването е неуспешно.'; });
+      };
+      up.addEventListener('click', function () { fi.click(); });
+      fi.addEventListener('change', function () { go(fi.files[0]); fi.value = ''; });
+      f.addEventListener('dragover', function (e) { e.preventDefault(); f.classList.add('drop'); });
+      f.addEventListener('dragleave', function () { f.classList.remove('drop'); });
+      f.addEventListener('drop', function (e) {
+        e.preventDefault(); f.classList.remove('drop');
+        var file = e.dataTransfer && e.dataTransfer.files[0];
+        if (file && /^image\//.test(file.type)) { go(file); }
+      });
+    }
     $('[data-media-clear]', f).addEventListener('click', function () {
       input.value = ''; img.hidden = true; img.removeAttribute('src');
     });

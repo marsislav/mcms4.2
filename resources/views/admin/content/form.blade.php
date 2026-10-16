@@ -136,7 +136,8 @@
                     <input type="hidden" name="featured_media_id" value="{{ old('featured_media_id', $content->featured_media_id) }}">
                     <img class="media-preview" alt="" @if($content->featured) src="{{ $content->featured->thumbUrl() }}" @else hidden @endif>
                     <div>
-                        <button type="button" class="btn sm" data-media-choose>Избери</button>
+                        <button type="button" class="btn sm" data-media-upload>⬆ Качи</button>
+        <button type="button" class="btn sm" data-media-choose>Библиотека</button>
                         <button type="button" class="btn sm" data-media-clear>Премахни</button>
                     </div>
                 </div>
