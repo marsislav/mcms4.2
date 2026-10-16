@@ -6,14 +6,13 @@
 @section('content')
 <div class="table-wrap">
 <table class="table">
-    <thead><tr><th>Име</th><th>Имейл</th><th>Роля</th><th>2FA</th><th>Статус</th><th>Последен вход</th><th></th></tr></thead>
+    <thead><tr><th>Име</th><th>Имейл</th><th>Роля</th><th>Статус</th><th>Последен вход</th><th></th></tr></thead>
     <tbody>
     @foreach ($users as $u)
         <tr>
             <td><strong>{{ $u->name }}</strong></td>
             <td>{{ $u->email }}</td>
             <td>{{ $u->roleLabel() }}</td>
-            <td>{!! $u->totp_enabled ? '<span class="tag ok">вкл.</span>' : '<span class="tag">изкл.</span>' !!}</td>
             <td>
                 @if(! $u->active)<span class="tag warn">деактивиран</span>
                 @elseif($u->isLocked())<span class="tag warn">заключен</span>

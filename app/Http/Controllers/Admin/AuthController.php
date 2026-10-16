@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Support\Totp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -71,68 +70,6 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttle);
 
-        if ($user->totp_enabled) {
-            $request->session()->regenerate();
-            $request->session()->put('mcms_2fa', ['id' => $user->id, 'at' => time(), 'tries' => 0]);
-
-            return redirect()->route('admin.challenge');
-        }
-
-        return $this->completeLogin($request, $user);
-    }
-
-    public function showChallenge(Request $request)
-    {
-        return $this->pending($request) ? view('admin.challenge') : redirect()->route('admin.login');
-    }
-
-    public function challenge(Request $request)
-    {
-        $pending = $this->pending($request);
-        if (! $pending) {
-            return redirect()->route('admin.login')->with('error', 'Времето за потвърждение изтече.');
-        }
-
-        $request->validate(['code' => 'required|string|max:32']);
-        $user = User::find($pending['id']);
-
-        $key = 'twofa:'.$request->ip();
-        if (! $user || RateLimiter::tooManyAttempts($key, 10)) {
-            $request->session()->forget('mcms_2fa');
-
-            return redirect()->route('admin.login')->with('error', 'Твърде много опити.');
-        }
-
-        $code = trim($request->input('code'));
-        $ok = false;
-
-        if (preg_match('/^\d{3}\s?\d{3}$/', $code)) {
-            $step = Totp::verify((string) $user->totp_secret, $code);
-            if ($step !== null && $step > (int) $user->totp_last_step) {
-                $user->totp_last_step = $step; // blocks code replay
-                $ok = true;
-            }
-        } else {
-            $ok = $this->useRecoveryCode($user, $code);
-        }
-
-        if (! $ok) {
-            RateLimiter::hit($key, 600);
-            $pending['tries']++;
-            audit('2fa.failed', $user->email);
-            if ($pending['tries'] >= 5) {
-                $request->session()->forget('mcms_2fa');
-
-                return redirect()->route('admin.login')->with('error', 'Твърде много грешни кодове. Влезте отново.');
-            }
-            $request->session()->put('mcms_2fa', $pending);
-
-            return back()->withErrors(['code' => 'Невалиден код.']);
-        }
-
-        $user->save();
-        $request->session()->forget('mcms_2fa');
-
         return $this->completeLogin($request, $user);
     }
 
@@ -144,13 +81,6 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login')->with('status', 'Излязохте успешно.');
-    }
-
-    private function pending(Request $request): ?array
-    {
-        $p = $request->session()->get('mcms_2fa');
-
-        return (is_array($p) && time() - $p['at'] < 300) ? $p : null;
     }
 
     private function completeLogin(Request $request, User $user)
@@ -173,31 +103,5 @@ class AuthController extends Controller
         do_action('user.login', $user);
 
         return redirect()->intended(route('admin.dashboard'));
-    }
-
-    private function useRecoveryCode(User $user, string $input): bool
-    {
-        $input = strtolower(preg_replace('/[^a-z0-9]/i', '', $input));
-        if (strlen($input) !== 10) {
-            return false;
-        }
-        $hash = self::hashRecovery($input);
-        $codes = $user->recovery_codes ?? [];
-        foreach ($codes as $i => $stored) {
-            if (hash_equals($stored, $hash)) {
-                unset($codes[$i]);
-                $user->recovery_codes = array_values($codes);
-                audit('2fa.recovery_used', $user->email);
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static function hashRecovery(string $plain): string
-    {
-        return hash_hmac('sha256', strtolower(preg_replace('/[^a-z0-9]/i', '', $plain)), (string) config('app.key'));
     }
 }

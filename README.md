@@ -1,7 +1,7 @@
 # mCMS 4.2
 
 Сигурна многоезична CMS на **Laravel 12** (PHP 8.2+), проектирана за **споделен хостинг без SSH**.
-Без външни пакети освен самия Laravel: двуфакторна защита, sanitizer, превод, плъгини, архиви — всичко е собствен код.
+Без външни пакети освен самия Laravel: sanitizer, превод, плъгини, архиви — всичко е собствен код.
 
 ## Функции
 
@@ -16,14 +16,13 @@
 | Област | Мерки |
 |---|---|
 | Вход | bcrypt, rate limit по имейл+IP и по IP, заключване на акаунт (8 грешки → 15 мин), еднакво време за несъществуващ имейл, регенериране на сесията |
-| 2FA | TOTP (RFC 6238), защита от повторно използване на код, 8 кода за възстановяване (само хешове), опция „задължителна за администратори“ |
 | Сесии | криптирани, HttpOnly, SameSite=Lax, Secure при HTTPS, изтичане при неактивност, обвързване с User-Agent, прекратяване на другите сесии при смяна на парола |
 | Админ път | конфигурируем (`MCMS_ADMIN_PATH`), `noindex`, `no-store`, не се споменава в robots.txt |
 | Заглавки | строг CSP с nonce (без inline скриптове/стилове), HSTS, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy, COOP |
 | Съдържание | allow-list HTML sanitizer (DOM), блокиране на javascript:/data: URL, iframe само YouTube/Vimeo, `rel=noopener` |
 | Качване | MIME по съдържание (finfo), случайни имена, **преобработка с GD** (маха EXIF/payload), ограничение на пиксели/размер, `.htaccess` без PHP изпълнение |
 | Инсталатор | изисква еднократен ключ от `.env`, rate limit, заключва се след инсталация, не изтрива чужди данни |
-| Данни | Eloquent/prepared statements, mass-assignment защита (роля/2FA не са fillable), SMTP паролата е криптирана |
+| Данни | Eloquent/prepared statements, mass-assignment защита (ролята не е fillable), SMTP паролата е криптирана |
 | Плъгини | само по FTP (не през уеб), грешка в плъгин не сваля сайта |
 | Одит | всички важни действия се записват (180 дни) |
 
@@ -42,7 +41,7 @@
 4. Дайте права за запис на `storage/`, `bootstrap/cache/` и `public/uploads/` (755/775).
 5. Отворете `https://вашият-домейн/install`. При първото зареждане се създава `.env` с `MCMS_INSTALL_KEY` — копирайте ключа от файла (File Manager) във формата.
 6. Попълнете данните за MySQL, сайта и администратора. След инсталация `/install` връща 404.
-7. Влезте на `https://вашият-домейн/panel/login`, веднага активирайте **2FA** (Профил) и сменете `MCMS_ADMIN_PATH` в `.env`.
+7. Влезте на `https://вашият-домейн/panel/login`, сменете паролата и `MCMS_ADMIN_PATH` в `.env`.
 
 ### След инсталация
 - В `.env`: `APP_DEBUG=false`, `TRUSTED_PROXIES=*` ако сте зад Cloudflare.
@@ -57,7 +56,7 @@
 ## Структура
 
 ```
-app/Http/Controllers/Admin/*   панелът          app/Support/*   Sanitizer, Totp, Uploader, Backup, Hooks...
+app/Http/Controllers/Admin/*   панелът          app/Support/*   Sanitizer, Uploader, Backup, Hooks...
 app/Http/Controllers/Site*     публичният сайт  app/Models/*    Eloquent модели
 resources/views/{admin,site}   Blade изгледи    plugins/*       плъгини
 database/migrations            схема            lang/bg         български съобщения за валидация
@@ -77,7 +76,7 @@ add_action('contact.received', fn ($message) => null);
 
 ## Команди (само ако имате терминал)
 
-`php artisan mcms:backup` · `mcms:unlock имейл` · `mcms:reset-2fa имейл` · `mcms:version`
+`php artisan mcms:backup` · `mcms:unlock имейл` · `mcms:version`
 
 ## Бележки
 

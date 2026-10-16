@@ -59,7 +59,6 @@ class Installer
                 'contact_email' => $admin->email,
                 'posts_per_page' => '9',
                 'maintenance_mode' => '0',
-                'require_2fa_admin' => '0',
                 'tagline.bg' => 'Модерен и сигурен сайт',
                 'tagline.en' => 'A modern and secure website',
                 'footer_text.bg' => '© '.date('Y').' '.$d['site_name'].'. Всички права запазени.',

@@ -31,6 +31,7 @@ class SettingController extends Controller
             'contact_email' => 'nullable|email|max:190',
             'posts_per_page' => 'required|integer|min:1|max:50',
             'related_count' => 'required|integer|min:0|max:12',
+            'webp_quality' => 'nullable|integer|min:40|max:100',
             'logo_media_id' => 'nullable|integer|exists:media,id',
             'favicon_media_id' => 'nullable|integer|exists:media,id',
             'og_media_id' => 'nullable|integer|exists:media,id',
@@ -61,8 +62,9 @@ class SettingController extends Controller
             $values[$k] = $this->clean($request->input($k));
         }
 
+        $values['webp_convert'] = $request->boolean('webp_convert') ? '1' : '0';
+        $values['webp_quality'] = $this->clean($request->input('webp_quality')) ?? '82';
         $values['maintenance_mode'] = $request->boolean('maintenance_mode') ? '1' : '0';
-        $values['require_2fa_admin'] = $request->boolean('require_2fa_admin') ? '1' : '0';
 
         // Password is stored encrypted and only replaced when a new one is typed
         if ($request->filled('smtp_password')) {
@@ -78,7 +80,7 @@ class SettingController extends Controller
         }
 
         Setting::putMany($values);
-        audit('settings.update', null, ['maintenance' => $values['maintenance_mode'], '2fa_required' => $values['require_2fa_admin']]);
+        audit('settings.update', null, ['maintenance' => $values['maintenance_mode']]);
 
         return back()->with('status', 'Настройките са записани.');
     }

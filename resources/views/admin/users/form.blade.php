@@ -29,9 +29,6 @@
         <label class="check"><input type="checkbox" name="active" value="1" @checked(old('active', $user->active))> Активен профил</label>
         @endif
         <label class="check"><input type="checkbox" name="unlock" value="1"> Отключи (нулира неуспешните опити)</label>
-        @if($user->totp_enabled)
-        <label class="check"><input type="checkbox" name="reset_2fa" value="1"> Изключи 2FA (изгубено устройство)</label>
-        @endif
     @endif
 
     <button class="btn primary">Запази</button>

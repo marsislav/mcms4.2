@@ -40,7 +40,6 @@ class DashboardController extends Controller
         return [
             ['APP_DEBUG е изключен', ! config('app.debug'), 'Задайте APP_DEBUG=false в .env'],
             ['Сайтът работи през HTTPS', request()->isSecure(), 'Включете SSL и пренасочване към https'],
-            ['2FA е активна за вашия профил', (bool) $user->totp_enabled, 'Профил → Двуфакторна защита'],
             ['Административният път не е „panel“', config('mcms.admin_path') !== 'panel', 'Сменете MCMS_ADMIN_PATH в .env'],
             ['public/uploads блокира изпълнение на PHP', is_file(public_path('uploads/.htaccess')), 'Липсва public/uploads/.htaccess'],
             ['.env не е достъпен през уеб', true, 'Document root трябва да сочи към /public'],

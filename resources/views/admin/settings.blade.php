@@ -40,6 +40,9 @@
             {!! $media('favicon_media_id', 'Favicon (PNG)', $favicon) !!}
             {!! $media('og_media_id', 'Изображение за споделяне (OG)', $ogImage) !!}
         </div>
+        <label class="check"><input type="checkbox" name="webp_convert" value="1" @checked($s('webp_convert', '1') !== '0')> Преобразувай качените снимки (JPG, PNG, статичен GIF) във WebP @unless(function_exists('imagewebp'))<strong>— GD на сървъра няма WebP поддръжка, функцията не работи</strong>@endunless</label>
+        <label>Качество на WebP за JPG <small class="muted">40–100; PNG и GIF се записват без загуба</small>
+            <input type="number" name="webp_quality" min="40" max="100" value="{{ $s('webp_quality', 82) }}" class="narrow"></label>
     </section>
 
     <section class="card">
@@ -53,7 +56,6 @@
 
     <section class="card">
         <h2>Сигурност и поддръжка</h2>
-        <label class="check"><input type="checkbox" name="require_2fa_admin" value="1" @checked($s('require_2fa_admin') === '1')> Задължителна 2FA за администратори</label>
         <label class="check"><input type="checkbox" name="maintenance_mode" value="1" @checked($s('maintenance_mode') === '1')> Режим „профилактика“ (публичният сайт е недостъпен; панелът работи)</label>
         <label>Допълнителни редове за robots.txt <textarea name="robots_extra" rows="3" maxlength="1000">{{ $s('robots_extra') }}</textarea></label>
     </section>

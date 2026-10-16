@@ -18,8 +18,6 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
     // Guest area
     Route::get('login', [Admin\AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [Admin\AuthController::class, 'login'])->name('login.post');
-    Route::get('2fa', [Admin\AuthController::class, 'showChallenge'])->name('challenge');
-    Route::post('2fa', [Admin\AuthController::class, 'challenge'])->name('challenge.post');
 
     // Authenticated area
     Route::middleware([AuthenticateSession::class, 'admin'])->group(function () {
@@ -30,10 +28,6 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
         Route::get('profile', [Admin\ProfileController::class, 'show'])->name('profile');
         Route::post('profile', [Admin\ProfileController::class, 'updateInfo'])->name('profile.info');
         Route::post('profile/password', [Admin\ProfileController::class, 'updatePassword'])->name('profile.password');
-        Route::post('profile/2fa/start', [Admin\ProfileController::class, 'startTwoFactor'])->name('profile.2fa.start');
-        Route::post('profile/2fa/confirm', [Admin\ProfileController::class, 'confirmTwoFactor'])->name('profile.2fa.confirm');
-        Route::post('profile/2fa/recovery', [Admin\ProfileController::class, 'regenerateRecovery'])->name('profile.2fa.recovery');
-        Route::post('profile/2fa/disable', [Admin\ProfileController::class, 'disableTwoFactor'])->name('profile.2fa.disable');
 
         // Pages & posts share one controller; `type` is injected as a route default
         foreach (['page' => 'pages', 'post' => 'posts'] as $type => $segment) {

@@ -61,7 +61,6 @@ class UserController extends Controller
             'password' => ['nullable', Password::min(12)->letters()->mixedCase()->numbers()],
             'active' => 'nullable|boolean',
             'unlock' => 'nullable|boolean',
-            'reset_2fa' => 'nullable|boolean',
         ]);
 
         $self = $user->id === $request->user()->id;
@@ -85,12 +84,6 @@ class UserController extends Controller
         if (! empty($data['unlock'])) {
             $user->failed_attempts = 0;
             $user->locked_until = null;
-        }
-        if (! empty($data['reset_2fa'])) {
-            $user->totp_enabled = false;
-            $user->totp_secret = null;
-            $user->recovery_codes = null;
-            $user->totp_last_step = 0;
         }
         $user->save();
         audit('user.update', $user->email, ['role' => $user->role, 'active' => $user->active]);

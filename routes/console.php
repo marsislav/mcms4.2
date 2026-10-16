@@ -15,13 +15,6 @@ Artisan::command('mcms:unlock {email}', function (string $email) {
     $this->info($n ? 'Account unlocked.' : 'User not found.');
 })->purpose('Unlock a locked admin account');
 
-Artisan::command('mcms:reset-2fa {email}', function (string $email) {
-    $n = \App\Models\User::where('email', mb_strtolower($email))->update([
-        'totp_enabled' => false, 'totp_secret' => null, 'recovery_codes' => null, 'totp_last_step' => 0,
-    ]);
-    $this->info($n ? '2FA disabled for the user.' : 'User not found.');
-})->purpose('Disable two-factor authentication for a user (lost device)');
-
 Artisan::command('mcms:purge-trash {days=30}', function (int $days) {
     if (! \App\Support\Trash::ready()) {
         return $this->error('Trash (deleted_at) is not set up yet - run the database update first.');

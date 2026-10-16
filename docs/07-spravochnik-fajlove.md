@@ -25,7 +25,7 @@
 | Файл | Описание |
 |---|---|
 | `routes/web.php` | Всички адреси: инсталатор, админ, публичен сайт (езиковите маршрути преди обикновените) |
-| `routes/console.php` | Команди `mcms:version`, `mcms:backup`, `mcms:unlock`, `mcms:reset-2fa` |
+| `routes/console.php` | Команди `mcms:version`, `mcms:backup`, `mcms:unlock` |
 
 ## app/helpers.php
 Функции: `t`, `setting`, `setting_l`, `lroute`, `admin_url`, `upload_url`, `csp_nonce`, `audit`, `excerpt`,
@@ -38,7 +38,7 @@
 | `SecurityHeaders` | CSP с nonce и други защитни заглавки |
 | `SetLocale` | Определя езика по префикса в адреса |
 | `CheckMaintenance` | Страница 503 при профилактика |
-| `AdminGuard` | Вход, активен акаунт, браузър, бездействие, права, задължителна 2FA |
+| `AdminGuard` | Вход, активен акаунт, браузър, бездействие, права |
 
 ## app/Http/Controllers/
 | Файл | Описание |
@@ -46,8 +46,8 @@
 | `Controller` | Базов клас |
 | `InstallController` | Уеб инсталатор |
 | `SiteController` | Публичен сайт: начало, страница, публикация, блог, категория, търсене, контакт, sitemap, robots, RSS, 404/пренасочвания |
-| `Admin/AuthController` | Вход, 2FA изпит, изход |
-| `Admin/ProfileController` | Профил, парола, настройка на 2FA |
+| `Admin/AuthController` | Вход, изход |
+| `Admin/ProfileController` | Профил, парола |
 | `Admin/DashboardController` | Начално табло |
 | `Admin/ContentController` | Страници и публикации (списък, форма, запис, изтриване, версии) |
 | `Admin/CategoryController` | Категории |
@@ -84,7 +84,6 @@
 | Файл | Описание |
 |---|---|
 | `Sanitizer` | Почиства HTML |
-| `Totp` | Двуфакторни кодове (RFC 6238) |
 | `Uploader` | Безопасно качване и обработка на файлове |
 | `Backup` | Архиви на базата и качените файлове |
 | `ContentSaver` | Запис на страница/публикация с преводи и версии |
@@ -109,7 +108,7 @@
 | `site/page`, `post`, `blog`, `search`, `contact` | Страниците на сайта |
 | `site/partials/card` | Карта на публикация в списък |
 | `admin/layout` | Рамката на панела (странично меню) |
-| `admin/login`, `challenge` | Вход и въвеждане на 2FA код |
+| `admin/login` | Вход |
 | `admin/dashboard`, `profile`, `settings`, `audit`, `backups`, `plugins`, `redirects` | Съответните раздели |
 | `admin/content/index,form` | Списък и форма за страници/публикации |
 | `admin/categories`, `media`, `menus`, `messages`, `languages`, `translations`, `users` | Съответните раздели |
@@ -140,5 +139,5 @@
 |---|---|
 | `plugins/schema-org/` | Примерен плъгин (структурирани данни за търсачките) |
 | `storage/.htaccess` | Забранява достъп отвън |
-| `tests/standalone.php` | Тестове на Sanitizer, Totp, EnvWriter (`php tests/standalone.php`) |
+| `tests/standalone.php` | Тестове на Sanitizer, EnvWriter (`php tests/standalone.php`) |
 | `docs/` | Тази документация |

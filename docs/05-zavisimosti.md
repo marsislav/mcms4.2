@@ -57,7 +57,7 @@ Views и всички слоеве ползват  ──►  app/helpers.php (t
 | `SecurityHeaders` | `setting()`, `csp_nonce()` |
 | `SetLocale` | таблица `languages` (през `mcms_languages()`) |
 | `CheckMaintenance` | настройка `maintenance_mode`, влязъл ли е потребител |
-| `AdminGuard` | `User`, `config/mcms.php` (роли), настройка `require_2fa_admin` |
+| `AdminGuard` | `User`, `config/mcms.php` (роли) |
 
 ## Контролери
 
@@ -65,8 +65,8 @@ Views и всички слоеве ползват  ──►  app/helpers.php (t
 |---|---|---|
 | `SiteController` | Content, ContentTranslation, Category, Message, Redirect, Menu | Hooks, `excerpt()` |
 | `InstallController` | — (PDO + Artisan migrate) | Installer, EnvWriter |
-| `Admin\AuthController` | User | Totp |
-| `Admin\ProfileController` | User | Totp |
+| `Admin\AuthController` | User | — |
+| `Admin\ProfileController` | User | — |
 | `Admin\ContentController` | Content, Revision, Category, Media | ContentSaver |
 | `Admin\CategoryController` | Category, CategoryTranslation | — |
 | `Admin\MediaController` | Media | Uploader |
@@ -87,7 +87,6 @@ Views и всички слоеве ползват  ──►  app/helpers.php (t
 |---|---|
 | `Sanitizer` | само PHP (DOM) — без Laravel; тества се отделно |
 | `Design` | само PHP (+ `setting()`); генерира CSS за `/design.css` |
-| `Totp` | само PHP |
 | `EnvWriter` | само PHP |
 | `Hooks` | само PHP |
 | `Uploader` | GD, finfo, `config('mcms')`, модел Media |
@@ -107,7 +106,7 @@ Views и всички слоеве ползват  ──►  app/helpers.php (t
 | `tests/` | Нищо. Само самопроверка |
 | `docs/` | Нищо |
 | `storage/installed.lock` | Програмата мисли, че не е инсталирана → праща към `/install` |
-| `.env` | Създава се наново, но с нов `APP_KEY` → старите сесии и криптирани данни (SMTP парола, 2FA) стават нечетливи |
+| `.env` | Създава се наново, но с нов `APP_KEY` → старите сесии и криптирани данни (SMTP парола) стават нечетливи |
 | `database/seeders/strings.php` | Инсталацията няма начални текстове |
 | Таблица `translations` | `t()` връща ключовете (напр. `nav.blog`) вместо текст |
 | Език `bg` в `languages` | Основният език изчезва — не го трийте |

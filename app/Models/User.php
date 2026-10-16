@@ -6,18 +6,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    // role / active / 2FA fields are intentionally NOT mass-assignable
+    // role / active fields are intentionally NOT mass-assignable
     protected $fillable = ['name', 'email', 'password'];
 
-    protected $hidden = ['password', 'totp_secret', 'recovery_codes'];
+    protected $hidden = ['password'];
 
     protected function casts(): array
     {
         return [
             'password' => 'hashed',
-            'totp_secret' => 'encrypted',
-            'recovery_codes' => 'encrypted:array',
-            'totp_enabled' => 'boolean',
             'active' => 'boolean',
             'locked_until' => 'datetime',
             'last_login_at' => 'datetime',

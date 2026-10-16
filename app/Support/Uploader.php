@@ -41,6 +41,12 @@ class Uploader
         }
         $ext = self::TYPES[$mime];
 
+        // JPEG / PNG / static GIF -> WebP (smaller files); original format is kept if conversion is off or not possible
+        $outMime = self::webpTarget($mime, $real) ? 'image/webp' : $mime;
+        if ($outMime !== $mime) {
+            $ext = 'webp';
+        }
+
         $sub = date('Y/m');
         $dir = public_path('uploads/'.$sub);
         if (! is_dir($dir) && ! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
@@ -63,11 +69,12 @@ class Uploader
                 throw new RuntimeException('Изображението е с твърде голяма резолюция.');
             }
 
-            if ($mime === 'image/gif') {
+            if ($mime === 'image/gif' && $outMime === 'image/gif') { // animated GIFs stay untouched
                 self::passThrough($real, $abs);
             } else {
-                [$w, $h] = self::reencode($real, $abs, $mime);
-                $thumbRel = self::thumbnail($abs, $mime, "$sub/{$name}_t.$ext", $dir);
+                [$w, $h] = self::reencode($real, $abs, $mime, $outMime);
+                $thumbRel = self::thumbnail($abs, $outMime, "$sub/{$name}_t.$ext", $dir);
+                $mime = $outMime;
             }
         } else { // pdf
             if (! str_starts_with((string) file_get_contents($real, false, null, 0, 5), '%PDF-')) {
@@ -83,13 +90,48 @@ class Uploader
         return Media::create([
             'path' => $rel,
             'thumb_path' => $thumbRel,
-            'original_name' => mb_substr(preg_replace('/[^\p{L}\p{N}._\- ]/u', '', $file->getClientOriginalName()) ?: 'file', 0, 180),
+            'original_name' => mb_substr(self::displayName($file->getClientOriginalName(), $ext), 0, 180),
             'mime' => $mime,
             'size' => (int) filesize($abs),
             'width' => $w,
             'height' => $h,
             'user_id' => $userId,
         ]);
+    }
+
+    /** Cleaned original name; when the image was converted to WebP the extension follows. */
+    private static function displayName(string $name, string $ext): string
+    {
+        $name = preg_replace('/[^\p{L}\p{N}._\- ]/u', '', $name) ?: 'file';
+        if ($ext === 'webp' && preg_match('/\.(jpe?g|png|gif)$/i', $name)) {
+            $name = preg_replace('/\.[^.]+$/', '.webp', $name);
+        }
+
+        return $name;
+    }
+
+    public static function webpEnabled(): bool
+    {
+        return function_exists('imagewebp') && function_exists('imagecreatefromwebp') && setting('webp_convert', '1') !== '0';
+    }
+
+    public static function webpQuality(): int
+    {
+        return max(40, min(100, (int) setting('webp_quality', 82) ?: 82));
+    }
+
+    /** Should this upload be converted to WebP? (animated GIFs and WebP/PDF are left alone) */
+    private static function webpTarget(string $mime, string $path): bool
+    {
+        if (! self::webpEnabled() || ! in_array($mime, ['image/jpeg', 'image/png', 'image/gif'], true)) {
+            return false;
+        }
+        if ($mime === 'image/gif') {
+            // more than one image frame = animation
+            return preg_match_all('/\x21\xF9\x04.{4}\x00[\x2C\x21]/s', (string) file_get_contents($path), $m) <= 1;
+        }
+
+        return true;
     }
 
     public static function delete(Media $media): void
@@ -118,7 +160,7 @@ class Uploader
     }
 
     /** @return array{0:int,1:int} */
-    private static function reencode(string $from, string $to, string $mime): array
+    private static function reencode(string $from, string $to, string $mime, ?string $outMime = null): array
     {
         if (! function_exists('imagecreatetruecolor')) {
             throw new RuntimeException('PHP GD разширението не е налично.');
@@ -128,11 +170,16 @@ class Uploader
         $img = match ($mime) {
             'image/jpeg' => @imagecreatefromjpeg($from),
             'image/png' => @imagecreatefrompng($from),
+            'image/gif' => @imagecreatefromgif($from),
             'image/webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($from) : false,
             default => false,
         };
         if (! $img) {
             throw new RuntimeException('Изображението не може да бъде обработено.');
+        }
+        $outMime ??= $mime;
+        if (! imageistruecolor($img)) { // palette PNG/GIF: WebP needs truecolor
+            imagepalettetotruecolor($img);
         }
 
         if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
@@ -153,12 +200,14 @@ class Uploader
         $h = imagesy($img);
         if (max($w, $h) > $maxPx) {
             $scale = $maxPx / max($w, $h);
-            $img = self::resample($img, (int) round($w * $scale), (int) round($h * $scale), $mime);
+            $img = self::resample($img, (int) round($w * $scale), (int) round($h * $scale), $outMime);
             $w = imagesx($img);
             $h = imagesy($img);
         }
 
-        self::write($img, $to, $mime);
+        // PNG/GIF sources -> lossless WebP (keeps sharp edges and transparency); JPEG -> lossy at the configured quality
+        $lossless = $outMime === 'image/webp' && in_array($mime, ['image/png', 'image/gif'], true) && defined('IMG_WEBP_LOSSLESS');
+        self::write($img, $to, $outMime, $lossless ? IMG_WEBP_LOSSLESS : self::webpQuality());
 
         return [$w, $h];
     }
@@ -181,7 +230,7 @@ class Uploader
             $img = self::resample($img, $tw, (int) max(1, round($h * $tw / $w)), $mime);
         }
         $to = public_path('uploads/'.$rel);
-        self::write($img, $to, $mime, 82);
+        self::write($img, $to, $mime, $mime === 'image/webp' ? min(self::webpQuality(), 80) : 82);
         @chmod($to, 0644);
 
         return $rel;

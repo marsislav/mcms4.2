@@ -56,7 +56,6 @@ audit_logs       (журнал на действията)
 | `password` | Парола в **хеш** (необратимо „смляна“; никой не може да я прочете) |
 | `role` | `admin`, `editor` или `author` |
 | `active` | 0 = деактивиран |
-| `totp_secret`, `totp_enabled`, `totp_last_step`, `recovery_codes` | Двуфакторна защита (тайната и кодовете са криптирани) |
 | `failed_attempts`, `locked_until` | Брояч грешни пароли и време на заключване |
 | `last_login_at`, `last_login_ip` | Последен вход |
 

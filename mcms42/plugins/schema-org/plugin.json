@@ -1,0 +1,6 @@
+{
+    "name": "Schema.org JSON-LD",
+    "version": "1.0.0",
+    "author": "mCMS",
+    "description": "Добавя структурирани данни (Organization, WebSite и Article) за по-богати резултати в търсачките."
+}

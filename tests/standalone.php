@@ -4,12 +4,11 @@
  * Run:  php tests/standalone.php
  */
 require __DIR__.'/../app/Support/Sanitizer.php';
-require __DIR__.'/../app/Support/Totp.php';
 require __DIR__.'/../app/Support/EnvWriter.php';
 require __DIR__.'/../app/Support/Taxonomy.php';
 require __DIR__.'/../app/Support/Design.php';
 
-use App\Support\{Sanitizer, Totp, EnvWriter, Taxonomy, Design};
+use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -59,16 +58,6 @@ $check('drops <style> element', ! str_contains($clean('<style>*{}</style><p>a</p
 $check('drops <form>', ! str_contains($clean('<form action="/x"><input></form>'), 'form'));
 $check('unwraps unknown tags', $clean('<custom>inner</custom>') === 'inner');
 $check('removes comments', ! str_contains($clean('<p>a</p><!-- secret -->'), 'secret'));
-
-echo "TOTP (RFC 6238 vectors)\n";
-$secret = Totp::base32Encode('12345678901234567890');
-$check('t=59 -> 94287082', Totp::code($secret, intdiv(59, 30), 8) === '94287082');
-$check('t=1111111109 -> 07081804', Totp::code($secret, intdiv(1111111109, 30), 8) === '07081804');
-$check('verify current code', Totp::verify($secret, Totp::code($secret)) !== null);
-$check('reject wrong code', Totp::verify($secret, '000000', 0, 1700000000) === null || Totp::code($secret, intdiv(1700000000, 30)) === '000000');
-$check('reject non-numeric', Totp::verify($secret, 'abcdef') === null);
-$r = random_bytes(20);
-$check('base32 round trip', Totp::base32Decode(Totp::base32Encode($r)) === $r);
 
 echo "Taxonomy\n";
 $check('tags: split, trim, dedupe (case-insens.)', Taxonomy::parse(' PHP,  Laravel ; php,,') === ['PHP', 'Laravel']);

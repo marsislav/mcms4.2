@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 /**
  * Protects the admin panel: authentication, active account, idle timeout,
- * session/user-agent binding, role permission and optional mandatory 2FA.
+ * session/user-agent binding, role permission.
  * Usage: 'admin' or 'admin:permission'
  */
 class AdminGuard
@@ -35,12 +35,6 @@ class AdminGuard
 
         if ($permission && ! $user->allows($permission)) {
             abort(403);
-        }
-
-        if (setting('require_2fa_admin') === '1' && $user->isAdmin() && ! $user->totp_enabled
-            && ! $request->routeIs('admin.profile*', 'admin.logout')) {
-            return redirect()->route('admin.profile')
-                ->with('error', 'Политиката изисква двуфакторна защита (2FA) за администратори. Активирайте я, за да продължите.');
         }
 
         return $next($request);

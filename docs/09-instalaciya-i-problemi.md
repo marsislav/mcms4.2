@@ -54,7 +54,6 @@ composer install --no-dev -o
 
 - [ ] `.env`: `APP_DEBUG=false`, `APP_ENV=production`, `APP_URL=https://…`
 - [ ] Включете HTTPS
-- [ ] Включете 2FA на профила си
 - [ ] Настройки → поща (SMTP), за да работи контактната форма по имейл
 - [ ] Направете първо резервно копие
 
@@ -69,7 +68,6 @@ composer install --no-dev -o
 | `/install` дава 404 | Вече е инсталирано | Нормално. Преинсталация: изтрийте `storage/installed.lock` **и** таблиците (изтрива данните!) |
 | Забравена парола на админ | — | `php artisan tinker` или phpMyAdmin: сменете хеша; по-лесно локално: `php artisan mcms:unlock имейл` отключва акаунта |
 | Заключен акаунт | 8 грешни опита | Изчакайте 15 мин. или `php artisan mcms:unlock имейл` |
-| Загубен телефон за 2FA | — | `php artisan mcms:reset-2fa имейл` |
 | Не се качват снимки | PHP лимит или липсва `gd` | `upload_max_filesize`, `post_max_size`; включете `gd` |
 | Контактната форма не праща имейл | SMTP не е настроен | Настройки → Поща; съобщенията така или иначе са в „Съобщения“ |
 | Сайтът показва „Профилактика“ | Включен режим | Настройки → изключете; влезли администратори го виждат нормално |
@@ -83,7 +81,6 @@ composer install --no-dev -o
 | `php artisan mcms:version` | Показва версията |
 | `php artisan mcms:backup` | Прави резервно копие на базата (`.sql.gz`); архив на файловете — от панела |
 | `php artisan mcms:unlock имейл` | Отключва акаунт |
-| `php artisan mcms:reset-2fa имейл` | Изключва 2FA на акаунт |
 | `php artisan mcms:purge-trash 30` | Трие завинаги записи от кошчето, по-стари от 30 дни |
 | `php artisan migrate` | Изпълнява нови миграции |
 | `php artisan serve` | Локален сървър за разработка |
