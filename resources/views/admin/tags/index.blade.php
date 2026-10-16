@@ -5,7 +5,7 @@
 @unless($ready)
     <section class="card warn-card">
         <h2>Нужно е обновяване на базата</h2>
-        <p>Таговете и свързаните публикации изискват нови таблици. Натиснете бутона (или изпълнете <code>database/upgrade/4.2-tags-related.sql</code> в phpMyAdmin).</p>
+        <p>Таговете и свързаните публикации изискват нови таблици. Натиснете бутона (или изпълнете <code>database/upgrade/4.2-upgrade.sql</code> в phpMyAdmin).</p>
         <form method="post" action="{{ route('admin.system.migrate') }}">@csrf <button class="btn primary">Обнови базата</button></form>
     </section>
 @else

@@ -184,3 +184,8 @@ button.chip:hover{border-color:var(--accent,#2a6df4)}
 .row-actions{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:.6rem}
 .inline-form{display:flex;gap:.4rem;align-items:center}
 .inline-form select{width:auto}
+
+/* trash tabs */
+.subtabs{display:flex;gap:.3rem;align-items:center;margin-bottom:1rem;border-bottom:1px solid var(--line)}
+.subtabs a{padding:.45rem .9rem;text-decoration:none;color:inherit;border-bottom:2px solid transparent;margin-bottom:-1px}
+.subtabs a.active{border-bottom-color:var(--accent,#2a6df4);font-weight:600}

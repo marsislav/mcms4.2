@@ -8,6 +8,7 @@ use App\Models\Content;
 use App\Models\Revision;
 use App\Support\ContentSaver;
 use App\Support\Taxonomy;
+use App\Support\Trash;
 use Illuminate\Http\Request;
 
 class ContentController extends Controller
@@ -30,7 +31,9 @@ class ContentController extends Controller
         $type = $this->type($request);
         $user = $request->user();
 
+        $trash = Trash::ready() && $request->boolean('trash');
         $q = Content::with(['translations', 'author', 'category.translations'])->where('type', $type)
+            ->when($trash, fn ($q) => $q->onlyTrashed())
             ->when(! $user->allows('content.all'), fn ($q) => $q->where('author_id', $user->id))
             ->when($request->filled('status') && in_array($request->status, ['draft', 'published'], true), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('q'), function ($q) use ($request) {
@@ -38,9 +41,19 @@ class ContentController extends Controller
                 $q->whereHas('translations', fn ($t) => $t->where('title', 'like', $term));
             });
 
-        $items = $type === 'page' ? $q->orderBy('sort')->orderByDesc('id') : $q->orderByDesc('publish_at')->orderByDesc('id');
+        $items = $trash
+            ? $q->orderByDesc('deleted_at')
+            : ($type === 'page' ? $q->orderBy('sort')->orderByDesc('id') : $q->orderByDesc('publish_at')->orderByDesc('id'));
 
-        return view('admin.content.index', ['type' => $type, 'items' => $items->paginate(20)->withQueryString()]);
+        $trashCount = Trash::ready()
+            ? Content::onlyTrashed()->where('type', $type)
+                ->when(! $user->allows('content.all'), fn ($q) => $q->where('author_id', $user->id))->count()
+            : null;
+
+        return view('admin.content.index', [
+            'type' => $type, 'trash' => $trash, 'trashCount' => $trashCount,
+            'items' => $items->paginate(20)->withQueryString(),
+        ]);
     }
 
     public function create(Request $request)
@@ -97,12 +110,57 @@ class ContentController extends Controller
         $content->delete();
         audit($type.'.delete', (string) $content->id, $title);
 
-        return redirect()->route("admin.{$type}s.index")->with('status', 'Изтрито.');
+        return redirect()->route("admin.{$type}s.index")
+            ->with('status', Trash::ready() ? 'Преместено в кошчето.' : 'Изтрито.');
+    }
+
+    private function trashed(Request $request, int $id): Content
+    {
+        abort_unless(Trash::ready(), 404);
+        $content = Content::onlyTrashed()->where('type', $this->type($request))->findOrFail($id);
+        $this->authorize($request, $content);
+
+        return $content;
+    }
+
+    public function untrash(Request $request, int $id)
+    {
+        $content = $this->trashed($request, $id);
+        $content->restore();
+        \Illuminate\Support\Facades\Cache::forget('mcms.sitemap');
+        audit($content->type.'.restore', (string) $content->id, $content->adminTitle());
+
+        return back()->with('status', 'Възстановено от кошчето.');
+    }
+
+    public function purge(Request $request, int $id)
+    {
+        $content = $this->trashed($request, $id);
+        audit($content->type.'.purge', (string) $content->id, $content->adminTitle());
+        $content->forceDelete(); // translations, revisions, tag/related links cascade in the database
+
+        return back()->with('status', 'Изтрито завинаги.');
+    }
+
+    public function emptyTrash(Request $request)
+    {
+        abort_unless(Trash::ready(), 404);
+        $type = $this->type($request);
+        $user = $request->user();
+        $items = Content::onlyTrashed()->where('type', $type)->with('translations')
+            ->when(! $user->allows('content.all'), fn ($q) => $q->where('author_id', $user->id))->get();
+        foreach ($items as $c) {
+            $c->forceDelete();
+        }
+        audit($type.'.trash.empty', null, (string) $items->count());
+
+        return redirect()->route("admin.{$type}s.index")->with('status', 'Кошчето е изпразнено ('.$items->count().').');
     }
 
     public function restore(Request $request, Revision $revision)
     {
         $translation = \App\Models\ContentTranslation::with('content')->findOrFail($revision->content_translation_id);
+        abort_unless($translation->content, 404);
         $this->authorize($request, $translation->content);
 
         // Current state becomes a revision too, so restoring is reversible

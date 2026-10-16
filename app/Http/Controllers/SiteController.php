@@ -125,7 +125,7 @@ class SiteController extends Controller
 
     public function category(Request $request, string $slug)
     {
-        $ct = CategoryTranslation::where('locale', app()->getLocale())->where('slug', $slug)->first();
+        $ct = CategoryTranslation::where('locale', app()->getLocale())->where('slug', $slug)->whereHas('category')->first();
         if (! $ct) {
             return $this->notFound($request);
         }

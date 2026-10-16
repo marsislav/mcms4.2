@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\CategoryTranslation;
 use App\Support\ContentSaver;
+use App\Support\Trash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +17,7 @@ class CategoryController extends Controller
     {
         return view('admin.categories.index', [
             'categories' => Category::with('translations')->withCount('contents')->orderBy('sort')->get(),
+            'trashed' => Trash::ready() ? Category::onlyTrashed()->with('translations')->orderByDesc('deleted_at')->get() : collect(),
             'languages' => mcms_languages(),
         ]);
     }
@@ -39,9 +41,30 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         audit('category.delete', (string) $category->id, $category->adminName());
-        $category->delete(); // posts keep existing (category_id -> NULL)
+        $category->delete(); // soft: posts keep their category_id, so restoring brings everything back
 
-        return back()->with('status', 'Категорията е изтрита.');
+        return back()->with('status', Trash::ready() ? 'Категорията е преместена в кошчето.' : 'Категорията е изтрита.');
+    }
+
+    public function untrash(int $id)
+    {
+        abort_unless(Trash::ready(), 404);
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->restore();
+        \Illuminate\Support\Facades\Cache::forget('mcms.sitemap');
+        audit('category.restore', (string) $category->id);
+
+        return back()->with('status', 'Категорията е възстановена.');
+    }
+
+    public function purge(int $id)
+    {
+        abort_unless(Trash::ready(), 404);
+        $category = Category::onlyTrashed()->with('translations')->findOrFail($id);
+        audit('category.purge', (string) $category->id, $category->adminName());
+        $category->forceDelete(); // posts keep existing (category_id -> NULL)
+
+        return back()->with('status', 'Категорията е изтрита завинаги.');
     }
 
     private function persist(Category $category, Request $request): Category

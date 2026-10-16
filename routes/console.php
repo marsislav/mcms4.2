@@ -21,3 +21,14 @@ Artisan::command('mcms:reset-2fa {email}', function (string $email) {
     ]);
     $this->info($n ? '2FA disabled for the user.' : 'User not found.');
 })->purpose('Disable two-factor authentication for a user (lost device)');
+
+Artisan::command('mcms:purge-trash {days=30}', function (int $days) {
+    if (! \App\Support\Trash::ready()) {
+        return $this->error('Trash (deleted_at) is not set up yet - run the database update first.');
+    }
+    $cut = now()->subDays(max(1, $days));
+    $n = 0;
+    foreach (\App\Models\Content::onlyTrashed()->where('deleted_at', '<', $cut)->get() as $c) { $c->forceDelete(); $n++; }
+    foreach (\App\Models\Category::onlyTrashed()->where('deleted_at', '<', $cut)->get() as $c) { $c->forceDelete(); $n++; }
+    $this->info("Permanently deleted $n item(s) trashed more than $days days ago.");
+})->purpose('Permanently delete pages/posts/categories that have been in the trash for N days (default 30)');

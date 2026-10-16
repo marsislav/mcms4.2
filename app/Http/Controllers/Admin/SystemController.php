@@ -19,6 +19,7 @@ class SystemController extends Controller
             return back()->with('error', 'Обновяването на базата не успя: '.mb_substr($e->getMessage(), 0, 300));
         }
         Cache::forget('mcms.tags_ready');
+        \App\Support\Trash::forget();
         audit('system.migrate');
 
         return back()->with('status', 'Базата данни е обновена.');

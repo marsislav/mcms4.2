@@ -2,9 +2,9 @@
 @section('title', 'Табло')
 
 @section('content')
-@if(auth()->user()->isAdmin() && ! \App\Support\Taxonomy::ready())
+@if(auth()->user()->isAdmin() && (! \App\Support\Taxonomy::ready() || ! \App\Support\Trash::ready()))
 <section class="card warn-card">
-    <strong>Има налично обновяване на базата данни</strong> (тагове и свързани публикации).
+    <strong>Има налично обновяване на базата данни</strong> (тагове, свързани публикации, кошче).
     <form method="post" action="{{ route('admin.system.migrate') }}" class="inline-form" style="margin-top:.6rem">@csrf <button class="btn primary">Обнови базата</button></form>
 </section>
 @endif

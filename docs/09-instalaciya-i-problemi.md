@@ -84,6 +84,7 @@ composer install --no-dev -o
 | `php artisan mcms:backup` | Прави резервно копие на базата (`.sql.gz`); архив на файловете — от панела |
 | `php artisan mcms:unlock имейл` | Отключва акаунт |
 | `php artisan mcms:reset-2fa имейл` | Изключва 2FA на акаунт |
+| `php artisan mcms:purge-trash 30` | Трие завинаги записи от кошчето, по-стари от 30 дни |
 | `php artisan migrate` | Изпълнява нови миграции |
 | `php artisan serve` | Локален сървър за разработка |
 | `php tests/standalone.php` | Самопроверка на сигурностните класове |

@@ -45,6 +45,9 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
                     Route::get('{content}/edit', [Admin\ContentController::class, 'edit'])->whereNumber('content')->name('edit'),
                     Route::put('{content}', [Admin\ContentController::class, 'update'])->whereNumber('content')->name('update'),
                     Route::delete('{content}', [Admin\ContentController::class, 'destroy'])->whereNumber('content')->name('destroy'),
+                    Route::post('{id}/untrash', [Admin\ContentController::class, 'untrash'])->whereNumber('id')->name('untrash'),
+                    Route::delete('{id}/purge', [Admin\ContentController::class, 'purge'])->whereNumber('id')->name('purge'),
+                    Route::delete('trash/empty', [Admin\ContentController::class, 'emptyTrash'])->name('trash.empty'),
                 ] as $route) {
                     $route->defaults('type', $type);
                 }
@@ -58,6 +61,8 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::post('/', [Admin\CategoryController::class, 'store'])->name('store');
             Route::put('{category}', [Admin\CategoryController::class, 'update'])->whereNumber('category')->name('update');
             Route::delete('{category}', [Admin\CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
+            Route::post('{id}/untrash', [Admin\CategoryController::class, 'untrash'])->whereNumber('id')->name('untrash');
+            Route::delete('{id}/purge', [Admin\CategoryController::class, 'purge'])->whereNumber('id')->name('purge');
         });
 
         Route::middleware('admin:categories')->prefix('tags')->name('tags.')->group(function () {

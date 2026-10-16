@@ -38,3 +38,7 @@ INSERT INTO `translations` (`key`,`locale`,`value`) VALUES
  ('site.tags','bg','Тагове'),('site.related','bg','Свързани публикации'),('site.tag','bg','Таг: :name'),
  ('site.tags','en','Tags'),('site.related','en','Related posts'),('site.tag','en','Tag: :name')
 ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
+
+-- Soft delete ("кошче") for pages, posts and categories. Run once (errors with "Duplicate column" if already applied).
+ALTER TABLE `contents` ADD COLUMN `deleted_at` timestamp NULL DEFAULT NULL, ADD INDEX `contents_deleted_at_index` (`deleted_at`);
+ALTER TABLE `categories` ADD COLUMN `deleted_at` timestamp NULL DEFAULT NULL, ADD INDEX `categories_deleted_at_index` (`deleted_at`);

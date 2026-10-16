@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Content extends Model
 {
+    use \App\Models\Concerns\Trashable;
+
     protected $fillable = [
         'type', 'status', 'publish_at', 'category_id', 'featured_media_id',
         'is_home', 'noindex', 'sort', 'author_id',
