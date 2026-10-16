@@ -117,6 +117,44 @@
     });
   });
 
+
+  /* ---- tags: click a known tag to add it to the field ---- */
+  $$('[data-tag-add]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var input = $('[data-tags-input]');
+      if (!input) { return; }
+      var name = b.getAttribute('data-tag-add');
+      var list = input.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (!list.some(function (x) { return x.toLowerCase() === name.toLowerCase(); })) { list.push(name); }
+      input.value = list.join(', ');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+
+  /* ---- related posts picker (datalist -> chips with hidden inputs) ---- */
+  $$('[data-related]').forEach(function (box) {
+    var chips = $('[data-chips]', box), input = $('[data-related-input]', box);
+    var MAX = 12;
+    box.addEventListener('click', function (e) {
+      var rm = e.target.closest('[data-chip-remove]');
+      if (rm) { rm.parentNode.remove(); input.dispatchEvent(new Event('input', { bubbles: true })); }
+    });
+    input.addEventListener('input', function () {
+      var m = /^(.*)\s\(#(\d+)\)$/.exec(input.value);
+      if (!m) { return; }
+      var id = m[2];
+      var exists = $$('input[name="related[]"]', chips).some(function (i) { return i.value === id; });
+      if (!exists && $$('.chip', chips).length < MAX) {
+        var chip = document.createElement('span'); chip.className = 'chip sel';
+        chip.appendChild(document.createTextNode(m[1]));
+        var h = document.createElement('input'); h.type = 'hidden'; h.name = 'related[]'; h.value = id; chip.appendChild(h);
+        var x = document.createElement('button'); x.type = 'button'; x.setAttribute('data-chip-remove', ''); x.setAttribute('aria-label', 'Махни'); x.textContent = '×'; chip.appendChild(x);
+        chips.appendChild(chip);
+      }
+      input.value = '';
+    });
+  });
+
   /* rich-text editor (CKEditor 5, assets/js/editor.js) uses the same media picker */
   window.mcmsOpenPicker = openPicker;
 

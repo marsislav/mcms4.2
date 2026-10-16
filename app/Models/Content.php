@@ -23,6 +23,18 @@ class Content extends Model
         return $this->hasMany(ContentTranslation::class);
     }
 
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'content_tag');
+    }
+
+    /** Manually chosen related posts (ordered). */
+    public function related()
+    {
+        return $this->belongsToMany(self::class, 'content_related', 'content_id', 'related_id')
+            ->withPivot('sort')->orderBy('content_related.sort');
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class);

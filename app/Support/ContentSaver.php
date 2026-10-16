@@ -116,7 +116,7 @@ class ContentSaver
         $slug = $base;
         $i = 2;
 
-        while (in_array($slug, $reserved, true) || preg_match('/^[a-z]{2}$/', $slug) || self::slugExists($slug, $locale, $ignoreId, $table)) {
+        while (($table === 'content' && (in_array($slug, $reserved, true) || preg_match('/^[a-z]{2}$/', $slug))) || self::slugExists($slug, $locale, $ignoreId, $table)) {
             $slug = $base.'-'.$i++;
         }
 
@@ -125,7 +125,11 @@ class ContentSaver
 
     private static function slugExists(string $slug, string $locale, ?int $ignoreId, string $table): bool
     {
-        $model = $table === 'category' ? CategoryTranslation::class : ContentTranslation::class;
+        $model = match ($table) {
+            'category' => CategoryTranslation::class,
+            'tag' => \App\Models\TagTranslation::class,
+            default => ContentTranslation::class,
+        };
 
         return $model::where('locale', $locale)->where('slug', $slug)
             ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists();

@@ -174,3 +174,13 @@ body.auth.wide{align-items:start}
 .editor-count{font-size:.8rem;color:var(--muted,#667);margin:.2rem 0 1rem;text-align:right}
 .ck.ck-editor__editable:not(.ck-editor__nested-editable).ck-focused{box-shadow:none}
 .ck.ck-balloon-panel,.ck.ck-dialog-overlay,.ck.ck-fullscreen__main-wrapper{z-index:1000}
+
+/* ---- tags & related posts ---- */
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.5rem 0}
+.chip{display:inline-flex;align-items:center;gap:.3rem;font:inherit;font-size:.82rem;padding:.2rem .6rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:inherit;cursor:pointer}
+button.chip:hover{border-color:var(--accent,#2a6df4)}
+.chip.sel{cursor:default;background:rgba(42,109,244,.08);border-color:rgba(42,109,244,.35)}
+.chip.sel button{border:0;background:none;cursor:pointer;font-size:1rem;line-height:1;padding:0;color:inherit}
+.row-actions{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-top:.6rem}
+.inline-form{display:flex;gap:.4rem;align-items:center}
+.inline-form select{width:auto}

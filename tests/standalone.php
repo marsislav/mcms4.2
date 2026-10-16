@@ -6,8 +6,9 @@
 require __DIR__.'/../app/Support/Sanitizer.php';
 require __DIR__.'/../app/Support/Totp.php';
 require __DIR__.'/../app/Support/EnvWriter.php';
+require __DIR__.'/../app/Support/Taxonomy.php';
 
-use App\Support\{Sanitizer, Totp, EnvWriter};
+use App\Support\{Sanitizer, Totp, EnvWriter, Taxonomy};
 
 $fail = 0;
 $check = function (string $name, bool $ok) use (&$fail) {
@@ -60,6 +61,12 @@ $check('reject wrong code', Totp::verify($secret, '000000', 0, 1700000000) === n
 $check('reject non-numeric', Totp::verify($secret, 'abcdef') === null);
 $r = random_bytes(20);
 $check('base32 round trip', Totp::base32Decode(Totp::base32Encode($r)) === $r);
+
+echo "Taxonomy\n";
+$check('tags: split, trim, dedupe (case-insens.)', Taxonomy::parse(' PHP,  Laravel ; php,,') === ['PHP', 'Laravel']);
+$check('tags: strips HTML', Taxonomy::parse('<b>Нов</b> таг') === ['Нов таг'] && ! str_contains(Taxonomy::parse('<script>a</script>')[0] ?? '', '<'));
+$check('tags: max 20', count(Taxonomy::parse(implode(',', range(1, 50)))) === 20);
+$check('tags: name capped at 80', mb_strlen(Taxonomy::parse(str_repeat('я', 200))[0]) === 80);
 
 echo "EnvWriter\n";
 $f = sys_get_temp_dir().'/mcms-env-'.bin2hex(random_bytes(4));

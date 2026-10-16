@@ -27,6 +27,7 @@ class SettingController extends Controller
             'site_name' => 'required|string|max:100',
             'contact_email' => 'nullable|email|max:190',
             'posts_per_page' => 'required|integer|min:1|max:50',
+            'related_count' => 'required|integer|min:0|max:12',
             'logo_media_id' => 'nullable|integer|exists:media,id',
             'favicon_media_id' => 'nullable|integer|exists:media,id',
             'og_media_id' => 'nullable|integer|exists:media,id',
@@ -51,7 +52,7 @@ class SettingController extends Controller
         ]);
 
         $values = [];
-        foreach (['site_name', 'contact_email', 'posts_per_page', 'logo_media_id', 'favicon_media_id', 'og_media_id',
+        foreach (['site_name', 'contact_email', 'posts_per_page', 'related_count', 'logo_media_id', 'favicon_media_id', 'og_media_id',
             'social_facebook', 'social_instagram', 'social_linkedin', 'social_youtube', 'robots_extra',
             'smtp_host', 'smtp_port', 'smtp_username', 'smtp_encryption', 'mail_from_address', 'mail_from_name'] as $k) {
             $values[$k] = $this->clean($request->input($k));

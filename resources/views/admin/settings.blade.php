@@ -16,6 +16,7 @@
             <label>Име на сайта <input name="site_name" value="{{ $s('site_name') }}" required maxlength="100"></label>
             <label>Имейл за контакт (получава съобщения) <input type="email" name="contact_email" value="{{ $s('contact_email') }}" maxlength="190"></label>
             <label>Публикации на страница <input type="number" name="posts_per_page" value="{{ $s('posts_per_page', 9) }}" min="1" max="50" required></label>
+            <label>Свързани публикации под статия <small class="muted">(0 = изключено)</small> <input type="number" name="related_count" value="{{ $s('related_count', 3) }}" min="0" max="12" required></label>
         </div>
         @foreach (['tagline' => 'Слоган', 'meta_description' => 'Meta описание по подразбиране', 'footer_text' => 'Текст във футъра'] as $key => $label)
             <div class="grid-form">

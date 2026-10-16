@@ -20,6 +20,7 @@
         ['admin.pages.index', 'Страници', 'content', null],
         ['admin.posts.index', 'Публикации', 'content', null],
         ['admin.categories.index', 'Категории', 'categories', null],
+        ['admin.tags.index', 'Тагове', 'categories', null],
         ['admin.media.index', 'Медия', 'media', null],
         ['admin.menus.index', 'Менюта', 'menus', null],
         ['admin.messages.index', 'Съобщения', 'messages', $unread],

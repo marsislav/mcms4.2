@@ -2,6 +2,12 @@
 @section('title', 'Табло')
 
 @section('content')
+@if(auth()->user()->isAdmin() && ! \App\Support\Taxonomy::ready())
+<section class="card warn-card">
+    <strong>Има налично обновяване на базата данни</strong> (тагове и свързани публикации).
+    <form method="post" action="{{ route('admin.system.migrate') }}" class="inline-form" style="margin-top:.6rem">@csrf <button class="btn primary">Обнови базата</button></form>
+</section>
+@endif
 <div class="stats">
     @foreach ($stats as [$label, $value, $url])
         <a class="stat" href="{{ $url }}"><span class="num">{{ $value }}</span><span>{{ $label }}</span></a>

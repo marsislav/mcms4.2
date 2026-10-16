@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Content;
 use App\Models\Revision;
 use App\Support\ContentSaver;
+use App\Support\Taxonomy;
 use Illuminate\Http\Request;
 
 class ContentController extends Controller
@@ -51,13 +52,14 @@ class ContentController extends Controller
             'content' => new Content(['status' => 'draft']),
             'categories' => Category::with('translations')->orderBy('sort')->get(),
             'languages' => mcms_languages(),
-        ]);
+        ] + $this->taxonomyData(null));
     }
 
     public function store(Request $request)
     {
         $type = $this->type($request);
         $content = ContentSaver::save(null, $type, $this->validated($request), $request->input('tr', []), $request->user()->id);
+        $this->saveTaxonomy($request, $content);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
         return redirect()->route("admin.{$type}s.edit", $content)->with('status', 'Записано.');
@@ -73,13 +75,14 @@ class ContentController extends Controller
             'content' => $content,
             'categories' => Category::with('translations')->orderBy('sort')->get(),
             'languages' => mcms_languages(),
-        ]);
+        ] + $this->taxonomyData($content));
     }
 
     public function update(Request $request, Content $content)
     {
         $this->authorize($request, $content);
         ContentSaver::save($content, $content->type, $this->validated($request), $request->input('tr', []), $request->user()->id);
+        $this->saveTaxonomy($request, $content);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
         return back()->with('status', 'Промените са записани.');
@@ -113,6 +116,43 @@ class ContentController extends Controller
         audit('revision.restore', (string) $translation->content_id);
 
         return back()->with('status', 'Версията е възстановена.');
+    }
+
+    /** Tags + related posts apply to posts only and need the "tags" migration. */
+    private function saveTaxonomy(Request $request, Content $content): void
+    {
+        if ($content->type !== 'post' || ! Taxonomy::ready()) {
+            return;
+        }
+        $request->validate([
+            'tags' => 'nullable|string|max:1500',
+            'related' => 'nullable|array|max:'.Taxonomy::MAX_RELATED,
+            'related.*' => 'integer',
+        ]);
+        Taxonomy::syncTags($content, (string) $request->input('tags', ''));
+        Taxonomy::syncRelated($content, (array) $request->input('related', []));
+    }
+
+    /** Extra data for the editor sidebar. */
+    private function taxonomyData(?Content $content): array
+    {
+        if (! Taxonomy::ready()) {
+            return ['taxReady' => false, 'tagsValue' => '', 'allTags' => collect(), 'relatedSelected' => collect(), 'postChoices' => collect()];
+        }
+        $def = mcms_default_locale();
+        $tagsValue = $content?->exists
+            ? $content->tags()->with('translations')->get()->map(fn ($t) => $t->adminName())->implode(', ')
+            : '';
+
+        return [
+            'taxReady' => true,
+            'tagsValue' => $tagsValue,
+            'allTags' => \App\Models\Tag::with('translations')->withCount('contents')->orderByDesc('contents_count')->limit(40)->get(),
+            'relatedSelected' => $content?->exists ? $content->related()->with('translations')->get() : collect(),
+            'postChoices' => Content::where('type', 'post')->with('translations')
+                ->when($content?->exists, fn ($q) => $q->where('id', '!=', $content->id))
+                ->orderByDesc('id')->limit(500)->get(),
+        ];
     }
 
     private function validated(Request $request): array

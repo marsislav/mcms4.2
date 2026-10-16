@@ -8,6 +8,8 @@ use App\Models\Content;
 use App\Models\ContentTranslation;
 use App\Models\Message;
 use App\Models\Redirect;
+use App\Models\TagTranslation;
+use App\Support\Taxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -55,15 +57,10 @@ class SiteController extends Controller
             return $this->notFound($request);
         }
 
-        $related = collect();
-        if ($tr->content->category_id) {
-            $related = $this->scope(Content::query())->where('type', 'post')
-                ->where('category_id', $tr->content->category_id)->where('id', '!=', $tr->content_id)
-                ->whereHas('translations', fn ($q) => $q->where('locale', app()->getLocale()))
-                ->with(['translations', 'featured'])->orderByDesc('publish_at')->limit(3)->get();
-        }
+        $related = Taxonomy::relatedFor($tr->content, (int) setting('related_count', 3));
+        $tags = Taxonomy::ready() ? $tr->content->tags()->with('translations')->get() : collect();
 
-        return $this->renderContent($tr->content, $tr, 'site.post', ['related' => $related]);
+        return $this->renderContent($tr->content, $tr, 'site.post', ['related' => $related, 'tags' => $tags]);
     }
 
     private function renderContent(Content $content, ContentTranslation $tr, string $view, array $extra = [])
@@ -150,6 +147,46 @@ class SiteController extends Controller
                 'title' => $ct->name,
                 'description' => $ct->description ?: setting_l('meta_description'),
                 'canonical' => $ct->url(),
+                'alternates' => $alternates,
+                'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
+            ],
+            'switch' => $alternates,
+        ]);
+    }
+
+    public function tag(Request $request, string $slug)
+    {
+        if (! Taxonomy::ready()) {
+            return $this->notFound($request);
+        }
+        $locale = app()->getLocale();
+        // slug of the current language first; a tag without a translation is reachable through its default-language slug
+        $found = TagTranslation::where('slug', $slug)->orderByRaw('locale = ? desc', [$locale])->first();
+        if (! $found) {
+            return $this->notFound($request);
+        }
+        $tag = $found->tag()->with('translations')->first();
+        $name = $tag->display($locale)?->name ?? $found->name;
+
+        $posts = $this->postQuery()->whereHas('tags', fn ($q) => $q->where('tags.id', $tag->id))
+            ->paginate((int) setting('posts_per_page', 9));
+
+        $alternates = [];
+        foreach ($tag->translations as $t) {
+            if (in_array($t->locale, mcms_locales(), true)) {
+                $alternates[$t->locale] = $t->url($t->locale);
+            }
+        }
+        $heading = t('site.tag', 'Tag: :name', ['name' => $name]);
+
+        return view('site.blog', [
+            'posts' => $posts,
+            'heading' => $heading,
+            'category' => null,
+            'seo' => [
+                'title' => $heading,
+                'description' => setting_l('meta_description'),
+                'canonical' => $tag->display($locale)->url($locale),
                 'alternates' => $alternates,
                 'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
             ],

@@ -60,6 +60,14 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::delete('{category}', [Admin\CategoryController::class, 'destroy'])->whereNumber('category')->name('destroy');
         });
 
+        Route::middleware('admin:categories')->prefix('tags')->name('tags.')->group(function () {
+            Route::get('/', [Admin\TagController::class, 'index'])->name('index');
+            Route::post('/', [Admin\TagController::class, 'store'])->name('store');
+            Route::put('{tag}', [Admin\TagController::class, 'update'])->whereNumber('tag')->name('update');
+            Route::post('{tag}/merge', [Admin\TagController::class, 'merge'])->whereNumber('tag')->name('merge');
+            Route::delete('{tag}', [Admin\TagController::class, 'destroy'])->whereNumber('tag')->name('destroy');
+        });
+
         Route::middleware('admin:media')->prefix('media')->name('media.')->group(function () {
             Route::get('/', [Admin\MediaController::class, 'index'])->name('index');
             Route::get('picker', [Admin\MediaController::class, 'picker'])->name('picker');
@@ -112,6 +120,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::get('settings', [Admin\SettingController::class, 'edit'])->name('settings');
             Route::put('settings', [Admin\SettingController::class, 'update'])->name('settings.update');
             Route::post('settings/test-mail', [Admin\SettingController::class, 'testMail'])->name('settings.mail-test');
+            Route::post('system/migrate', [Admin\SystemController::class, 'migrate'])->name('system.migrate');
         });
 
         Route::get('audit', [Admin\AuditController::class, 'index'])->middleware('admin:audit')->name('audit');
@@ -140,6 +149,7 @@ $public = function () {
     Route::get('feed.xml', [SiteController::class, 'feed'])->name('feed');
     Route::get('blog', [SiteController::class, 'blog'])->name('blog');
     Route::get('blog/category/{slug}', [SiteController::class, 'category'])->name('category');
+    Route::get('blog/tag/{slug}', [SiteController::class, 'tag'])->where('slug', '[a-z0-9\-]+')->name('tag');
     Route::get('blog/{slug}', [SiteController::class, 'post'])->name('post');
     Route::get('search', [SiteController::class, 'search'])->middleware('throttle:30,1')->name('search');
     Route::get('contact', [SiteController::class, 'contactForm'])->name('contact');

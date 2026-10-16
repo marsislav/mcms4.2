@@ -74,6 +74,7 @@
 | `Category`, `CategoryTranslation` | categories, category_translations |
 | `Content`, `ContentTranslation` | contents, content_translations |
 | `Revision` | revisions |
+| `Tag`, `TagTranslation` | tags, tag_translations (+ pivot `content_tag`, `content_related`) |
 | `Menu`, `MenuItem` | menus, menu_items |
 | `Message` | messages |
 | `Redirect` | redirects |
@@ -89,6 +90,7 @@
 | `ContentSaver` | Запис на страница/публикация с преводи и версии |
 | `Installer` | Начални данни |
 | `EnvWriter` | Безопасно пише в `.env` |
+| `Taxonomy` | Тагове и свързани публикации: разбор, запис, алгоритъм за „свързани“ |
 | `Hooks` | Хукове за плъгини |
 | `PluginManager` | Намира и зарежда плъгини |
 | `Providers/AppServiceProvider` | SMTP от настройките, плъгини, данни за общия шаблон (езици, менюта) |

@@ -95,6 +95,41 @@
             </section>
             @endif
 
+            @if($isPost)
+            <section class="card">
+                <h3>Тагове</h3>
+                @if(! ($taxReady ?? false))
+                    <p class="muted">Нужно е обновяване на базата — вижте <a href="{{ route('admin.tags.index') }}">Тагове</a>.</p>
+                @else
+                    <input name="tags" value="{{ old('tags', $tagsValue) }}" maxlength="1500" placeholder="php, laravel, новини" autocomplete="off" data-tags-input>
+                    <small class="muted">Разделяйте със запетая. Новите тагове се създават сами.</small>
+                    @if($allTags->isNotEmpty())
+                    <div class="chips" aria-label="Съществуващи тагове">
+                        @foreach ($allTags as $tg)
+                            <button type="button" class="chip" data-tag-add="{{ $tg->adminName() }}">{{ $tg->adminName() }}</button>
+                        @endforeach
+                    </div>
+                    @endif
+                @endif
+            </section>
+
+            @if($taxReady ?? false)
+            <section class="card" data-related>
+                <h3>Свързани публикации</h3>
+                <div class="chips" data-chips>
+                    @foreach ((old('related') ? $postChoices->whereIn('id', old('related')) : $relatedSelected) as $rp)
+                        <span class="chip sel">{{ $rp->adminTitle() }}<input type="hidden" name="related[]" value="{{ $rp->id }}"><button type="button" data-chip-remove aria-label="Махни">×</button></span>
+                    @endforeach
+                </div>
+                <input list="related-list" data-related-input placeholder="Търсене по заглавие…" autocomplete="off">
+                <datalist id="related-list">
+                    @foreach ($postChoices as $rp)<option value="{{ $rp->adminTitle() }} (#{{ $rp->id }})"></option>@endforeach
+                </datalist>
+                <small class="muted">Ръчно избраните се показват първи, после автоматично — със същите тагове и от същата категория.</small>
+            </section>
+            @endif
+            @endif
+
             <section class="card">
                 <h3>Изображение</h3>
                 <div class="media-field" data-media-field>

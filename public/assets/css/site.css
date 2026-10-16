@@ -143,3 +143,8 @@ input:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--accent) 45%
 .prose::after{content:"";display:table;clear:both}
 @media (max-width:600px){.prose .image-style-align-left,.prose .image-style-align-right,.prose .image-style-side{float:none;margin:1rem auto;max-width:100%}}
 .prose .page-break span{display:none}
+
+/* ---- tags & related posts ---- */
+.tags{list-style:none;display:flex;flex-wrap:wrap;gap:.4rem;padding:0;margin:2rem 0 0}
+.tags a{display:inline-block;font-size:.85rem;padding:.2rem .7rem;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:inherit}
+.tags a:hover{border-color:var(--accent);color:var(--accent)}
