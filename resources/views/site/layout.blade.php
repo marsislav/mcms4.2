@@ -10,6 +10,10 @@
     $favicon = ($id = setting('favicon_media_id')) ? \App\Models\Media::find($id) : null;
     $current = app()->getLocale();
     $switch = $switch ?? [];
+    $topbar = \App\Support\Design::topbar();
+    $pageAnim = \App\Support\Design::pageAnim();
+    $elAnim = \App\Support\Design::elementAnims();
+    $hasAnim = $pageAnim !== 'none' || $elAnim;
 @endphp
 <!doctype html>
 <html lang="{{ $current }}">
@@ -37,12 +41,24 @@
     @if(! empty($seo['published']))<meta property="article:published_time" content="{{ $seo['published']->toAtomString() }}">@endif
     <link rel="alternate" type="application/rss+xml" title="{{ t('site.rss') }}" href="{{ lroute('feed') }}">
     @if($favicon)<link rel="icon" href="{{ $favicon->url() }}">@endif
+    <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome/css/all.min.css') }}?v=7.3.1">
     <link rel="stylesheet" href="{{ asset('assets/css/site.css') }}?v={{ config('mcms.version') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/grid.css') }}?v={{ config('mcms.version') }}">
+    <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}">
     @php(do_action('head'))
 </head>
-<body>
+<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
+
+@if($topbar)
+<div class="topbar">
+    <div class="wrap topbar-in" style="--tb-cols: {{ count($topbar) }}">
+        @foreach ($topbar as $col)
+            @if(trim($col['html']) !== '')<div class="tb-col tb-{{ $col['align'] }}">{!! $col['html'] !!}</div>@else<div class="tb-col"></div>@endif
+        @endforeach
+    </div>
+</div>
+@endif
 
 <header class="site-header">
     <div class="wrap bar">
@@ -100,6 +116,9 @@
                 @endforeach
                 <li><a href="{{ lroute('feed') }}">RSS</a></li>
             </ul>
+            @if($hasAnim && \App\Support\Design::get('anim_pause_btn') === '1')
+                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ t('site.anim_pause', 'Спри анимациите') }}" data-off="{{ t('site.anim_play', 'Пусни анимациите') }}">{{ t('site.anim_pause', 'Спри анимациите') }}</button>
+            @endif
         </nav>
         <nav class="social" aria-label="Social">
             @foreach (['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube'] as $k => $label)

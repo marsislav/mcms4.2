@@ -124,6 +124,8 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
         Route::middleware('admin:settings')->group(function () {
             Route::get('settings', [Admin\SettingController::class, 'edit'])->name('settings');
             Route::put('settings', [Admin\SettingController::class, 'update'])->name('settings.update');
+            Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
+            Route::post('settings/design/reset', [Admin\SettingController::class, 'resetDesign'])->name('settings.design-reset');
             Route::post('settings/test-mail', [Admin\SettingController::class, 'testMail'])->name('settings.mail-test');
             Route::post('system/migrate', [Admin\SystemController::class, 'migrate'])->name('system.migrate');
         });
@@ -146,6 +148,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
 
 /* -------------------------------------------------------- SEO / feed files */
 Route::get('sitemap.xml', [SiteController::class, 'sitemap'])->name('site.sitemap');
+Route::get('design.css', [SiteController::class, 'designCss'])->name('site.design');
 Route::get('robots.txt', [SiteController::class, 'robots'])->name('site.robots');
 
 /* ------------------------------------------------------------- public site */

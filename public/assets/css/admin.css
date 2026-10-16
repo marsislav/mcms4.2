@@ -189,3 +189,18 @@ button.chip:hover{border-color:var(--accent,#2a6df4)}
 .subtabs{display:flex;gap:.3rem;align-items:center;margin-bottom:1rem;border-bottom:1px solid var(--line)}
 .subtabs a{padding:.45rem .9rem;text-decoration:none;color:inherit;border-bottom:2px solid transparent;margin-bottom:-1px}
 .subtabs a.active{border-bottom-color:var(--accent,#2a6df4);font-weight:600}
+
+/* Font Awesome picker (editor) */
+.fa-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+.fa-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;min-height:74px;padding:.4rem;font-size:1.4rem}
+.fa-item small{font-size:.62rem;line-height:1.1;word-break:break-all;text-align:center;opacity:.7;max-width:100%}
+.modal-head .fa-style{width:auto}
+.ck-content .mc-fa-widget{margin:0 .1em}
+
+/* settings > design */
+.colorfield{display:flex;gap:.4rem;align-items:center}
+.colorfield input[type=color]{width:2.6rem;height:2.4rem;padding:.15rem;flex:none;cursor:pointer}
+.colorfield input[type=text]{flex:1;min-width:0;font-family:ui-monospace,monospace}
+.tb-fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:.6rem 1rem .2rem;margin:.8rem 0}
+.tb-fieldset legend{font-weight:600;padding:0 .4rem}
+[data-spanel][hidden],[data-topbar-box][hidden],[data-topbar-col][hidden]{display:none}

@@ -61,6 +61,7 @@
   names.forEach(function (n) { if (CK[n]) { plugins.push(CK[n]); } else { missing.push(n); } });
   plugins.push(MediaLibrary);
   if (window.McmsGridLayout) { plugins.push(window.McmsGridLayout); }
+  if (window.McmsFontAwesome) { plugins.push(window.McmsFontAwesome); }
   if (missing.length && window.console) { console.warn('CKEditor: липсват плъгини:', missing.join(', ')); }
 
   var cls = function (name, className, title) { return { name: name, className: className, title: title }; };
@@ -77,7 +78,7 @@
         'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
         'link', 'mediaLibrary', 'insertImage', 'mediaEmbed', 'insertTable', 'gridLayout', 'gridColSpan', 'gridAddCol', 'gridRemoveCol', 'gridRemoveRow', '|',
         'bulletedList', 'numberedList', 'outdent', 'indent', 'alignment', '|',
-        'blockQuote', 'codeBlock', 'horizontalLine', 'pageBreak', 'specialCharacters', '|',
+        'blockQuote', 'codeBlock', 'horizontalLine', 'pageBreak', 'specialCharacters', 'faIcons', '|',
         'findAndReplace', 'selectAll', 'showBlocks', 'sourceEditing', 'fullscreen', 'accessibilityHelp'
       ]
     },

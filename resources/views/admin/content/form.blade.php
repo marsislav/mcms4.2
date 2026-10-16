@@ -162,6 +162,7 @@
 @push('scripts')
 <script src="{{ asset('assets/vendor/ckeditor5/ckeditor5.umd.js') }}?v=49.0.0" nonce="{{ csp_nonce() }}" defer></script>
 <script src="{{ asset('assets/vendor/ckeditor5/translations/bg.umd.js') }}?v=49.0.0" nonce="{{ csp_nonce() }}" defer></script>
+<script src="{{ asset('assets/js/editor-fa.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
 <script src="{{ asset('assets/js/editor-grid.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
 <script src="{{ asset('assets/js/editor.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
 @endpush

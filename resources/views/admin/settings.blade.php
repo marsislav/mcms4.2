@@ -7,6 +7,12 @@
     $media = fn ($name, $label, $m) => view('admin.partials.media-field', compact('name', 'label', 'm'));
 @endphp
 
+<div class="tabs" data-stabs role="tablist">
+    <button type="button" class="active" data-stab="general" role="tab">Общи</button>
+    <button type="button" data-stab="design" role="tab">Дизайн</button>
+</div>
+
+<div data-spanel="general">
 <form method="post" action="{{ route('admin.settings.update') }}" class="settings-form">
     @csrf @method('PUT')
 
@@ -78,4 +84,9 @@
 <form method="post" action="{{ route('admin.settings.mail-test') }}" class="inline-form">
     @csrf <button class="btn">Изпрати тестово писмо до мен</button>
 </form>
+</div>
+
+<div data-spanel="design">
+    @include('admin.partials.design-form')
+</div>
 @endsection

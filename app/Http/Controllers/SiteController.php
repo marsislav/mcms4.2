@@ -352,6 +352,14 @@ class SiteController extends Controller
         return response($xml, 200, ['Content-Type' => 'application/xml; charset=UTF-8']);
     }
 
+    public function designCss()
+    {
+        return response(\App\Support\Design::css(), 200, [
+            'Content-Type' => 'text/css; charset=UTF-8',
+            'Cache-Control' => 'public, max-age=86400', // URL carries ?v=<hash>, so changes are picked up at once
+        ]);
+    }
+
     public function robots()
     {
         $lines = ['User-agent: *', 'Disallow: /search', 'Disallow: /*/search', 'Disallow: /install'];

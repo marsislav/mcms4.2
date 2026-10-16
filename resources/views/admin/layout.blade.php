@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="mcms-admin" content="{{ admin_url() }}">
     <title>@yield('title', 'Табло') — {{ setting('site_name', 'mCMS') }}</title>
+    <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome/css/all.min.css') }}?v=7.3.1">
     <link rel="stylesheet" href="{{ asset('assets/css/admin.css') }}?v={{ config('mcms.version') }}">
     @stack('styles')
 </head>

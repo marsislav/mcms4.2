@@ -148,3 +148,41 @@ input:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--accent) 45%
 .tags{list-style:none;display:flex;flex-wrap:wrap;gap:.4rem;padding:0;margin:2rem 0 0}
 .tags a{display:inline-block;font-size:.85rem;padding:.2rem .7rem;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:inherit}
 .tags a:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---- top bar (Settings > Дизайн) ---- */
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);font-size:.88rem;line-height:1.4}
+.topbar-in{display:grid;grid-template-columns:repeat(var(--tb-cols,1),minmax(0,1fr));gap:.4rem 1.5rem;padding-block:.45rem;align-items:center}
+.tb-col p{margin:0}.tb-col a{text-underline-offset:.2em}
+.tb-left{text-align:left}.tb-center{text-align:center}.tb-right{text-align:right}
+@media (max-width:760px){.topbar-in{grid-template-columns:1fr}.tb-col,.tb-left,.tb-right{text-align:center}.tb-col:empty{display:none}}
+
+/* ---- animations (Settings > Дизайн) ---- */
+@keyframes mc-fade{from{opacity:0}to{opacity:1}}
+@keyframes mc-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes mc-down{from{opacity:0;transform:translateY(-28px)}to{opacity:1;transform:none}}
+@keyframes mc-left{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:none}}
+@keyframes mc-right{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:none}}
+@keyframes mc-zoom{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.pa-fade .main{animation:mc-fade var(--anim-ms,600ms) ease both}
+.pa-slide-up .main{animation:mc-up var(--anim-ms,600ms) ease both}
+.pa-slide-down .main{animation:mc-down var(--anim-ms,600ms) ease both}
+.pa-slide-left .main{animation:mc-left var(--anim-ms,600ms) ease both}
+.pa-slide-right .main{animation:mc-right var(--anim-ms,600ms) ease both}
+.pa-zoom .main{animation:mc-zoom var(--anim-ms,600ms) ease both}
+/* element reveal: site.js sets data-rv only on elements it will animate, so no-JS visitors see everything */
+[data-rv]{opacity:0;transition:opacity var(--anim-ms,600ms) ease,transform var(--anim-ms,600ms) ease!important}
+[data-rv=slide-up]{transform:translateY(28px)}
+[data-rv=slide-down]{transform:translateY(-28px)}
+[data-rv=slide-left]{transform:translateX(36px)}
+[data-rv=slide-right]{transform:translateX(-36px)}
+[data-rv=zoom]{transform:scale(.94)}
+[data-rv].rv-in{opacity:1;transform:none}
+.anim-toggle{margin-top:.8rem;background:none;border:1px solid var(--line);color:var(--fg);border-radius:99px;padding:.25rem .8rem;font:inherit;font-size:.85rem;cursor:pointer}
+.anim-toggle:hover{border-color:var(--accent)}
+/* stop everything: visitor button (html.anim-off) or OS "reduce motion" */
+html.anim-off *,html.anim-off *::before,html.anim-off *::after{animation:none!important;transition:none!important}
+html.anim-off [data-rv]{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .main{animation:none!important}
+  [data-rv]{opacity:1!important;transform:none!important;transition:none!important}
+}

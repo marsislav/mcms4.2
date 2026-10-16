@@ -125,6 +125,10 @@
 | `.htaccess` | Пренасочва към `index.php`, скрива `.env` и др. |
 | `assets/css/site.css`, `admin.css`, `errors.css` | Стилове |
 | `assets/js/site.js`, `admin.js` | Скриптове (без вградени `onclick`) |
+| `app/Support/Design.php` | Настройки „Дизайн“: цветове, шрифтове, анимации, top-bar → генерира `/design.css` |
+| `resources/views/admin/partials/design-form.blade.php` | Формата на таб „Дизайн“ |
+| `assets/js/editor-fa.js` | Плъгин на CKEditor: избор и вмъкване на Font Awesome икони |
+| `assets/vendor/fontawesome/` | Font Awesome Free 7.3.1 (CSS, woff2, icons.json) |
 | `assets/js/editor-grid.js` | Плъгин на CKEditor „Колони“ (редове и колони 1–12) |
 | `assets/css/grid.css` | Стилове и responsive за редове/колони |
 | `assets/js/editor.js` | Настройка на CKEditor 5 (плъгини, бутони, библиотека с медия) |

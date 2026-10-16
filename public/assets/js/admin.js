@@ -23,6 +23,52 @@
     });
   });
 
+
+  /* ---- settings page tabs (Общи / Дизайн); #design in the URL opens the design tab ---- */
+  $$('[data-stabs]').forEach(function (bar) {
+    var panels = $$('[data-spanel]');
+    var show = function (name) {
+      $$('[data-stab]', bar).forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-stab') === name); });
+      panels.forEach(function (p) { p.hidden = p.getAttribute('data-spanel') !== name; });
+    };
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-stab]');
+      if (!btn) { return; }
+      show(btn.getAttribute('data-stab'));
+      try { history.replaceState(null, '', btn.getAttribute('data-stab') === 'design' ? '#design' : location.pathname + location.search); } catch (x) { /* ignore */ }
+    });
+    show(location.hash === '#design' ? 'design' : 'general');
+  });
+
+  /* ---- colour fields: picker <-> hex text, empty = theme default ---- */
+  $$('.colorfield').forEach(function (box) {
+    var pick = $('[data-color-pick]', box), text = $('[data-color-text]', box), clear = $('[data-color-clear]', box);
+    var hex = function (v) { return /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? (v.charAt(0) === '#' ? v : '#' + v) : null; };
+    pick.addEventListener('input', function () { text.value = pick.value; });
+    text.addEventListener('input', function () {
+      var h = hex(text.value.trim());
+      if (h && h.length === 7) { pick.value = h.toLowerCase(); }
+    });
+    text.addEventListener('blur', function () {
+      var h = hex(text.value.trim());
+      text.value = h || (text.value.trim() === '' ? '' : text.value);
+    });
+    clear.addEventListener('click', function () { text.value = ''; pick.value = '#888888'; });
+  });
+
+  /* ---- top-bar: show only as many column editors as selected, hide all when off ---- */
+  (function () {
+    var on = $('[data-topbar-on]'), box = $('[data-topbar-box]'), cols = $('[data-topbar-cols]');
+    if (!on || !box || !cols) { return; }
+    var apply = function () {
+      box.hidden = !on.checked;
+      $$('[data-topbar-col]', box).forEach(function (f) {
+        f.hidden = parseInt(f.getAttribute('data-topbar-col'), 10) > parseInt(cols.value, 10);
+      });
+    };
+    on.addEventListener('change', apply); cols.addEventListener('change', apply); apply();
+  })();
+
   /* ---- menu row: show only the relevant target field ---- */
   $$('[data-menu-type]').forEach(function (sel) {
     var row = sel.closest('tr');

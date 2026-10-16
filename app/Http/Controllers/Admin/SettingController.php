@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Media;
 use App\Models\Setting;
+use App\Support\Design;
+use App\Support\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
@@ -17,6 +19,7 @@ class SettingController extends Controller
             'languages' => mcms_languages(),
             'logo' => ($id = setting('logo_media_id')) ? Media::find($id) : null,
             'favicon' => ($id = setting('favicon_media_id')) ? Media::find($id) : null,
+            'design' => Design::all(),
             'ogImage' => ($id = setting('og_media_id')) ? Media::find($id) : null,
         ]);
     }
@@ -78,6 +81,81 @@ class SettingController extends Controller
         audit('settings.update', null, ['maintenance' => $values['maintenance_mode'], '2fa_required' => $values['require_2fa_admin']]);
 
         return back()->with('status', 'Настройките са записани.');
+    }
+
+    public function updateDesign(Request $request)
+    {
+        $color = ['nullable', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'];
+        $font = ['nullable', 'in:'.implode(',', array_keys(Design::FONTS))];
+        $anim = ['required', 'in:'.implode(',', array_keys(Design::ANIMS))];
+        $align = ['required', 'in:left,center,right'];
+        $rules = [
+            'font_size' => 'nullable|integer|min:14|max:22',
+            'logo_size' => ['required', function ($attr, $v, $fail) {
+                if ($v !== 'auto' && (! ctype_digit((string) $v) || (int) $v < 20 || (int) $v > 300)) {
+                    $fail('Големината на логото е „auto“ или число между 20 и 300 (px).');
+                }
+            }],
+            'anim_page_type' => $anim,
+            'anim_speed' => 'required|integer|min:150|max:2000',
+            'topbar_cols' => 'required|integer|min:1|max:'.Design::MAX_COLS,
+            'topbar' => 'nullable|array',
+            'topbar.*' => 'nullable|array',
+            'topbar.*.*' => 'nullable|string|max:2000',
+        ];
+        foreach (Design::COLOR_KEYS as $k) {
+            $rules[$k] = $color;
+        }
+        foreach (['font_body', 'font_heading', 'font_menu', 'font_logo'] as $k) {
+            $rules[$k] = $font;
+        }
+        foreach (array_keys(Design::ELEMENTS) as $k) {
+            $rules['el_'.$k] = $anim;
+        }
+        for ($i = 1; $i <= Design::MAX_COLS; $i++) {
+            $rules["topbar_c{$i}_align"] = $align;
+        }
+        $request->validate($rules);
+
+        $values = [];
+        foreach (Design::DEFAULTS as $k => $default) {
+            if (in_array($k, Design::BOOL_KEYS, true)) {
+                $values["design.$k"] = $request->boolean($k) ? '1' : '0';
+            } elseif (in_array($k, Design::COLOR_KEYS, true)) {
+                $values["design.$k"] = Design::normalizeColor($request->input($k));
+            } else {
+                $v = trim((string) $request->input($k, ''));
+                $values["design.$k"] = $v === '' ? null : $v;
+            }
+        }
+
+        // Top-bar texts per language: plain text stays text (line breaks kept), HTML goes through the Sanitizer
+        for ($i = 1; $i <= Design::MAX_COLS; $i++) {
+            foreach (mcms_locales() as $loc) {
+                $raw = trim((string) $request->input("topbar.c$i.$loc", ''));
+                if ($raw === '') {
+                    $values["design.topbar_c$i.$loc"] = null;
+                } elseif (strip_tags($raw) === $raw) {
+                    $values["design.topbar_c$i.$loc"] = nl2br(e($raw), false);
+                } else {
+                    $values["design.topbar_c$i.$loc"] = Sanitizer::clean($raw);
+                }
+            }
+        }
+
+        Setting::putMany($values);
+        audit('settings.design');
+
+        return redirect(route('admin.settings').'#design')->with('status', 'Дизайнът е записан.');
+    }
+
+    public function resetDesign()
+    {
+        Setting::where('key', 'like', 'design.%')->delete();
+        \Illuminate\Support\Facades\Cache::forget('mcms.settings');
+        audit('settings.design.reset');
+
+        return redirect(route('admin.settings').'#design')->with('status', 'Дизайнът е върнат към подразбиращите се стойности.');
     }
 
     public function testMail(Request $request)

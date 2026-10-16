@@ -86,6 +86,7 @@ Views и всички слоеве ползват  ──►  app/helpers.php (t
 | Клас | Зависи от |
 |---|---|
 | `Sanitizer` | само PHP (DOM) — без Laravel; тества се отделно |
+| `Design` | само PHP (+ `setting()`); генерира CSS за `/design.css` |
 | `Totp` | само PHP |
 | `EnvWriter` | само PHP |
 | `Hooks` | само PHP |

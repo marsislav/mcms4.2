@@ -7,8 +7,14 @@ require __DIR__.'/../app/Support/Sanitizer.php';
 require __DIR__.'/../app/Support/Totp.php';
 require __DIR__.'/../app/Support/EnvWriter.php';
 require __DIR__.'/../app/Support/Taxonomy.php';
+require __DIR__.'/../app/Support/Design.php';
 
-use App\Support\{Sanitizer, Totp, EnvWriter, Taxonomy};
+use App\Support\{Sanitizer, Totp, EnvWriter, Taxonomy, Design};
+
+// tiny stand-ins for the Laravel helpers Design uses
+$GLOBALS['S'] = [];
+function setting(string $k, $d = null) { return $GLOBALS['S'][$k] ?? $d; }
+function setting_l(string $k, $d = null) { return $GLOBALS['S'][$k.'.bg'] ?? $d; }
 
 $fail = 0;
 $check = function (string $name, bool $ok) use (&$fail) {
@@ -46,6 +52,8 @@ $check('oembed foreign host dropped', ! str_contains($clean('<oembed url="https:
 $check('oembed renders nocookie iframe', str_contains(Sanitizer::renderEmbeds('<oembed url="https://youtu.be/dQw4w9WgXcQ"></oembed>'), 'youtube-nocookie.com/embed/dQw4w9WgXcQ'));
 $check('oembed vimeo renders player', str_contains(Sanitizer::renderEmbeds('<oembed url="https://vimeo.com/123456789"></oembed>'), 'player.vimeo.com/video/123456789'));
 $check('grid classes kept', str_contains($clean('<div class="mc-row mc-cols-3"><div class="mc-col mc-span-2"><p>a</p></div></div>'), '<div class="mc-row mc-cols-3"><div class="mc-col mc-span-2"><p>a</p></div></div>'));
+$check('font awesome span kept', $clean('<p><span class="fa-solid fa-house" aria-hidden="true"></span></p>') === '<p><span class="fa-solid fa-house" aria-hidden="true"></span></p>');
+$check('aria-hidden only "true"', ! str_contains($clean('<span aria-hidden="x">a</span>'), 'aria-hidden'));
 $check('mark/colgroup allowed', str_contains($clean('<p><mark class="marker-yellow">a</mark></p>'), '<mark class="marker-yellow">'));
 $check('drops <style> element', ! str_contains($clean('<style>*{}</style><p>a</p>'), 'style'));
 $check('drops <form>', ! str_contains($clean('<form action="/x"><input></form>'), 'form'));
@@ -79,6 +87,47 @@ $check('removes null keys', ! str_contains($env, 'A=1'));
 try { EnvWriter::set($f, ['X' => "a\nb"]); $check('rejects newline injection', false); } catch (InvalidArgumentException) { $check('rejects newline injection', true); }
 try { EnvWriter::set($f, ['bad key' => 'x']); $check('rejects invalid key', false); } catch (InvalidArgumentException) { $check('rejects invalid key', true); }
 unlink($f);
+
+echo "Design\n";
+$css = fn (array $s) => (function () use ($s) { $GLOBALS['S'] = $s; return Design::css(); })();
+$check('defaults add no colour rules', ! str_contains($css([]), '--bg:'));
+$o = $css(['design.bg' => '#ffffff']);
+$check('bg only -> dark text picked', str_contains($o, '--bg:#ffffff;--fg:#231f1a') && str_contains($o, 'color-scheme:light'));
+$o = $css(['design.bg' => '#101010']);
+$check('dark bg -> light text', str_contains($o, '--fg:#f0ebe3') && str_contains($o, 'color-scheme:dark'));
+$o = $css(['design.fg' => '#f0f0f0']);
+$check('light text only -> dark bg', str_contains($o, '--bg:#171513'));
+$check('3-digit hex normalised', str_contains($css(['design.accent' => '#f00']), '--accent:#ff0000'));
+$check('accent text contrast (red -> white)', str_contains($css(['design.accent' => '#b4472b']), '--accent-fg:#ffffff'));
+$check('accent text contrast (yellow -> dark)', str_contains($css(['design.accent' => '#ffee00']), '--accent-fg:#111111'));
+$bad = $css(['design.bg' => 'red;}body{display:none', 'design.heading' => 'url(x)', 'design.font_body' => 'x;}*{}']);
+$check('invalid colours / fonts ignored (no CSS injection)', ! str_contains($bad, 'display:none') && ! str_contains($bad, 'url(') && ! str_contains($bad, '*{}'));
+$check('font stack applied', str_contains($css(['design.font_body' => 'mono']), '--sans:ui-monospace'));
+$check('logo size px', str_contains($css(['design.logo_size' => '80']), '.logo img{max-height:none;height:80px'));
+$check('logo auto -> nothing', ! str_contains($css(['design.logo_size' => 'auto']), '.logo img'));
+$check('logo out of range ignored', ! str_contains($css(['design.logo_size' => '9999']), '.logo img'));
+$check('sticky off', str_contains($css(['design.sticky_header' => '0']), '.site-header{position:static}'));
+$check('sticky on by default', ! str_contains($css([]), 'position:static'));
+$check('header bg scoped text colour', str_contains($css(['design.header_bg' => '#111111']), '.site-header{background:#111111;color:#f0ebe3'));
+$check('topbar hidden on mobile when off', str_contains($css(['design.topbar_mobile' => '0']), '.topbar{display:none}'));
+$GLOBALS['S'] = ['design.anim_page_type' => 'zoom'];
+$check('page anim on by default', Design::pageAnim() === 'zoom');
+$GLOBALS['S'] = ['design.anim_page_type' => 'zoom', 'design.anim_page_on' => '0'];
+$check('page anim can be stopped', Design::pageAnim() === 'none');
+$GLOBALS['S'] = ['design.anim_page_type' => 'evil'];
+$check('unknown anim type -> none', Design::pageAnim() === 'none');
+$GLOBALS['S'] = ['design.el_cards' => 'fade', 'design.el_logo' => 'zoom', 'design.el_menu' => 'bad'];
+$check('element anims: only valid active', Design::elementAnims() === ['logo' => 'zoom', 'cards' => 'fade'] || Design::elementAnims() === ['cards' => 'fade', 'logo' => 'zoom']);
+$GLOBALS['S'] = ['design.el_cards' => 'fade', 'design.anim_el_on' => '0'];
+$check('element anims master switch', Design::elementAnims() === []);
+$GLOBALS['S'] = ['design.topbar_on' => '1', 'design.topbar_cols' => '3', 'design.topbar_c1.bg' => 'Здравей'];
+$tb = Design::topbar();
+$check('topbar: 3 columns, first has text', count($tb) === 3 && $tb[0]['html'] === 'Здравей' && $tb[0]['align'] === 'left');
+$GLOBALS['S'] = ['design.topbar_on' => '1', 'design.topbar_cols' => '2'];
+$check('topbar: all empty -> not rendered', Design::topbar() === []);
+$GLOBALS['S'] = ['design.topbar_cols' => '2', 'design.topbar_c1.bg' => 'x'];
+$check('topbar off -> not rendered', Design::topbar() === []);
+$check('fa icon allowed in topbar html', str_contains($clean('<span class="fa-solid fa-phone" aria-hidden="true"></span> <a href="tel:+359888000000">0888</a>'), 'fa-phone'));
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

@@ -36,6 +36,7 @@ class Sanitizer
         'ol' => ['start'],
         'iframe' => ['src', 'width', 'height', 'title', 'allowfullscreen', 'loading'],
         'oembed' => ['url'],
+        'span' => ['aria-hidden'],
     ];
 
     /** CSS properties the rich-text editor may emit (value rules in cleanStyle()). */
@@ -166,6 +167,7 @@ class Sanitizer
                 'class' => (bool) preg_match('/^[A-Za-z0-9_\- ]{1,100}$/', $value),
                 'width', 'height', 'colspan', 'rowspan', 'start' => (bool) preg_match('/^\d{1,4}$/', $value),
                 'target' => $value === '_blank',
+                'aria-hidden' => $value === 'true',
                 'url' => $this->parseEmbed($value) !== null,
                 'loading' => in_array($value, ['lazy', 'eager'], true),
                 'scope' => in_array($value, ['row', 'col', 'rowgroup', 'colgroup'], true),
