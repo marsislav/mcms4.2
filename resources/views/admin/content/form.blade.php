@@ -83,6 +83,23 @@
                 <button class="btn primary block">{{ $exists ? 'Запази промените' : 'Създай' }}</button>
             </section>
 
+            @if(\App\Support\Discussion::ready())
+            <section class="card">
+                <h3>Дискусия</h3>
+                @php($co = old('comments_open', $content->comments_open === null ? '' : ($content->comments_open ? '1' : '0')))
+                <label>Коментари
+                    <select name="comments_open">
+                        <option value="" @selected($co === '')>По подразбиране ({{ \App\Support\Discussion::on($isPost ? 'on_posts' : 'on_pages') ? 'отворени' : 'затворени' }})</option>
+                        <option value="1" @selected($co === '1')>Отворени</option>
+                        <option value="0" @selected($co === '0')>Затворени</option>
+                    </select>
+                </label>
+                @if($exists && ($n = \App\Models\Comment::where('content_id', $content->id)->whereIn('status', ['approved', 'pending'])->count()))
+                    <a href="{{ route('admin.comments.index', ['content' => $content->id]) }}">Коментари: {{ $n }}</a>
+                @endif
+            </section>
+            @endif
+
             @if($isPost)
             <section class="card">
                 <h3>Категория</h3>

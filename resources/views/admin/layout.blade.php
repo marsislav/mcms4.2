@@ -15,6 +15,7 @@
 @php
     $me = auth()->user();
     $unread = $me->allows('messages') ? \App\Models\Message::whereNull('read_at')->count() : 0;
+    $pendingComments = ($me->allows('comments') && \App\Support\Discussion::ready()) ? \App\Models\Comment::where('status', 'pending')->count() : 0;
     $nav = [
         ['admin.dashboard', 'Табло', null, null],
         ['—', 'Съдържание'],
@@ -24,6 +25,7 @@
         ['admin.tags.index', 'Тагове', 'categories', null],
         ['admin.media.index', 'Медия', 'media', null],
         ['admin.menus.index', 'Менюта', 'menus', null],
+        ['admin.comments.index', 'Коментари', 'comments', $pendingComments],
         ['admin.messages.index', 'Съобщения', 'messages', $unread],
         ['—', 'Сайт'],
         ['admin.translations.index', 'Преводи', 'translations', null],

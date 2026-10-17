@@ -16,7 +16,7 @@ return [
 
     // Slugs that can never be used by content (they are real routes)
     'reserved_slugs' => [
-        'blog', 'search', 'contact', 'install', 'sitemap', 'robots', 'feed', 'uploads',
+        'blog', 'search', 'contact', 'comment', 'install', 'sitemap', 'robots', 'feed', 'uploads',
         'assets', 'storage', 'vendor', 'up', 'admin', 'panel', 'login', 'logout', 'api',
         'app', 'config', 'database', 'resources', 'routes', 'plugins', 'lang', 'bootstrap', 'tests', 'public',
     ],
@@ -24,7 +24,7 @@ return [
     // Role => permissions ('*' = everything)
     'roles' => [
         'admin' => ['*'],
-        'editor' => ['content', 'content.all', 'categories', 'media', 'menus', 'messages', 'redirects', 'translations'],
+        'editor' => ['content', 'content.all', 'categories', 'media', 'menus', 'messages', 'comments', 'redirects', 'translations'],
         'author' => ['content', 'media'],
     ],
 

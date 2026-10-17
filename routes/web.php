@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Http\Request;
@@ -83,6 +84,15 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::put('{menu}', [Admin\MenuController::class, 'update'])->whereNumber('menu')->name('update');
         });
 
+        Route::middleware('admin:comments')->prefix('comments')->name('comments.')->group(function () {
+            Route::get('/', [Admin\CommentController::class, 'index'])->name('index');
+            Route::post('bulk', [Admin\CommentController::class, 'bulk'])->name('bulk');
+            Route::post('empty', [Admin\CommentController::class, 'emptyTrash'])->name('empty');
+            Route::get('{comment}', [Admin\CommentController::class, 'edit'])->whereNumber('comment')->name('edit');
+            Route::put('{comment}', [Admin\CommentController::class, 'update'])->whereNumber('comment')->name('update');
+            Route::post('{comment}/reply', [Admin\CommentController::class, 'reply'])->whereNumber('comment')->name('reply');
+        });
+
         Route::middleware('admin:messages')->prefix('messages')->name('messages.')->group(function () {
             Route::get('/', [Admin\MessageController::class, 'index'])->name('index');
             Route::get('{message}', [Admin\MessageController::class, 'show'])->whereNumber('message')->name('show');
@@ -120,6 +130,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
         Route::middleware('admin:settings')->group(function () {
             Route::get('settings', [Admin\SettingController::class, 'edit'])->name('settings');
             Route::put('settings', [Admin\SettingController::class, 'update'])->name('settings.update');
+            Route::put('settings/discussion', [Admin\SettingController::class, 'updateDiscussion'])->name('settings.discussion');
             Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
             Route::post('settings/design/reset', [Admin\SettingController::class, 'resetDesign'])->name('settings.design-reset');
             Route::post('settings/test-mail', [Admin\SettingController::class, 'testMail'])->name('settings.mail-test');
@@ -157,6 +168,7 @@ $public = function () {
     Route::get('blog/{slug}', [SiteController::class, 'post'])->name('post');
     Route::get('search', [SiteController::class, 'search'])->middleware('throttle:30,1')->name('search');
     Route::get('contact', [SiteController::class, 'contactForm'])->name('contact');
+    Route::post('comment', [CommentController::class, 'store'])->middleware('throttle:20,1')->name('comment');
     Route::post('contact', [SiteController::class, 'contactSend'])->middleware('throttle:10,1')->name('contact.send');
     Route::get('{slug}', [SiteController::class, 'page'])->where('slug', '[a-z0-9\-]+')->name('page');
 };

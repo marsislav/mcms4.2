@@ -23,5 +23,8 @@ Artisan::command('mcms:purge-trash {days=30}', function (int $days) {
     $n = 0;
     foreach (\App\Models\Content::onlyTrashed()->where('deleted_at', '<', $cut)->get() as $c) { $c->forceDelete(); $n++; }
     foreach (\App\Models\Category::onlyTrashed()->where('deleted_at', '<', $cut)->get() as $c) { $c->forceDelete(); $n++; }
+    if (\App\Support\Discussion::ready()) {
+        $n += \App\Models\Comment::whereIn('status', ['trash', 'spam'])->where('updated_at', '<', $cut)->delete();
+    }
     $this->info("Permanently deleted $n item(s) trashed more than $days days ago.");
 })->purpose('Permanently delete pages/posts/categories that have been in the trash for N days (default 30)');

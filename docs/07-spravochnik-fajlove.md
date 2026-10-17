@@ -56,6 +56,8 @@
 | `Admin/LanguageController` | Езици |
 | `Admin/TranslationController` | Преводи на интерфейса |
 | `Admin/MessageController` | Съобщения от контактната форма |
+| `Admin/CommentController` | Модерация на коментари (одобри, спам, кошче, отговор, редакция) |
+| `CommentController` | Приема коментар от публичната форма (защити, правила, известия) |
 | `Admin/UserController` | Потребители |
 | `Admin/SettingController` | Настройки (лого, поща, сигурност…) |
 | `Admin/RedirectController` | Пренасочвания |
@@ -89,6 +91,7 @@
 | `ContentSaver` | Запис на страница/публикация с преводи и версии |
 | `Installer` | Начални данни |
 | `EnvWriter` | Безопасно пише в `.env` |
+| `Discussion` | Коментари: правила за модерация, затваряне, нишки, форматиране на текста |
 | `Taxonomy` | Тагове и свързани публикации: разбор, запис, алгоритъм за „свързани“ |
 | `Hooks` | Хукове за плъгини |
 | `PluginManager` | Намира и зарежда плъгини |

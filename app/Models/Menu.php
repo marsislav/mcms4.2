@@ -19,7 +19,7 @@ class Menu extends Model
      * Render-ready tree for a location in the given locale.
      * Items pointing to missing/hidden content are skipped.
      *
-     * @return array<int, array{label:string,url:string,new_tab:bool,children:array}>
+     * @return array<int, array{label:string,url:string,new_tab:bool,css_class:?string,css_id:?string,children:array}>
      */
     public static function tree(string $location, ?string $locale = null): array
     {

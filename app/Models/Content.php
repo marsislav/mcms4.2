@@ -11,18 +11,24 @@ class Content extends Model
 
     protected $fillable = [
         'type', 'status', 'publish_at', 'category_id', 'featured_media_id',
-        'is_home', 'noindex', 'sort', 'author_id',
+        'is_home', 'noindex', 'sort', 'author_id', 'comments_open',
     ];
 
     protected $casts = [
         'publish_at' => 'datetime',
         'is_home' => 'boolean',
         'noindex' => 'boolean',
+        'comments_open' => 'boolean', // NULL = site default
     ];
 
     public function translations()
     {
         return $this->hasMany(ContentTranslation::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
     }
 
     public function tags()

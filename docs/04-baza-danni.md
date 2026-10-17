@@ -21,6 +21,7 @@ languages        (кои езици има)
 translations     (преводи на интерфейса: ключ + език → текст)
 settings         (настройки: ключ → стойност)
 messages         (съобщения от контактната форма)
+comments         (коментари под публикации и страници)
 redirects        (пренасочвания)
 audit_logs       (журнал на действията)
 ```
@@ -109,6 +110,9 @@ audit_logs       (журнал на действията)
 
 ### `messages`
 Съобщения от контактната форма: `name`, `email`, `subject`, `body`, `ip`, `locale`, `read_at`.
+
+### `comments`
+Коментари: `content_id` (към коя страница/публикация), `parent_id` (отговор на друг коментар), `author_name`, `author_email`, `author_url`, `author_ip`, `user_agent`, `body` (чист текст), `status` (`pending` чака, `approved` одобрен, `spam`, `trash`), `user_id` (когато го е писал член на екипа). Колоната `contents.comments_open` е отмяна за отделна страница: `NULL` = по подразбиране от Настройки, `1` = отворени, `0` = затворени.
 
 ### `redirects`
 `from_path` → `to_url` с код 301/302 и брояч `hits`. Прилагат се само когато адресът иначе би дал 404.

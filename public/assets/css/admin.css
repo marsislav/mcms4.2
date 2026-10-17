@@ -210,3 +210,8 @@ button.chip:hover{border-color:var(--accent,#2a6df4)}
 .picker-msg.bad{color:var(--danger)}
 .modal-box.drop,.media-field.drop{outline:3px dashed var(--accent);outline-offset:-6px}
 .modal-head .picker-upload{flex:none}
+
+/* comments */
+.comments-table td{vertical-align:top}
+.comments-table tr.unread td{background:color-mix(in srgb,var(--warn,#e0a84a) 12%,transparent);font-weight:400}
+.comments-table .row-actions{margin-top:.3rem;font-size:.85rem}

@@ -11,4 +11,8 @@
     @endif
     <div class="prose">{!! mcms_body($tr->body, $content) !!}</div>
 </article>
+
+@if(\App\Support\Discussion::visible($content))
+    @include('site.partials.comments', ['content' => $content])
+@endif
 @endsection

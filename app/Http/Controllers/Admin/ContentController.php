@@ -223,6 +223,7 @@ class ContentController extends Controller
             'sort' => 'nullable|integer|min:0|max:100000',
             'is_home' => 'nullable|boolean',
             'noindex' => 'nullable|boolean',
+            'comments_open' => 'nullable|in:0,1',
             'tr' => 'required|array',
             'tr.*.title' => 'nullable|string|max:190',
             'tr.*.slug' => 'nullable|string|max:150',
@@ -232,6 +233,12 @@ class ContentController extends Controller
             'tr.*.meta_description' => 'nullable|string|max:300',
         ]);
         unset($data['tr']);
+        // per-content comment override: '' = site default (NULL). Column exists only after the database update.
+        if (\App\Support\Discussion::ready()) {
+            $data['comments_open'] = ($data['comments_open'] ?? '') === '' ? null : (bool) (int) $data['comments_open'];
+        } else {
+            unset($data['comments_open']);
+        }
 
         return $data;
     }

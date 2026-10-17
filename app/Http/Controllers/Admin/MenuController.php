@@ -20,6 +20,7 @@ class MenuController extends Controller
     public function edit(Menu $menu)
     {
         return view('admin.menus.edit', [
+            'extras' => MenuItem::hasExtras(),
             'menu' => $menu,
             'items' => $menu->items()->get(),
             'contents' => Content::with('translations')->orderBy('type')->orderBy('id')->get(),
@@ -40,7 +41,27 @@ class MenuController extends Controller
             'items.*.url' => 'nullable|string|max:500',
             'items.*.labels' => 'nullable|array',
             'items.*.labels.*' => 'nullable|string|max:120',
+            'items.*.css_class' => ['nullable', 'string', 'max:200', 'regex:/^\s*([A-Za-z_][A-Za-z0-9_\-]*(\s+|\s*$))*$/'],
+            'items.*.css_id' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z][A-Za-z0-9_\-:.]*$/'],
+        ], [
+            'items.*.css_class.regex' => 'CSS клас: само букви, цифри, „-“ и „_“, разделени с интервал (не започва с цифра).',
+            'items.*.css_id.regex' => 'CSS ID: започва с буква; само букви, цифри, „-“, „_“, „:“ и „.“ (без интервали).',
         ]);
+
+        // each ID may be used only once in the menu (and the page must not get duplicate ids)
+        if (MenuItem::hasExtras()) {
+            $ids = [];
+            foreach ($request->input('items', []) as $key => $row) {
+                if (! empty($row['delete']) || empty($row['css_id'])) {
+                    continue;
+                }
+                $id = trim((string) $row['css_id']);
+                if (isset($ids[$id])) {
+                    throw ValidationException::withMessages(["items.$key.css_id" => "CSS ID „{$id}“ се повтаря."]);
+                }
+                $ids[$id] = true;
+            }
+        }
 
         $valid = array_flip(mcms_locales());
 
@@ -86,6 +107,11 @@ class MenuController extends Controller
                     'menu_id' => $menu->id, 'type' => $type, 'content_id' => $contentId, 'url' => $url,
                     'labels' => $labels ?: null, 'sort' => (int) ($row['sort'] ?? 0), 'new_tab' => ! empty($row['new_tab']), 'parent_id' => null,
                 ];
+
+                if (MenuItem::hasExtras()) {
+                    $payload['css_class'] = MenuItem::cleanClass($row['css_class'] ?? null);
+                    $payload['css_id'] = MenuItem::cleanId($row['css_id'] ?? null);
+                }
 
                 $id = (int) ($row['id'] ?? 0);
                 if ($id && in_array($id, $existingIds, true)) {

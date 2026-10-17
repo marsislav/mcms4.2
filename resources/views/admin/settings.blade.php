@@ -10,6 +10,7 @@
 <div class="tabs" data-stabs role="tablist">
     <button type="button" class="active" data-stab="general" role="tab">Общи</button>
     <button type="button" data-stab="design" role="tab">Дизайн</button>
+    <button type="button" data-stab="discussion" role="tab">Дискусии</button>
 </div>
 
 <div data-spanel="general">
@@ -90,5 +91,9 @@
 
 <div data-spanel="design">
     @include('admin.partials.design-form')
+</div>
+
+<div data-spanel="discussion">
+    @include('admin.partials.discussion-form')
 </div>
 @endsection

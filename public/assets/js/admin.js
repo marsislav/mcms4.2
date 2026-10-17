@@ -12,6 +12,17 @@
     if (msg && !window.confirm(msg)) { e.preventDefault(); }
   });
 
+  /* ---- confirm on a single button (data-confirm-btn) and "select all" checkboxes (data-check-all) ---- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-confirm-btn]');
+    if (b && !window.confirm(b.getAttribute('data-confirm-btn'))) { e.preventDefault(); }
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target.matches || !e.target.matches('[data-check-all]')) { return; }
+    var table = e.target.closest('table');
+    $$('tbody input[type=checkbox]', table).forEach(function (c) { c.checked = e.target.checked; });
+  });
+
   /* ---- language tabs ---- */
   $$('[data-tabs]').forEach(function (bar) {
     var panels = $$('[data-panel]');
@@ -35,9 +46,9 @@
       var btn = e.target.closest('[data-stab]');
       if (!btn) { return; }
       show(btn.getAttribute('data-stab'));
-      try { history.replaceState(null, '', btn.getAttribute('data-stab') === 'design' ? '#design' : location.pathname + location.search); } catch (x) { /* ignore */ }
+      try { var tabName = btn.getAttribute('data-stab'); history.replaceState(null, '', tabName === 'general' ? location.pathname + location.search : '#' + tabName); } catch (x) { /* ignore */ }
     });
-    show(location.hash === '#design' ? 'design' : 'general');
+    show(['#design', '#discussion'].indexOf(location.hash) !== -1 ? location.hash.slice(1) : 'general');
   });
 
   /* ---- colour fields: picker <-> hex text, empty = theme default ---- */

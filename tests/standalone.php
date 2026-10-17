@@ -7,8 +7,9 @@ require __DIR__.'/../app/Support/Sanitizer.php';
 require __DIR__.'/../app/Support/EnvWriter.php';
 require __DIR__.'/../app/Support/Taxonomy.php';
 require __DIR__.'/../app/Support/Design.php';
+require __DIR__.'/../app/Support/Discussion.php';
 
-use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design};
+use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -117,6 +118,44 @@ $check('topbar: all empty -> not rendered', Design::topbar() === []);
 $GLOBALS['S'] = ['design.topbar_cols' => '2', 'design.topbar_c1.bg' => 'x'];
 $check('topbar off -> not rendered', Design::topbar() === []);
 $check('fa icon allowed in topbar html', str_contains($clean('<span class="fa-solid fa-phone" aria-hidden="true"></span> <a href="tel:+359888000000">0888</a>'), 'fa-phone'));
+
+echo "Discussion (comments)\n";
+$cfg = Discussion::DEFAULTS;
+$cm = fn (string $body = 'Здравей!', array $o = []) => $o + ['author' => 'Иван', 'email' => 'i@example.com', 'url' => '', 'body' => $body, 'ip' => '203.0.113.5'];
+$check('first-time commenter is held (previously_approved)', Discussion::decide($cm(), $cfg, false) === 'pending');
+$check('returning commenter is approved', Discussion::decide($cm(), $cfg, true) === 'approved');
+$check('logged-in team member always approved', Discussion::decide($cm('http://a.bg http://b.bg http://c.bg'), $cfg, false, true) === 'approved');
+$check('2 links -> held', Discussion::decide($cm('виж http://a.bg и https://b.bg'), $cfg, true) === 'pending');
+$check('1 link -> approved', Discussion::decide($cm('виж http://a.bg'), $cfg, true) === 'approved');
+$check('max_links=0 disables the link rule', Discussion::decide($cm('http://a http://b http://c'), ['max_links' => '0'] + $cfg, true) === 'approved');
+$check('moderation_all holds everything', Discussion::decide($cm(), ['moderation_all' => '1'] + $cfg, true) === 'pending');
+$check('moderation keyword (case-insens., any field)', Discussion::decide($cm('купи ВИАГРА'), ['moderation_keys' => "casino\nвиагра"] + $cfg, true) === 'pending');
+$check('disallowed keyword -> spam', Discussion::decide($cm('best casino'), ['disallowed_keys' => 'casino'] + $cfg, true) === 'spam');
+$check('disallowed IP -> spam', Discussion::decide($cm(), ['disallowed_keys' => '203.0.113.'] + $cfg, true) === 'spam');
+$check('blank lines in keyword list ignored', Discussion::decide($cm(), ['moderation_keys' => "\n\n  \n"] + $cfg, true) === 'approved');
+$check('spam beats trusted? no - team is trusted first', Discussion::decide($cm('casino'), ['disallowed_keys' => 'casino'] + $cfg, true, true) === 'approved');
+$check('countLinks', Discussion::countLinks('a http://x.bg b www.y.bg <a href="z">') === 3);
+$f = Discussion::format("<script>alert(1)</script>\nвиж https://example.com/a?b=1&c=2.");
+$check('format escapes HTML', ! str_contains($f, '<script') && str_contains($f, '&lt;script&gt;'));
+$check('format keeps line breaks', str_contains($f, '<br>'));
+$check('format links URL with nofollow ugc', str_contains($f, '<a href="https://example.com/a?b=1&amp;c=2" rel="nofollow ugc noopener noreferrer" target="_blank">'));
+$check('format keeps trailing dot outside the link', str_contains($f, '</a>.'));
+$check('format blocks javascript: (no link made)', ! str_contains(Discussion::format('javascript:alert(1)'), '<a '));
+$check('format escapes quote in URL', ! str_contains(Discussion::format('http://a.bg/"onmouseover="x'), 'onmouseover="x"'));
+$rows = [
+  ['id' => 1, 'parent_id' => null], ['id' => 2, 'parent_id' => 1], ['id' => 3, 'parent_id' => 2],
+  ['id' => 4, 'parent_id' => 3], ['id' => 5, 'parent_id' => null], ['id' => 6, 'parent_id' => 99],
+];
+$tr = Discussion::tree($rows, true, 3);
+$flat = function (array $nodes) use (&$flat) { $o = []; foreach ($nodes as $n) { $o[] = $n['c']['id'].'@'.$n['depth']; $o = array_merge($o, $flat($n['children'])); } return $o; };
+$check('tree: nesting + depth limit flattens #4 to level 3', $flat($tr) === ['1@1', '2@2', '3@3', '4@3', '5@1', '6@1']);
+$check('tree: orphan (missing parent) shown at top level', in_array('6@1', $flat($tr), true));
+$check('tree: threading off -> everything top level', $flat(Discussion::tree($rows, false, 3)) === ['1@1', '2@1', '3@1', '4@1', '5@1', '6@1']);
+$check('depthOf', Discussion::depthOf(4, [2 => 1, 3 => 2, 4 => 3]) === 4);
+$GLOBALS['S'] = ['discussion.show_avatars' => '0'];
+$check('avatar off -> null (no external request)', Discussion::avatar('a@b.c') === null);
+$GLOBALS['S'] = ['discussion.show_avatars' => '1'];
+$check('avatar on -> gravatar md5', str_contains((string) Discussion::avatar(' A@B.c '), md5('a@b.c')));
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

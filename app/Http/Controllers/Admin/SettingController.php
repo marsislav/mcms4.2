@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use App\Models\Setting;
 use App\Support\Design;
+use App\Support\Discussion;
 use App\Support\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -20,6 +21,7 @@ class SettingController extends Controller
             'logo' => ($id = setting('logo_media_id')) ? Media::find($id) : null,
             'favicon' => ($id = setting('favicon_media_id')) ? Media::find($id) : null,
             'design' => Design::all(),
+            'discussion' => Discussion::all(),
             'ogImage' => ($id = setting('og_media_id')) ? Media::find($id) : null,
         ]);
     }
@@ -83,6 +85,36 @@ class SettingController extends Controller
         audit('settings.update', null, ['maintenance' => $values['maintenance_mode']]);
 
         return back()->with('status', 'Настройките са записани.');
+    }
+
+    public function updateDiscussion(Request $request)
+    {
+        $request->validate([
+            'close_after_days' => 'required|integer|min:0|max:3650',
+            'thread_depth' => 'required|integer|min:2|max:5',
+            'per_page' => 'required|integer|min:0|max:200',
+            'order' => 'required|in:asc,desc',
+            'max_links' => 'required|integer|min:0|max:20',
+            'flood_seconds' => 'required|integer|min:0|max:3600',
+            'moderation_keys' => 'nullable|string|max:5000',
+            'disallowed_keys' => 'nullable|string|max:5000',
+        ]);
+
+        $values = [];
+        foreach (Discussion::DEFAULTS as $k => $_) {
+            if (in_array($k, Discussion::BOOL_KEYS, true)) {
+                $values["discussion.$k"] = $request->boolean($k) ? '1' : '0';
+            } elseif (in_array($k, ['moderation_keys', 'disallowed_keys'], true)) {
+                $lines = array_filter(array_map('trim', preg_split('/\R/u', strip_tags((string) $request->input($k, ''))) ?: []));
+                $values["discussion.$k"] = $lines ? implode("\n", array_unique($lines)) : null;
+            } else {
+                $values["discussion.$k"] = (string) $request->input($k, Discussion::DEFAULTS[$k]);
+            }
+        }
+        Setting::putMany($values);
+        audit('settings.discussion', null, ['enabled' => $values['discussion.enabled']]);
+
+        return redirect(route('admin.settings').'#discussion')->with('status', 'Настройките за дискусии са записани.');
     }
 
     public function updateDesign(Request $request)

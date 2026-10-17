@@ -186,3 +186,25 @@ html.anim-off [data-rv]{opacity:1;transform:none}
   .main{animation:none!important}
   [data-rv]{opacity:1!important;transform:none!important;transition:none!important}
 }
+
+/* ---- comments (Settings > Дискусии) ---- */
+.comments{max-width:var(--read);margin:3.5rem auto 0;padding-top:2rem;border-top:1px solid var(--line)}
+.comments h2{font-size:1.5rem}
+.comment-list,.comment-list .children{list-style:none;margin:0;padding:0}
+.comment-list .children{margin-left:1.4rem;padding-left:1.1rem;border-left:2px solid var(--line)}
+.comment{margin:1.4rem 0}
+.comment>article{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.2rem}
+.comment-head{display:flex;gap:.8rem;align-items:center;margin-bottom:.5rem}
+.comment-head>div{display:flex;flex-wrap:wrap;gap:.1rem .7rem;align-items:baseline}
+.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none}
+.avatar.initial{display:grid;place-items:center;background:var(--accent);color:var(--accent-fg);font:700 1rem var(--sans)}
+.comment-author a{color:inherit}
+.comment-date{font-size:.82rem;text-decoration:none}
+.badge-staff{font:700 .65rem var(--sans);text-transform:uppercase;letter-spacing:.08em;background:var(--accent);color:var(--accent-fg);border-radius:99px;padding:.1rem .5rem}
+.comment-body{overflow-wrap:anywhere}
+.comment-reply{margin:.5rem 0 0;font-size:.9rem;font-weight:600}
+.comment:target>article{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.respond{margin-top:2.5rem}
+.respond h3 small{font-weight:400;margin-left:.6rem}
+.comment-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));gap:0 1rem}
+@media (max-width:600px){.comment-list .children{margin-left:.5rem;padding-left:.6rem}}

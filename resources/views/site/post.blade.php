@@ -8,7 +8,7 @@
             <a class="kicker" href="{{ $ct->url() }}">{{ $ct->name }}</a>
         @endif
         <h1>{{ $tr->title }}</h1>
-        <p class="meta"><time datetime="{{ ($content->publish_at ?? $content->created_at)->toAtomString() }}">{{ ($content->publish_at ?? $content->created_at)->translatedFormat('j F Y') }}</time></p>
+        <p class="meta"><time datetime="{{ ($content->publish_at ?? $content->created_at)->toAtomString() }}">{{ ($content->publish_at ?? $content->created_at)->translatedFormat('j F Y') }}</time>@if(\App\Support\Discussion::enabled() && ($cn = \App\Support\Discussion::approvedCount($content))) · <a href="#comments">{{ t('comments.n', 'Коментари: :n', ['n' => $cn]) }}</a>@endif</p>
     </header>
     @if($content->featured)
         <img class="hero" src="{{ $content->featured->url() }}" alt="{{ $content->featured->alt ?: $tr->title }}" @if($content->featured->width) width="{{ $content->featured->width }}" height="{{ $content->featured->height }}" @endif>
@@ -22,6 +22,10 @@
     </ul>
     @endif
 </article>
+
+@if(\App\Support\Discussion::visible($content))
+    @include('site.partials.comments', ['content' => $content])
+@endif
 
 @if($related->isNotEmpty())
 <section class="related">

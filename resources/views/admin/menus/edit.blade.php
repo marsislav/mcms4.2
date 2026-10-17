@@ -15,11 +15,14 @@
 
 <form method="post" action="{{ route('admin.menus.update', $menu) }}">
     @csrf @method('PUT')
+    @unless($extras)
+        <div class="flash err">Полетата „CSS клас“ и „ID“ изискват обновяване на базата — натиснете „Обнови базата“ на Таблото (или изпълнете <code>database/upgrade/4.2-upgrade.sql</code>).</div>
+    @endunless
     <p class="muted">Максимум 2 нива. Елементи към несъществуващо/непубликувано съдържание не се показват. Оставете етикета празен за автоматичен.</p>
 
     <div class="table-wrap">
     <table class="table menu-table">
-        <thead><tr><th>Тип</th><th>Цел</th><th>Етикети</th><th>Родител</th><th>№</th><th>Нов прозорец</th><th>Изтрий</th></tr></thead>
+        <thead><tr><th>Тип</th><th>Цел</th><th>Етикети</th>@if($extras)<th>CSS клас / ID</th>@endif<th>Родител</th><th>№</th><th>Нов прозорец</th><th>Изтрий</th></tr></thead>
         <tbody>
         @foreach ($rows as $k => $item)
             <tr>
@@ -47,6 +50,12 @@
                         <input name="items[{{ $k }}][labels][{{ $lang->code }}]" placeholder="{{ strtoupper($lang->code) }}" maxlength="120" value="{{ $item->labels[$lang->code] ?? '' }}">
                     @endforeach
                 </td>
+                @if($extras)
+                <td>
+                    <input name="items[{{ $k }}][css_class]" placeholder="class (напр. btn highlight)" maxlength="200" value="{{ old("items.$k.css_class", $item->css_class) }}" pattern="[A-Za-z_][A-Za-z0-9_\-]*(\s+[A-Za-z_][A-Za-z0-9_\-]*)*" title="Букви, цифри, - и _, разделени с интервал">
+                    <input name="items[{{ $k }}][css_id]" placeholder="id (напр. menu-shop)" maxlength="80" value="{{ old("items.$k.css_id", $item->css_id) }}" pattern="[A-Za-z][A-Za-z0-9_\-:.]*" title="Започва с буква; без интервали">
+                </td>
+                @endif
                 <td>
                     <select name="items[{{ $k }}][parent_id]">
                         <option value="">—</option>
@@ -64,6 +73,7 @@
     </table>
     </div>
     <button class="btn primary">Запази менюто</button>
+    <p class="muted">CSS клас и ID се добавят към <code>&lt;li&gt;</code> на елемента (както в WordPress), напр. <code>#menu-shop &gt; a {…}</code> или <code>.highlight &gt; a {…}</code>. ID трябва да е уникален.</p>
     <p class="muted">Нужни още редове? Запазете и отворете страницата отново — добавят се два нови празни реда.</p>
 </form>
 @endsection

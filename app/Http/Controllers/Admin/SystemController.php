@@ -20,6 +20,8 @@ class SystemController extends Controller
         }
         Cache::forget('mcms.tags_ready');
         \App\Support\Trash::forget();
+        \App\Support\Discussion::forget();
+        Cache::forget('mcms.menu_extras');
         audit('system.migrate');
 
         return back()->with('status', 'Базата данни е обновена.');
