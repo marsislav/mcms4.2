@@ -8,8 +8,9 @@ require __DIR__.'/../app/Support/EnvWriter.php';
 require __DIR__.'/../app/Support/Taxonomy.php';
 require __DIR__.'/../app/Support/Design.php';
 require __DIR__.'/../app/Support/Discussion.php';
+require __DIR__.'/../app/Support/Widgets.php';
 
-use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion};
+use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -156,6 +157,22 @@ $GLOBALS['S'] = ['discussion.show_avatars' => '0'];
 $check('avatar off -> null (no external request)', Discussion::avatar('a@b.c') === null);
 $GLOBALS['S'] = ['discussion.show_avatars' => '1'];
 $check('avatar on -> gravatar md5', str_contains((string) Discussion::avatar(' A@B.c '), md5('a@b.c')));
+
+echo "Widgets\n";
+$L = ['bg', 'en'];
+$w = Widgets::clean(['type' => 'html', 'title' => ['bg' => ' <b>Hi</b> '], 'icon' => 'fa-solid fa-phone', 'class' => 'a b"><x', 'body' => ['bg' => '<p onclick="x()">T <span class="fa-solid fa-x" aria-hidden="true"></span></p><script>alert(1)</script>']], $L);
+$check('widget: html cleaned', $w && !str_contains($w['body']['bg'], 'script') && !str_contains($w['body']['bg'], 'onclick') && str_contains($w['body']['bg'], 'fa-solid fa-x'));
+$check('widget: title stripped', $w['title']['bg'] === 'Hi');
+$check('widget: icon ok', $w['icon'] === 'fa-solid fa-phone');
+$check('widget: bad class dropped', empty($w['class']));
+$check('widget: id 8 hex', (bool) preg_match('/^[a-f0-9]{8}$/', $w['id']));
+$check('widget: unknown type -> null', Widgets::clean(['type' => 'evil'], $L) === null);
+$check('widget: bad icon -> null', Widgets::clean(['type' => 'search', 'icon' => 'x" onload="y'], $L)['icon'] === null);
+$check('widget: count clamped', Widgets::clean(['type' => 'recent_posts', 'count' => 999], $L)['count'] === 20);
+$check('widget: tags style default', Widgets::clean(['type' => 'tags', 'style' => 'zzz'], $L)['style'] === 'cloud');
+$check('widget: menu slug sanitized', Widgets::clean(['type' => 'menu', 'menu' => '../x'], $L)['menu'] === 'footer');
+$check('widget: list limited', count(Widgets::cleanList(array_fill(0, 40, ['type' => 'search']), $L)) === Widgets::MAX_WIDGETS);
+$check('widget: inactive locale ignored', !isset(Widgets::clean(['type' => 'html', 'body' => ['de' => 'x']], $L)['body']['de']));
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

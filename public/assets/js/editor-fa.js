@@ -4,11 +4,7 @@
  * Defines window.McmsFontAwesome (used by editor.js). */
 (function () {
   'use strict';
-  var CK = window.CKEDITOR;
-  if (!CK) { return; }
-
-  var Plugin = CK.Plugin, Widget = CK.Widget, Command = CK.Command, ButtonView = CK.ButtonView;
-  var toWidget = CK.toWidget;
+  var CK = window.CKEDITOR || null; // without CKEditor only the picker (window.mcmsFaPicker) is defined
 
   // …/assets/js/editor-fa.js  ->  …/assets/vendor/fontawesome/icons.json
   var script = document.currentScript && document.currentScript.src;
@@ -110,6 +106,13 @@
       }
     };
   }
+
+  /* open the icon picker from anywhere: mcmsFaPicker(function (classes) {...}) */
+  window.mcmsFaPicker = openPicker;
+
+  if (!CK) { return; }
+  var Plugin = CK.Plugin, Widget = CK.Widget, Command = CK.Command, ButtonView = CK.ButtonView;
+  var toWidget = CK.toWidget;
 
   /* ---------------- command ---------------- */
   class InsertFaIconCommand extends Command {

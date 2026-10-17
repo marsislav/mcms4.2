@@ -7,6 +7,7 @@ use App\Models\Media;
 use App\Models\Setting;
 use App\Support\Design;
 use App\Support\Discussion;
+use App\Support\Widgets;
 use App\Support\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -22,6 +23,10 @@ class SettingController extends Controller
             'favicon' => ($id = setting('favicon_media_id')) ? Media::find($id) : null,
             'design' => Design::all(),
             'discussion' => Discussion::all(),
+            'footerCols' => Widgets::footerCols(),
+            'footerAll' => collect(range(1, Widgets::MAX_COLS))->mapWithKeys(fn ($c) => [$c => Widgets::decode(setting('widgets.footer.c'.$c))])->all(),
+            'sidebar' => Widgets::sidebar(),
+            'menus' => \App\Models\Menu::orderBy('id')->get(),
             'ogImage' => ($id = setting('og_media_id')) ? Media::find($id) : null,
         ]);
     }
@@ -85,6 +90,50 @@ class SettingController extends Controller
         audit('settings.update', null, ['maintenance' => $values['maintenance_mode']]);
 
         return back()->with('status', 'Настройките са записани.');
+    }
+
+    /** Footer: number of columns (0 = classic footer, 1-12) + widgets of each column. */
+    public function updateFooter(Request $request)
+    {
+        $data = $request->validate(['footer_cols' => 'required|integer|min:0|max:'.Widgets::MAX_COLS, 'cols' => 'nullable|array', 'seen' => 'nullable|array']);
+        $locales = mcms_locales();
+        $values = ['footer.cols' => (string) (int) $data['footer_cols']];
+
+        foreach ((array) $request->input('seen', []) as $c) {
+            $c = (int) $c;
+            if ($c < 1 || $c > Widgets::MAX_COLS) {
+                continue;
+            }
+            $list = Widgets::cleanList((array) $request->input("cols.$c", []), $locales);
+            $json = $list ? json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+            if ($json !== null && strlen($json) > Widgets::MAX_JSON) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["cols.$c" => "Колона $c е твърде голяма — съкратете текстовете."]);
+            }
+            $values["widgets.footer.c$c"] = $json;
+        }
+        Setting::putMany($values);
+        audit('settings.footer', null, ['cols' => $values['footer.cols']]);
+
+        return redirect(route('admin.settings').'#footer')->with('status', 'Футърът е записан.');
+    }
+
+    /** Blog sidebar: on/off, side and widgets. */
+    public function updateSidebar(Request $request)
+    {
+        $request->validate(['sidebar_side' => 'required|in:left,right', 'cols' => 'nullable|array']);
+        $list = Widgets::cleanList((array) $request->input('cols.0', []), mcms_locales());
+        $json = $list ? json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+        if ($json !== null && strlen($json) > Widgets::MAX_JSON) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['cols' => 'Сайдбарът е твърде голям — съкратете текстовете.']);
+        }
+        Setting::putMany([
+            'sidebar.on' => $request->boolean('sidebar_on') ? '1' : '0',
+            'sidebar.side' => $request->input('sidebar_side'),
+            'widgets.sidebar' => $json,
+        ]);
+        audit('settings.sidebar');
+
+        return redirect(route('admin.settings').'#sidebar')->with('status', 'Сайдбарът е записан.');
     }
 
     public function updateDiscussion(Request $request)

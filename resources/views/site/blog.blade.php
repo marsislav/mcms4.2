@@ -1,5 +1,7 @@
 @extends('site.layout')
 
+@section('has_sidebar', '1')
+
 @section('content')
 <header class="page-head">
     <h1>{{ $heading }}</h1>

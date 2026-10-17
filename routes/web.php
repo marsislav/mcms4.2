@@ -130,6 +130,8 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
         Route::middleware('admin:settings')->group(function () {
             Route::get('settings', [Admin\SettingController::class, 'edit'])->name('settings');
             Route::put('settings', [Admin\SettingController::class, 'update'])->name('settings.update');
+            Route::put('settings/footer', [Admin\SettingController::class, 'updateFooter'])->name('settings.footer');
+            Route::put('settings/sidebar', [Admin\SettingController::class, 'updateSidebar'])->name('settings.sidebar');
             Route::put('settings/discussion', [Admin\SettingController::class, 'updateDiscussion'])->name('settings.discussion');
             Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
             Route::post('settings/design/reset', [Admin\SettingController::class, 'resetDesign'])->name('settings.design-reset');

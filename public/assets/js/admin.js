@@ -48,7 +48,9 @@
       show(btn.getAttribute('data-stab'));
       try { var tabName = btn.getAttribute('data-stab'); history.replaceState(null, '', tabName === 'general' ? location.pathname + location.search : '#' + tabName); } catch (x) { /* ignore */ }
     });
-    show(['#design', '#discussion'].indexOf(location.hash) !== -1 ? location.hash.slice(1) : 'general');
+    var names = $$('[data-stab]', bar).map(function (b) { return b.getAttribute('data-stab'); });
+    var fromHash = location.hash.slice(1);
+    show(names.indexOf(fromHash) !== -1 ? fromHash : 'general');
   });
 
   /* ---- colour fields: picker <-> hex text, empty = theme default ---- */
@@ -277,6 +279,86 @@
       input.value = '';
     });
   });
+
+
+  /* widgets repeater (Settings → Футър / Сайдбар) */
+  (function () {
+    var lists = $$('[data-widget-list]');
+    if (!lists.length) { return; }
+    var counter = 0;
+
+    function tpl(type) {
+      var t = document.querySelector('template[data-widget-tpl="' + type + '"]');
+      return t ? t.innerHTML : '';
+    }
+    function addTo(list, type) {
+      var html = tpl(type);
+      if (!html) { return; }
+      var col = list.getAttribute('data-col');
+      html = html.replace(/__C__/g, col).replace(/__I__/g, 'n' + Date.now().toString(36) + (counter++));
+      var tmp = document.createElement('div'); tmp.innerHTML = html.trim();
+      var card = tmp.firstElementChild;
+      if (card) { list.appendChild(card); card.scrollIntoView({ block: 'nearest' }); }
+    }
+    function syncTitle(card) {
+      var inp = card.querySelector('input[name*="[title]"]');
+      var span = card.querySelector('.wtitle');
+      if (inp && span) { span.textContent = inp.value; }
+    }
+
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      if (!t.closest) { return; }
+      var add = t.closest('[data-widget-add]');
+      if (add) {
+        var area = add.closest('[data-widget-area]');
+        addTo(area.querySelector('[data-widget-list]'), area.querySelector('[data-widget-type]').value);
+        return;
+      }
+      var card = t.closest('[data-widget]');
+      if (!card) { return; }
+      if (t.closest('[data-w-up]')) {
+        e.preventDefault(); var p = card.previousElementSibling; if (p) { card.parentNode.insertBefore(card, p); }
+      } else if (t.closest('[data-w-down]')) {
+        e.preventDefault(); var n = card.nextElementSibling; if (n) { card.parentNode.insertBefore(n, card); }
+      } else if (t.closest('[data-w-del]')) {
+        e.preventDefault();
+        if (window.confirm('Да се премахне ли този уиджет?')) { card.parentNode.removeChild(card); }
+      } else if (t.closest('[data-fa-pick]')) {
+        var mode = t.closest('[data-fa-pick]').getAttribute('data-fa-pick');
+        if (!window.mcmsFaPicker) { window.alert('Изборът на икони не е зареден (assets/js/editor-fa.js).'); return; }
+        window.mcmsFaPicker(function (cls) {
+          if (mode === 'icon') {
+            var inp = card.querySelector('[data-fa-input]'); if (inp) { inp.value = cls; }
+          } else {
+            var ta = card._lastBody || card.querySelector('[data-w-body]');
+            if (!ta) { return; }
+            var ins = '<span class="' + cls + '" aria-hidden="true"></span> ';
+            var s = ta.selectionStart == null ? ta.value.length : ta.selectionStart;
+            var en = ta.selectionEnd == null ? s : ta.selectionEnd;
+            ta.value = ta.value.slice(0, s) + ins + ta.value.slice(en);
+            ta.focus(); ta.selectionStart = ta.selectionEnd = s + ins.length;
+          }
+        });
+      }
+    });
+    document.addEventListener('focusin', function (e) {
+      var ta = e.target;
+      if (ta && ta.matches && ta.matches('[data-w-body]')) { var c = ta.closest('[data-widget]'); if (c) { c._lastBody = ta; } }
+    });
+    document.addEventListener('input', function (e) {
+      var c = e.target.closest && e.target.closest('[data-widget]');
+      if (c && /\[title\]/.test(e.target.name || '')) { syncTitle(c); }
+    });
+
+    /* footer: show only the chosen number of columns */
+    var sel = document.querySelector('[data-fcols]');
+    function cols() {
+      var n = parseInt(sel.value, 10) || 0;
+      $$('[data-fcol]').forEach(function (s) { s.hidden = parseInt(s.getAttribute('data-fcol'), 10) > n; });
+    }
+    if (sel) { sel.addEventListener('change', cols); cols(); }
+  })();
 
   /* rich-text editor (CKEditor 5, assets/js/editor.js) uses the same media picker */
   window.mcmsOpenPicker = openPicker;

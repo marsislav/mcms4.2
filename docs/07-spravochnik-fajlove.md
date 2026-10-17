@@ -144,3 +144,4 @@
 | `storage/.htaccess` | Забранява достъп отвън |
 | `tests/standalone.php` | Тестове на Sanitizer, EnvWriter (`php tests/standalone.php`) |
 | `docs/` | Тази документация |
+- `app/Support/Widgets.php`, `admin/partials/{footer-form,sidebar-form,widget-card,widget-area}.blade.php`, `site/partials/widget-area.blade.php`, `site/widgets/*.blade.php` — уиджети (виж 08 §23)

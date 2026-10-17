@@ -1,5 +1,7 @@
 @extends('site.layout')
 
+@section('has_sidebar', '1')
+
 @section('content')
 <article class="entry">
     @if($preview)<div class="preview-banner">Преглед — тази публикация още не е публично видима.</div>@endif

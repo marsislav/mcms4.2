@@ -11,6 +11,8 @@
     <button type="button" class="active" data-stab="general" role="tab">Общи</button>
     <button type="button" data-stab="design" role="tab">Дизайн</button>
     <button type="button" data-stab="discussion" role="tab">Дискусии</button>
+    <button type="button" data-stab="footer" role="tab">Футър</button>
+    <button type="button" data-stab="sidebar" role="tab">Сайдбар</button>
 </div>
 
 <div data-spanel="general">
@@ -96,4 +98,22 @@
 <div data-spanel="discussion">
     @include('admin.partials.discussion-form')
 </div>
+
+<div data-spanel="footer">
+    @include('admin.partials.footer-form')
+</div>
+
+<div data-spanel="sidebar">
+    @include('admin.partials.sidebar-form')
+</div>
+
+{{-- one blank card per widget type; admin.js clones it (placeholders __I__ = unique index, __C__ = column) --}}
+<div hidden>
+    @foreach (\App\Support\Widgets::TYPES as $type => $label)
+        <template data-widget-tpl="{{ $type }}">@include('admin.partials.widget-card', ['col' => '__C__', 'idx' => '__I__', 'w' => ['type' => $type, 'id' => '', 'hide_empty' => true, 'show_count' => true, 'count' => 5, 'limit' => 30], 'new' => true])</template>
+    @endforeach
+</div>
+@push('scripts')
+<script src="{{ asset('assets/js/editor-fa.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
+@endpush
 @endsection

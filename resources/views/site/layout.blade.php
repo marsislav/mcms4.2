@@ -14,6 +14,9 @@
     $pageAnim = \App\Support\Design::pageAnim();
     $elAnim = \App\Support\Design::elementAnims();
     $hasAnim = $pageAnim !== 'none' || $elAnim;
+    $footerW = \App\Support\Widgets::footer();
+    $sidebarW = \App\Support\Widgets::sidebar();
+    $showSidebar = $sidebarW['on'] && $sidebarW['widgets'] !== [] && trim($__env->yieldContent('has_sidebar')) === '1';
 @endphp
 <!doctype html>
 <html lang="{{ $current }}">
@@ -98,11 +101,32 @@
     </div>
 </header>
 
-<main id="main" class="wrap main">
-    @yield('content')
+<main id="main" @class(['wrap', 'main', 'has-sidebar sb-'.$sidebarW['side'] => $showSidebar])>
+    @if($showSidebar)
+        <div class="main-col">@yield('content')</div>
+        <aside class="sidebar" aria-label="{{ t('site.sidebar', 'Страничен панел') }}">
+            @include('site.partials.widget-area', ['widgets' => $sidebarW['widgets']])
+        </aside>
+    @else
+        @yield('content')
+    @endif
 </main>
 
 <footer class="site-footer">
+@if($footerW['cols'] > 0 && $footerW['has'])
+    <div class="wrap foot-widgets" style="--fc: {{ $footerW['cols'] }}">
+        @foreach ($footerW['columns'] as $col)
+            <div class="foot-col">@include('site.partials.widget-area', ['widgets' => $col])</div>
+        @endforeach
+    </div>
+    <div class="wrap foot-bottom">
+        <p class="muted">{{ setting_l('footer_text', '© '.date('Y').' '.$siteName) }}</p>
+            @if($hasAnim && \App\Support\Design::get('anim_pause_btn') === '1')
+                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ t('site.anim_pause', 'Спри анимациите') }}" data-off="{{ t('site.anim_play', 'Пусни анимациите') }}">{{ t('site.anim_pause', 'Спри анимациите') }}</button>
+            @endif
+    </div>
+@else
+
     <div class="wrap foot">
         <div>
             <strong>{{ $siteName }}</strong>
@@ -126,6 +150,7 @@
             @endforeach
         </nav>
     </div>
+@endif
 </footer>
 
 <script src="{{ asset('assets/js/site.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
