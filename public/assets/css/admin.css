@@ -198,9 +198,9 @@ button.chip:hover{border-color:var(--accent,#2a6df4)}
 .ck-content .mc-fa-widget{margin:0 .1em}
 
 /* settings > design */
-.colorfield{display:flex;gap:.4rem;align-items:center}
+.colorfield,.inline-field{display:flex;gap:.4rem;align-items:center}
 .colorfield input[type=color]{width:2.6rem;height:2.4rem;padding:.15rem;flex:none;cursor:pointer}
-.colorfield input[type=text]{flex:1;min-width:0;font-family:ui-monospace,monospace}
+.colorfield input[type=text],.inline-field input[type=text]{flex:1;min-width:0;font-family:ui-monospace,monospace}
 .tb-fieldset{border:1px solid var(--line);border-radius:var(--radius);padding:.6rem 1rem .2rem;margin:.8rem 0}
 .tb-fieldset legend{font-weight:600;padding:0 .4rem}
 [data-spanel][hidden],[data-topbar-box][hidden],[data-topbar-col][hidden]{display:none}

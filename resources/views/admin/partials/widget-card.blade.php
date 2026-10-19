@@ -24,7 +24,7 @@
                     <input name="{{ $name('title') }}[{{ $l->code }}]" maxlength="120" value="{{ $w['title'][$l->code] ?? '' }}">
                 </label>
             @endforeach
-            <label>{!! __('Икона (Font Awesome) <small class="muted">пред заглавието</small> <span class="colorfield">') !!}
+            <label>{!! __('Икона (Font Awesome) <small class="muted">пред заглавието</small> <span class="inline-field">') !!}
                     <input name="{{ $name('icon') }}" data-fa-input maxlength="80" placeholder="fa-solid fa-envelope" value="{{ $w['icon'] ?? '' }}">
                     <button type="button" class="btn sm" data-fa-pick="icon">{{ __('Избери') }}</button>
                 </span>

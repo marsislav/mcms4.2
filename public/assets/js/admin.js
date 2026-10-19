@@ -56,6 +56,7 @@
   /* ---- colour fields: picker <-> hex text, empty = theme default ---- */
   $$('.colorfield').forEach(function (box) {
     var pick = $('[data-color-pick]', box), text = $('[data-color-text]', box), clear = $('[data-color-clear]', box);
+    if (!pick || !text || !clear) { return; }
     var hex = function (v) { return /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? (v.charAt(0) === '#' ? v : '#' + v) : null; };
     pick.addEventListener('input', function () { text.value = pick.value; });
     text.addEventListener('input', function () {
