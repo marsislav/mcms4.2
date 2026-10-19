@@ -1,6 +1,6 @@
-@php($pt = $post->tr())
+@php $pt = $post->tr(); @endphp
 @if($pt)
-@php($pt->setRelation('content', $post))
+@php $pt->setRelation('content', $post); @endphp
 <article class="card">
     @if($post->featured)
         <a href="{{ $pt->url() }}" tabindex="-1" aria-hidden="true"><img src="{{ $post->featured->thumbUrl() }}" alt="" loading="lazy" @if($post->featured->width) width="{{ min($post->featured->width, 480) }}" @endif></a>

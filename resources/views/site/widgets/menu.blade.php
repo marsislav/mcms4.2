@@ -1,4 +1,4 @@
-@php($items = \App\Models\Menu::tree($w['menu'] ?? 'footer'))
+@php $items = \App\Models\Menu::tree($w['menu'] ?? 'footer'); @endphp
 @if($items)
 <nav aria-label="{{ \App\Support\Widgets::text($w, 'title') ?: 'Menu' }}">
     <ul class="widget-list">

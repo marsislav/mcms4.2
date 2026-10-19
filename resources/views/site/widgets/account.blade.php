@@ -1,4 +1,4 @@
-@php($me = auth()->user())
+@php $me = auth()->user(); @endphp
 <ul class="widget-list">
     @if($me && $me->active)
         @if($me->allows('content'))

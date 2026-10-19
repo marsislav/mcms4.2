@@ -21,7 +21,7 @@
             <tr>
                 <td><code>{{ $key }}</code></td>
                 @foreach ($languages as $l)
-                    @php($v = optional($rows[$key]->firstWhere('locale', $l->code))->value)
+                    @php $v = optional($rows[$key]->firstWhere('locale', $l->code))->value; @endphp
                     <td><textarea name="tr[{{ $key }}][{{ $l->code }}]" rows="1" maxlength="2000" class="autogrow">{{ $v }}</textarea></td>
                 @endforeach
             </tr>

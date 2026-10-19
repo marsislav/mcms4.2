@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@php($isPost = $type === 'post')
+@php $isPost = $type === 'post'; @endphp
 @section('title', $isPost ? __('Публикации') : __('Страници'))
 
 @section('actions')
@@ -7,10 +7,10 @@
 @endsection
 
 @section('content')
-@php($route = $isPost ? 'admin.posts' : 'admin.pages')
+@php $route = $isPost ? 'admin.posts' : 'admin.pages'; @endphp
 @if(! is_null($trashCount))
 <nav class="subtabs">
-    {!! __('<a href=":p1" @class([\'active\' => ! $trash])>Активни</a> <a href=":p2" @class([\'active\' => $trash])>Кошче', ['p1' => e(route($route.'.index')), 'p2' => e(route($route.'.index', ['trash' => 1]))]) !!} @if($trashCount)<span class="tag">{{ $trashCount }}</span>@endif</a>
+    <a href="{{ route($route.'.index') }}" @class(['active' => ! $trash])>{{ __('Активни') }}</a> <a href="{{ route($route.'.index', ['trash' => 1]) }}" @class(['active' => $trash])>{{ __('Кошче') }} @if($trashCount)<span class="tag">{{ $trashCount }}</span>@endif</a>
     @if($trash && $trashCount)
         <form method="post" action="{{ route($route.'.trash.empty') }}" data-confirm="{{ __('Всички записи в кошчето ще бъдат изтрити ЗАВИНАГИ. Продължавате ли?') }}" class="inline-form" style="margin-left:auto">
             @csrf @method('DELETE')<button class="btn sm danger">{{ __('Изпразни кошчето') }}</button>

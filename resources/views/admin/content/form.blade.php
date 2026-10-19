@@ -26,7 +26,7 @@
             </div>
 
             @foreach ($languages as $i => $lang)
-                @php($loc = $lang->code)
+                @php $loc = $lang->code; @endphp
                 <div class="tab-panel" data-panel="{{ $loc }}" @if($i !== 0) hidden @endif>
                     <label>{{ __('Заглавие') }} @if($loc === $default)<em class="req">*</em>@endif
                         <input name="tr[{{ $loc }}][title]" value="{{ $fv($loc, 'title') }}" maxlength="190" data-slug-source="{{ $loc }}" @if($loc === $default) required @endif>
@@ -88,7 +88,7 @@
             @if(\App\Support\Discussion::ready())
             <section class="card">
                 <h3>{{ __('Дискусия') }}</h3>
-                @php($co = old('comments_open', $content->comments_open === null ? '' : ($content->comments_open ? '1' : '0')))
+                @php $co = old('comments_open', $content->comments_open === null ? '' : ($content->comments_open ? '1' : '0')); @endphp
                 <label>{{ __('Коментари') }}
                     <select name="comments_open">
                         <option value="" @selected($co === '')>{{ __('По подразбиране (:p1)', ['p1' => \App\Support\Discussion::on($isPost ? 'on_posts' : 'on_pages') ? __('отворени') : __('затворени')]) }}</option>

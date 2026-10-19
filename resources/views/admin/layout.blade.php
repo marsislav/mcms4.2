@@ -49,7 +49,7 @@
             @if ($item[0] === '—')
                 <div class="nav-group">{{ __($item[1]) }}</div>
             @elseif (! $item[2] || $me->allows($item[2]))
-                @php($active = request()->routeIs(substr_count($item[0], '.') >= 2 ? Str::beforeLast($item[0], '.').'.*' : $item[0].'*'))
+                @php $active = request()->routeIs(substr_count($item[0], '.') >= 2 ? Str::beforeLast($item[0], '.').'.*' : $item[0].'*'); @endphp
                 <a href="{{ route($item[0]) }}" @class(['active' => $active])>
                     {{ __($item[1]) }}
                     @if (! empty($item[3]))<span class="badge">{{ $item[3] }}</span>@endif

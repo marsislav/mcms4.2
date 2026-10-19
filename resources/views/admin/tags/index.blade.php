@@ -28,7 +28,7 @@
     <form method="post" action="{{ route('admin.tags.update', $tag) }}" class="grid-form">
         @csrf @method('PUT')
         @foreach ($languages as $lang)
-            @php($t = $tag->tr($lang->code))
+            @php $t = $tag->tr($lang->code); @endphp
             <label>{{ __('Име (:p1)', ['p1' => strtoupper($lang->code)]) }} <input name="tr[{{ $lang->code }}][name]" value="{{ $t?->name }}" maxlength="80"></label>
             <label>Slug ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][slug]" value="{{ $t?->slug }}" maxlength="120" pattern="[a-z0-9\-]*"></label>
         @endforeach

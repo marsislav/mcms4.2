@@ -6,8 +6,8 @@
 @if($rows->isNotEmpty())
 <ul class="widget-list">
     @foreach ($rows as $c)
-        @php($pt = $c->content->tr())
-        @php($pt->setRelation('content', $c->content))
+        @php $pt = $c->content->tr(); @endphp
+        @php $pt->setRelation('content', $c->content); @endphp
         <li>{{ $c->author_name }} — <a href="{{ $pt->url() }}#comment-{{ $c->id }}">{{ $pt->title }}</a></li>
     @endforeach
 </ul>

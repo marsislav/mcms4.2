@@ -6,7 +6,7 @@
 <ul class="widget-list widget-posts">
     @foreach ($posts as $p)
         @if($pt = $p->tr())
-            @php($pt->setRelation('content', $p))
+            @php $pt->setRelation('content', $p); @endphp
             <li>
                 @if(! empty($w['show_thumb']) && $p->featured)<a class="wp-thumb" href="{{ $pt->url() }}" tabindex="-1" aria-hidden="true"><img src="{{ $p->featured->thumbUrl() }}" alt="" width="56" height="56" loading="lazy"></a>@endif
                 <span class="wp-text"><a href="{{ $pt->url() }}">{{ $pt->title }}</a>

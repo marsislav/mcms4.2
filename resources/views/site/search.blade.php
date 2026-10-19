@@ -14,7 +14,7 @@
 @elseif($results)
     <h2 class="small">{{ t('site.search_results', null, ['q' => $q]) }}</h2>
     @forelse ($results as $r)
-        @php($r->content->loadMissing('featured'))
+        @php $r->content->loadMissing('featured'); @endphp
         <article class="result">
             <h3><a href="{{ $r->url() }}">{{ $r->title }}</a></h3>
             <p>{{ $r->excerpt ?: excerpt($r->body, max(200, \App\Support\Options::excerptLength())) }}</p>

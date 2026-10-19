@@ -2,7 +2,7 @@
 @section('title', __('Коментар #').$comment->id)
 
 @section('content')
-@php($tr = $comment->content?->translations->first())
+@php $tr = $comment->content?->translations->first(); @endphp
 <p class="muted">{!! __('Към: <strong>:p1</strong> · :p2 · IP', ['p1' => e($tr?->title ?? '—'), 'p2' => e($comment->created_at->format('d.m.Y H:i'))]) !!} {{ $comment->author_ip }}</p>
 @if($comment->parent)<div class="card">{!! __('<small class="muted">В отговор на :p1:</small>', ['p1' => e($comment->parent->author_name)]) !!}<div>{!! \App\Support\Discussion::format(\Illuminate\Support\Str::limit($comment->parent->body, 300)) !!}</div></div>@endif
 

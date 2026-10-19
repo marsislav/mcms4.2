@@ -21,7 +21,7 @@
     <form method="post" action="{{ route('admin.categories.update', $cat) }}" class="grid-form">
         @csrf @method('PUT')
         @foreach ($languages as $lang)
-            @php($t = $cat->tr($lang->code))
+            @php $t = $cat->tr($lang->code); @endphp
             <label>{{ __('Име (:p1)', ['p1' => strtoupper($lang->code)]) }} <input name="tr[{{ $lang->code }}][name]" value="{{ $t?->name }}" maxlength="150"></label>
             <label>Slug ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][slug]" value="{{ $t?->slug }}" maxlength="150" pattern="[a-z0-9\-]*"></label>
         @endforeach

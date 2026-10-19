@@ -49,7 +49,7 @@
         <thead><tr><th style="width:2rem"><input type="checkbox" data-check-all aria-label="{{ __('Всички') }}"></th><th>{{ __('Автор') }}</th><th>{{ __('Коментар') }}</th><th>{{ __('Към') }}</th></tr></thead>
         <tbody>
         @forelse ($items as $c)
-            @php($tr = $c->content?->translations->first())
+            @php $tr = $c->content?->translations->first(); @endphp
             <tr @class(['unread' => $c->status === 'pending'])>
                 <td><input type="checkbox" name="ids[]" value="{{ $c->id }}" aria-label="{{ __('Избери') }}"></td>
                 <td>

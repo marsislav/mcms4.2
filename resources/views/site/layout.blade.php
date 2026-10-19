@@ -49,7 +49,7 @@
     <link rel="stylesheet" href="{{ asset_v('assets/css/grid.css') }}">
     <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}{{ substr(md5(\App\Support\Options::get('custom_css')), 0, 6) }}">
     {!! \App\Support\Options::scripts('head', csp_nonce()) !!}
-    @php(do_action('head'))
+    @php do_action('head'); @endphp
 </head>
 <body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
@@ -94,7 +94,7 @@
         @if($languages->count() > 1)
         <nav class="langs" aria-label="{{ t('site.language') }}">
             @foreach ($languages as $lang)
-                @php($href = $switch[$lang->code] ?? lroute('home', [], $lang->code))
+                @php $href = $switch[$lang->code] ?? lroute('home', [], $lang->code); @endphp
                 <a href="{{ $href }}" hreflang="{{ $lang->code }}" lang="{{ $lang->code }}" @class(['on' => $lang->code === $current]) @if($lang->code === $current) aria-current="true" @endif>{{ strtoupper($lang->code) }}</a>
             @endforeach
         </nav>
@@ -173,6 +173,6 @@
 
 <script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
-@php(do_action('footer'))
+@php do_action('footer'); @endphp
 </body>
 </html>

@@ -1,5 +1,5 @@
 @extends('admin.layout')
-@php($exists = $user->exists)
+@php $exists = $user->exists; @endphp
 @section('title', $exists ? __('Редакция на потребител') : __('Нов потребител'))
 
 @section('actions'){!! __('<a class="btn" href=":p1">← Потребители</a>', ['p1' => e(route('admin.users.index'))]) !!}@endsection
