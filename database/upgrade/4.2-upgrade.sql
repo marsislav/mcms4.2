@@ -117,3 +117,6 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
 
 -- Menu items: custom CSS class and ID. Run once (errors with "Duplicate column" if already applied).
 ALTER TABLE `menu_items` ADD COLUMN `css_class` varchar(200) NULL DEFAULT NULL, ADD COLUMN `css_id` varchar(80) NULL DEFAULT NULL;
+
+-- User profiles (registration, author page, resume). Run once (errors with "Duplicate column" if already applied).
+ALTER TABLE `users` ADD COLUMN `username` varchar(40) NULL DEFAULT NULL, ADD COLUMN `bio` text NULL, ADD COLUMN `website` varchar(190) NULL DEFAULT NULL, ADD UNIQUE KEY `users_username_unique` (`username`);

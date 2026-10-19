@@ -130,6 +130,32 @@ if (! function_exists('admin_url')) {
     }
 }
 
+if (! function_exists('mcms_date')) {
+    /** Date formatted per Settings > Дата и час. */
+    function mcms_date($dt, bool $withTime = false): string
+    {
+        if (! $dt) {
+            return '';
+        }
+        $f = \App\Support\Options::get('date_format');
+        if ($withTime) {
+            $f .= ', '.\App\Support\Options::get('time_format');
+        }
+
+        return $dt->translatedFormat($f);
+    }
+}
+
+if (! function_exists('asset_v')) {
+    /** asset() with ?v=<file modification time>, so edited CSS/JS is never served from a stale browser cache. */
+    function asset_v(string $path): string
+    {
+        $file = public_path($path);
+
+        return asset($path).'?v='.(is_file($file) ? filemtime($file) : config('mcms.version'));
+    }
+}
+
 if (! function_exists('upload_url')) {
     function upload_url(?string $path): ?string
     {

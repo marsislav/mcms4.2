@@ -162,7 +162,7 @@
       });
       conversion.for('editingDowncast').elementToElement({
         model: 'gridRow',
-        view: function (m, api) { return toWidget(api.writer.createContainerElement('div', { class: 'mc-row' }), api.writer, { label: 'Колони' }); }
+        view: function (m, api) { return toWidget(api.writer.createContainerElement('div', { class: 'mc-row' }), api.writer, { label: T('Колони') }); }
       });
       conversion.for('editingDowncast').elementToElement({
         model: 'gridCol',
@@ -224,13 +224,13 @@
       /* insert: 1–12 columns */
       f.add('gridLayout', function (locale) {
         var dd = CK.createDropdown(locale), cmd = editor.commands.get('insertGridRow');
-        dd.buttonView.set({ label: 'Колони (ред)', icon: ICON.layout, tooltip: true });
+        dd.buttonView.set({ label: T('Колони (ред)'), icon: ICON.layout, tooltip: true });
         dd.bind('isEnabled').to(cmd);
         var items = [];
         for (var n = 1; n <= MAX; n++) {
-          items.push({ label: n + (n === 1 ? ' колона' : n < 5 ? ' колони' : ' колони'), commandParam: n });
+          items.push({ label: n + (n === 1 ? T(' колона') : n < 5 ? T(' колони') : T(' колони')), commandParam: n });
         }
-        CK.addListToDropdown(dd, list(items), { ariaLabel: 'Брой колони' });
+        CK.addListToDropdown(dd, list(items), { ariaLabel: T('Брой колони') });
         dd.on('execute', function (evt) { editor.execute('insertGridRow', evt.source.commandParam); editor.editing.view.focus(); });
         return dd;
       });
@@ -238,13 +238,13 @@
       /* width of the current column: 1–12 tracks */
       f.add('gridColSpan', function (locale) {
         var dd = CK.createDropdown(locale), cmd = editor.commands.get('gridColSpan');
-        dd.buttonView.set({ label: 'Ширина на колоната', icon: ICON.span, tooltip: true });
+        dd.buttonView.set({ label: T('Ширина на колоната'), icon: ICON.span, tooltip: true });
         dd.bind('isEnabled').to(cmd);
         var items = [];
-        for (var n = 1; n <= MAX; n++) { items.push({ label: 'Заема ' + n + (n === 1 ? ' част' : ' части'), commandParam: n }); }
+        for (var n = 1; n <= MAX; n++) { items.push({ label: T('Заема ') + n + (n === 1 ? T(' част') : T(' части')), commandParam: n }); }
         var coll = list(items);
         coll.forEach(function (item) { item.model.bind('isOn').to(cmd, 'value', function (v) { return v === item.model.commandParam; }); });
-        CK.addListToDropdown(dd, coll, { ariaLabel: 'Ширина на колоната' });
+        CK.addListToDropdown(dd, coll, { ariaLabel: T('Ширина на колоната') });
         dd.on('execute', function (evt) { editor.execute('gridColSpan', evt.source.commandParam); editor.editing.view.focus(); });
         return dd;
       });
@@ -258,9 +258,9 @@
           return v;
         });
       };
-      btn('gridAddCol', 'Добави колона', ICON.add, 'gridAddCol');
-      btn('gridRemoveCol', 'Премахни колоната', ICON.remove, 'gridRemoveCol');
-      btn('gridRemoveRow', 'Изтрий целия ред с колони', ICON.row, 'gridRemoveRow');
+      btn('gridAddCol', T('Добави колона'), ICON.add, 'gridAddCol');
+      btn('gridRemoveCol', T('Премахни колоната'), ICON.remove, 'gridRemoveCol');
+      btn('gridRemoveRow', T('Изтрий целия ред с колони'), ICON.row, 'gridRemoveRow');
     }
   }
 

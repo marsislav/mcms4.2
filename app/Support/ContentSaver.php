@@ -32,12 +32,12 @@ class ContentSaver
                 continue;
             }
             if ($title === '') {
-                throw ValidationException::withMessages(["tr.$loc.title" => 'Заглавието е задължително.']);
+                throw ValidationException::withMessages(["tr.$loc.title" => __('Заглавието е задължително.')]);
             }
             $clean[$loc] = $row + ['title' => $title];
         }
         if (! isset($clean[$default])) {
-            throw ValidationException::withMessages(["tr.$default.title" => 'Заглавие на основния език е задължително.']);
+            throw ValidationException::withMessages(["tr.$default.title" => __('Заглавие на основния език е задължително.')]);
         }
 
         return DB::transaction(function () use ($content, $type, $data, $clean, $userId) {
@@ -112,7 +112,7 @@ class ContentSaver
     {
         $base = Str::slug($source, '-', substr($locale, 0, 2)) ?: 'item';
         $base = mb_substr($base, 0, 150);
-        $reserved = config('mcms.reserved_slugs', []);
+        $reserved = array_merge(config('mcms.reserved_slugs', []), [\App\Support\Options::get('blog_base')]);
         $slug = $base;
         $i = 2;
 

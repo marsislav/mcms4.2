@@ -27,7 +27,7 @@ class CategoryController extends Controller
         $category = $this->persist(new Category, $request);
         audit('category.create', (string) $category->id);
 
-        return back()->with('status', 'Категорията е добавена.');
+        return back()->with('status', __('Категорията е добавена.'));
     }
 
     public function update(Request $request, Category $category)
@@ -35,7 +35,7 @@ class CategoryController extends Controller
         $this->persist($category, $request);
         audit('category.update', (string) $category->id);
 
-        return back()->with('status', 'Категорията е обновена.');
+        return back()->with('status', __('Категорията е обновена.'));
     }
 
     public function destroy(Category $category)
@@ -43,7 +43,7 @@ class CategoryController extends Controller
         audit('category.delete', (string) $category->id, $category->adminName());
         $category->delete(); // soft: posts keep their category_id, so restoring brings everything back
 
-        return back()->with('status', Trash::ready() ? 'Категорията е преместена в кошчето.' : 'Категорията е изтрита.');
+        return back()->with('status', Trash::ready() ? __('Категорията е преместена в кошчето.') : __('Категорията е изтрита.'));
     }
 
     public function untrash(int $id)
@@ -54,7 +54,7 @@ class CategoryController extends Controller
         \Illuminate\Support\Facades\Cache::forget('mcms.sitemap');
         audit('category.restore', (string) $category->id);
 
-        return back()->with('status', 'Категорията е възстановена.');
+        return back()->with('status', __('Категорията е възстановена.'));
     }
 
     public function purge(int $id)
@@ -64,7 +64,7 @@ class CategoryController extends Controller
         audit('category.purge', (string) $category->id, $category->adminName());
         $category->forceDelete(); // posts keep existing (category_id -> NULL)
 
-        return back()->with('status', 'Категорията е изтрита завинаги.');
+        return back()->with('status', __('Категорията е изтрита завинаги.'));
     }
 
     private function persist(Category $category, Request $request): Category
@@ -80,7 +80,7 @@ class CategoryController extends Controller
         $default = mcms_default_locale();
         $tr = $request->input('tr', []);
         if (trim((string) ($tr[$default]['name'] ?? '')) === '') {
-            throw ValidationException::withMessages(["tr.$default.name" => 'Името на основния език е задължително.']);
+            throw ValidationException::withMessages(["tr.$default.name" => __('Името на основния език е задължително.')]);
         }
 
         return DB::transaction(function () use ($category, $request, $tr) {

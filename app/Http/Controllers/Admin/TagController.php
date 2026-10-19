@@ -31,7 +31,7 @@ class TagController extends Controller
         $tag = $this->persist(new Tag, $request);
         audit('tag.create', (string) $tag->id);
 
-        return back()->with('status', 'Тагът е добавен.');
+        return back()->with('status', __('Тагът е добавен.'));
     }
 
     public function update(Request $request, Tag $tag)
@@ -39,7 +39,7 @@ class TagController extends Controller
         $this->persist($tag, $request);
         audit('tag.update', (string) $tag->id);
 
-        return back()->with('status', 'Тагът е обновен.');
+        return back()->with('status', __('Тагът е обновен.'));
     }
 
     public function destroy(Tag $tag)
@@ -47,7 +47,7 @@ class TagController extends Controller
         audit('tag.delete', (string) $tag->id, $tag->load('translations')->adminName());
         $tag->delete(); // pivot rows cascade; posts stay
 
-        return back()->with('status', 'Тагът е изтрит.');
+        return back()->with('status', __('Тагът е изтрит.'));
     }
 
     /** Move all posts from this tag to another one, then delete this tag. */
@@ -56,7 +56,7 @@ class TagController extends Controller
         $data = $request->validate(['into' => 'required|integer|exists:tags,id']);
         $target = Tag::findOrFail($data['into']);
         if ($target->id === $tag->id) {
-            throw ValidationException::withMessages(['into' => 'Изберете друг таг.']);
+            throw ValidationException::withMessages(['into' => __('Изберете друг таг.')]);
         }
 
         DB::transaction(function () use ($tag, $target) {
@@ -68,7 +68,7 @@ class TagController extends Controller
         });
         audit('tag.merge', (string) $tag->id, '→ #'.$target->id);
 
-        return back()->with('status', 'Таговете са обединени.');
+        return back()->with('status', __('Таговете са обединени.'));
     }
 
     private function persist(Tag $tag, Request $request): Tag
@@ -82,7 +82,7 @@ class TagController extends Controller
         $default = mcms_default_locale();
         $tr = $request->input('tr', []);
         if (trim((string) ($tr[$default]['name'] ?? '')) === '') {
-            throw ValidationException::withMessages(["tr.$default.name" => 'Името на основния език е задължително.']);
+            throw ValidationException::withMessages(["tr.$default.name" => __('Името на основния език е задължително.')]);
         }
 
         return DB::transaction(function () use ($tag, $tr) {

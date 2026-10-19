@@ -17,7 +17,7 @@
         @php($r->content->loadMissing('featured'))
         <article class="result">
             <h3><a href="{{ $r->url() }}">{{ $r->title }}</a></h3>
-            <p>{{ $r->excerpt ?: excerpt($r->body, 200) }}</p>
+            <p>{{ $r->excerpt ?: excerpt($r->body, max(200, \App\Support\Options::excerptLength())) }}</p>
         </article>
     @empty
         <p class="muted">{{ t('site.no_results') }}</p>

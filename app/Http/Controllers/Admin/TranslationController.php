@@ -65,6 +65,6 @@ class TranslationController extends Controller
         }
         audit('translations.update');
 
-        return back()->with('status', 'Преводите са записани.');
+        return back()->with('status', __('Преводите са записани.'));
     }
 }

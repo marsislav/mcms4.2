@@ -6,9 +6,9 @@
         @endforeach
     </div>
     <div class="btn-row widget-add">
-        <select data-widget-type aria-label="Тип уиджет">
-            @foreach (\App\Support\Widgets::TYPES as $type => $tl)<option value="{{ $type }}">{{ $tl }}</option>@endforeach
+        <select data-widget-type aria-label="{{ __('Тип уиджет') }}">
+            @foreach (\App\Support\Widgets::TYPES as $type => $tl)<option value="{{ $type }}">{{ __($tl) }}</option>@endforeach
         </select>
-        <button type="button" class="btn sm primary" data-widget-add>＋ Добави уиджет</button>
+        <button type="button" class="btn sm primary" data-widget-add>{{ __('＋ Добави уиджет') }}</button>
     </div>
 </div>

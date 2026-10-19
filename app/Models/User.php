@@ -36,7 +36,7 @@ class User extends Authenticatable
 
     public function roleLabel(): string
     {
-        return config('mcms.role_labels.'.$this->role, $this->role);
+        return __(config('mcms.role_labels.'.$this->role, $this->role));
     }
 
     public function isLocked(): bool

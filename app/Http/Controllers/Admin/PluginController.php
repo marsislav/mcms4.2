@@ -28,6 +28,6 @@ class PluginController extends Controller
         PluginManager::setEnabled($enabled);
         audit($action, $slug);
 
-        return back()->with('status', 'Състоянието на плъгина е променено.');
+        return back()->with('status', __('Състоянието на плъгина е променено.'));
     }
 }

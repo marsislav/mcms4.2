@@ -9,6 +9,9 @@ return [
     // Admin URL segment. Change it in .env to hide the panel from bots.
     'admin_path' => trim((string) env('MCMS_ADMIN_PATH', 'panel'), '/') ?: 'panel',
 
+    // Language of the admin panel and installer: en | bg (users can switch with the EN/BG links)
+    'admin_locale' => env('MCMS_ADMIN_LOCALE', 'en'),
+
     'idle_minutes' => (int) env('MCMS_ADMIN_IDLE_MINUTES', 30),
     'max_upload_mb' => (int) env('MCMS_MAX_UPLOAD_MB', 8),
     'image_max_px' => 2560,
@@ -18,20 +21,24 @@ return [
     'reserved_slugs' => [
         'blog', 'search', 'contact', 'comment', 'install', 'sitemap', 'robots', 'feed', 'uploads',
         'assets', 'storage', 'vendor', 'up', 'admin', 'panel', 'login', 'logout', 'api',
-        'app', 'config', 'database', 'resources', 'routes', 'plugins', 'lang', 'bootstrap', 'tests', 'public',
+        'register', 'author', 'app', 'config', 'database', 'resources', 'routes', 'plugins', 'lang', 'bootstrap', 'tests', 'public',
     ],
 
     // Role => permissions ('*' = everything)
     'roles' => [
         'admin' => ['*'],
-        'editor' => ['content', 'content.all', 'categories', 'media', 'menus', 'messages', 'comments', 'redirects', 'translations'],
-        'author' => ['content', 'media'],
+        'editor' => ['content', 'content.all', 'pages', 'publish', 'categories', 'media', 'menus', 'messages', 'comments', 'redirects', 'translations'],
+        'author' => ['content', 'media', 'publish'],       // writes and publishes own posts
+        'contributor' => ['content'],                       // writes own posts; they wait for approval ("pending")
+        'subscriber' => [],                                 // registered account: only own profile
     ],
 
     'role_labels' => [
         'admin' => 'Администратор',
         'editor' => 'Редактор',
         'author' => 'Автор',
+        'contributor' => 'Сътрудник',
+        'subscriber' => 'Абонат',
     ],
 
     'embed_hosts' => ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'],

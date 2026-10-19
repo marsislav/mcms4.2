@@ -9,13 +9,16 @@ require __DIR__.'/../app/Support/Taxonomy.php';
 require __DIR__.'/../app/Support/Design.php';
 require __DIR__.'/../app/Support/Discussion.php';
 require __DIR__.'/../app/Support/Widgets.php';
+require __DIR__.'/../app/Support/Options.php';
+require __DIR__.'/../app/Support/Members.php';
 
-use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets};
+use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
 function setting(string $k, $d = null) { return $GLOBALS['S'][$k] ?? $d; }
 function setting_l(string $k, $d = null) { return $GLOBALS['S'][$k.'.bg'] ?? $d; }
+if (!function_exists('__')) { function __($k, array $r = []) { foreach ($r as $a => $b) { $k = str_replace(':'.$a, (string) $b, $k); } return $k; } }
 
 $fail = 0;
 $check = function (string $name, bool $ok) use (&$fail) {
@@ -173,6 +176,55 @@ $check('widget: tags style default', Widgets::clean(['type' => 'tags', 'style' =
 $check('widget: menu slug sanitized', Widgets::clean(['type' => 'menu', 'menu' => '../x'], $L)['menu'] === 'footer');
 $check('widget: list limited', count(Widgets::cleanList(array_fill(0, 40, ['type' => 'search']), $L)) === Widgets::MAX_WIDGETS);
 $check('widget: inactive locale ignored', !isset(Widgets::clean(['type' => 'html', 'body' => ['de' => 'x']], $L)['body']['de']));
+
+echo "Options\n";
+$GLOBALS['S'] = [];
+$o = fn (string $g, array $in, array $ctx = []) => Options::clean($g, $in, $ctx);
+$r = $o('reading', ['front_mode' => 'x', 'feed_count' => '999', 'noindex' => '1', 'excerpt_length' => '5']);
+$check('reading: enum/clamp', $r['values']['front_mode'] === 'page' && $r['values']['feed_count'] === '50' && $r['values']['noindex'] === '1' && $r['values']['feed_full'] === '0' && $r['values']['excerpt_length'] === '50');
+$r = $o('datetime', ['timezone' => 'Europe/Sofia', 'date_format' => 'evil', 'time_format' => 'g:i a']);
+$check('datetime: ok tz, bad format -> default', $r['values']['timezone'] === 'Europe/Sofia' && $r['values']['date_format'] === 'j F Y' && $r['values']['time_format'] === 'g:i a' && !$r['errors']);
+$check('datetime: bad tz rejected', $o('datetime', ['timezone' => 'Mars/Base'])['errors'] !== []);
+$r = $o('permalinks', ['blog_base' => ' News ', 'category_base' => 'Topics', 'tag_base' => 'labels']);
+$check('permalinks: normalised', $r['values'] === ['blog_base' => 'news', 'category_base' => 'topics', 'tag_base' => 'labels'] && !$r['errors']);
+$check('permalinks: reserved/page/2-letter/bad chars rejected', count($o('permalinks', ['blog_base' => 'search'])['errors']) === 1 && count($o('permalinks', ['blog_base' => 'about'], ['taken' => ['about']])['errors']) === 1 && count($o('permalinks', ['blog_base' => 'en'])['errors']) === 1 && count($o('permalinks', ['blog_base' => 'a/b'])['errors']) === 1);
+$r = $o('permalinks', ['blog_base' => 'search'], ['current' => ['blog_base' => 'news']]);
+$check('permalinks: rejected keeps current', $r['values']['blog_base'] === 'news');
+$check('permalinks: category = tag rejected', $o('permalinks', ['category_base' => 'x', 'tag_base' => 'x'])['errors'] !== []);
+$check('legacy: /blog/foo -> /news/foo', Options::legacyPath('blog/foo', 'news', 'category', 'tag') === 'news/foo');
+$check('legacy: locale + category', Options::legacyPath('en/blog/category/x', 'news', 'topics', 'tag') === 'en/news/topics/x');
+$check('legacy: tag only', Options::legacyPath('blog/tag/x', 'blog', 'category', 'labels') === 'blog/labels/x');
+$check('legacy: unchanged / unrelated -> null', Options::legacyPath('blog/foo', 'blog', 'category', 'tag') === null && Options::legacyPath('about', 'news', 'c', 't') === null);
+$r = $o('media', ['upload_max_mb' => '500', 'image_max_px' => '', 'thumb_px' => '50']);
+$check('media: clamp / empty = default', $r['values'] === ['upload_max_mb' => '64', 'image_max_px' => '', 'thumb_px' => '100']);
+$r = $o('scripts', ['scripts_head' => '<meta name="x">', 'csp_hosts' => "https://www.googletagmanager.com/\nhttp://evil.com\nhttps://a.b';x\nHTTPS://Www.Google-Analytics.com"]);
+$check('scripts: hosts validated, https only, normalised', $r['values']['csp_hosts'] === "https://www.googletagmanager.com\nhttps://www.google-analytics.com" && count($r['errors']) === 2);
+$GLOBALS['S'] = ['opt.scripts_head' => '<script nonce="evil" src="a.js"></script><SCRIPT>x()</SCRIPT><p>hi</p>'];
+$out = Options::scripts('head', 'N0NCE');
+$check('scripts: nonce injected, foreign nonce replaced', substr_count($out, 'nonce="N0NCE"') === 2 && !str_contains($out, 'evil'));
+$GLOBALS['S'] = ['opt.csp_hosts' => "https://ok.example.com\njavascript:alert(1)"];
+$check('csp hosts at read time filtered', Options::cspHosts() === ['https://ok.example.com']);
+$r = $o('maintenance', ['maintenance_message' => '<b>Скоро</b>', 'maintenance_ips' => "1.2.3.4\nnot-ip\n::1"]);
+$check('maintenance: strip tags, validate IPs', $r['values']['maintenance_message'] === 'Скоро' && $r['values']['maintenance_ips'] === "1.2.3.4\n::1" && count($r['errors']) === 1);
+$GLOBALS['S'] = ['opt.maintenance_ips' => "1.2.3.4"];
+$check('maintenance: ip allowed', Options::ipAllowed('1.2.3.4') && !Options::ipAllowed('1.2.3.5'));
+$r = $o('writing', ['default_category' => '7', 'default_status' => 'published'], ['categories' => [1, 2]]);
+$check('writing: unknown category dropped', $r['values']['default_category'] === '' && $r['values']['default_status'] === 'published');
+$GLOBALS['S'] = [];
+
+echo "Members\n";
+$none = fn ($u) => false;
+$check('username: cyrillic transliterated', Members::usernameFrom('Иван Петров', $none) === 'ivan-petrov');
+$check('username: unique suffix', Members::usernameFrom('Ivan', fn ($u) => in_array($u, ['ivan', 'ivan-2'], true)) === 'ivan-3');
+$check('username: reserved/short/empty safe', Members::usernameFrom('panel', $none) === 'user-panel' && Members::usernameFrom('bg', $none) === 'user-bg' && Members::usernameFrom('!!!', $none) === 'user' && Members::usernameFrom(str_repeat('a', 80), $none) === str_repeat('a', 32));
+$check('username: only a-z0-9-', (bool) preg_match('/^[a-z0-9\-]+$/', Members::usernameFrom("O'Brien <b>x</b> ñ", $none)));
+$GLOBALS['S'] = ['opt.default_role' => 'admin'];
+$check('default role can never be admin', Members::defaultRole() === 'subscriber');
+$GLOBALS['S'] = ['opt.default_role' => 'author'];
+$check('default role author', Members::defaultRole() === 'author');
+$r = Options::clean('users', ['registration' => '1', 'default_role' => 'editor']);
+$check('users options: invalid role -> subscriber', $r['values']['default_role'] === 'subscriber' && $r['values']['registration'] === '1' && $r['values']['reg_approval'] === '0');
+$GLOBALS['S'] = [];
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

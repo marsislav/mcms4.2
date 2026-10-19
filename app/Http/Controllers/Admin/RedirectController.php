@@ -24,21 +24,21 @@ class RedirectController extends Controller
 
         $from = '/'.ltrim(trim(parse_url($data['from_path'], PHP_URL_PATH) ?: $data['from_path']), '/');
         if ($from === '/' || str_starts_with($from, '/'.config('mcms.admin_path'))) {
-            throw ValidationException::withMessages(['from_path' => 'Този адрес не може да се пренасочва.']);
+            throw ValidationException::withMessages(['from_path' => __('Този адрес не може да се пренасочва.')]);
         }
 
         $to = trim($data['to_url']);
         if (! preg_match('~^(/(?!/)|https?://)[^\s\x00-\x1f]*$~i', $to)) {
-            throw ValidationException::withMessages(['to_url' => 'Целта трябва да е /път или http(s):// адрес.']);
+            throw ValidationException::withMessages(['to_url' => __('Целта трябва да е /път или http(s):// адрес.')]);
         }
         if ($to === $from) {
-            throw ValidationException::withMessages(['to_url' => 'Източникът и целта са еднакви.']);
+            throw ValidationException::withMessages(['to_url' => __('Източникът и целта са еднакви.')]);
         }
 
         Redirect::updateOrCreate(['from_path' => $from], ['to_url' => $to, 'code' => (int) $data['code']]);
         audit('redirect.save', $from, $to);
 
-        return back()->with('status', 'Пренасочването е записано.');
+        return back()->with('status', __('Пренасочването е записано.'));
     }
 
     public function destroy(Redirect $redirect)
@@ -46,6 +46,6 @@ class RedirectController extends Controller
         audit('redirect.delete', $redirect->from_path);
         $redirect->delete();
 
-        return back()->with('status', 'Пренасочването е изтрито.');
+        return back()->with('status', __('Пренасочването е изтрито.'));
     }
 }

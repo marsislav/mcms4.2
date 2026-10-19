@@ -28,11 +28,12 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
         // Own profile / security (no extra permission)
         Route::get('profile', [Admin\ProfileController::class, 'show'])->name('profile');
         Route::post('profile', [Admin\ProfileController::class, 'updateInfo'])->name('profile.info');
+        Route::post('profile/bio', [Admin\ProfileController::class, 'updateBio'])->name('profile.bio');
         Route::post('profile/password', [Admin\ProfileController::class, 'updatePassword'])->name('profile.password');
 
         // Pages & posts share one controller; `type` is injected as a route default
         foreach (['page' => 'pages', 'post' => 'posts'] as $type => $segment) {
-            Route::middleware('admin:content')->prefix($segment)->name($segment.'.')->group(function () use ($type) {
+            Route::middleware($type === 'page' ? 'admin:pages' : 'admin:content')->prefix($segment)->name($segment.'.')->group(function () use ($type) {
                 foreach ([
                     Route::get('/', [Admin\ContentController::class, 'index'])->name('index'),
                     Route::get('create', [Admin\ContentController::class, 'create'])->name('create'),
@@ -131,6 +132,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::get('settings', [Admin\SettingController::class, 'edit'])->name('settings');
             Route::put('settings', [Admin\SettingController::class, 'update'])->name('settings.update');
             Route::put('settings/footer', [Admin\SettingController::class, 'updateFooter'])->name('settings.footer');
+            Route::put('settings/options/{group}', [Admin\SettingController::class, 'updateOptions'])->where('group', '[a-z]+')->name('settings.options');
             Route::put('settings/sidebar', [Admin\SettingController::class, 'updateSidebar'])->name('settings.sidebar');
             Route::put('settings/discussion', [Admin\SettingController::class, 'updateDiscussion'])->name('settings.discussion');
             Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
@@ -161,13 +163,22 @@ Route::get('design.css', [SiteController::class, 'designCss'])->name('site.desig
 Route::get('robots.txt', [SiteController::class, 'robots'])->name('site.robots');
 
 /* ------------------------------------------------------------- public site */
-$public = function () {
+// Public registration (Settings > Потребители); 'register' is a reserved slug
+Route::get('register', [\App\Http\Controllers\RegisterController::class, 'show'])->name('register');
+Route::post('register', [\App\Http\Controllers\RegisterController::class, 'store'])->middleware('throttle:20,1')->name('register.store');
+
+// URL prefixes of the blog / categories / tags come from Settings > Връзки (defaults: blog, category, tag)
+$blogBase = \App\Support\Options::get('blog_base');
+$catBase = \App\Support\Options::get('category_base');
+$tagBase = \App\Support\Options::get('tag_base');
+$public = function () use ($blogBase, $catBase, $tagBase) {
     Route::get('/', [SiteController::class, 'home'])->name('home');
     Route::get('feed.xml', [SiteController::class, 'feed'])->name('feed');
-    Route::get('blog', [SiteController::class, 'blog'])->name('blog');
-    Route::get('blog/category/{slug}', [SiteController::class, 'category'])->name('category');
-    Route::get('blog/tag/{slug}', [SiteController::class, 'tag'])->where('slug', '[a-z0-9\-]+')->name('tag');
-    Route::get('blog/{slug}', [SiteController::class, 'post'])->name('post');
+    Route::get($blogBase, [SiteController::class, 'blog'])->name('blog');
+    Route::get("$blogBase/$catBase/{slug}", [SiteController::class, 'category'])->name('category');
+    Route::get("$blogBase/$tagBase/{slug}", [SiteController::class, 'tag'])->where('slug', '[a-z0-9\-]+')->name('tag');
+    Route::get("$blogBase/{slug}", [SiteController::class, 'post'])->name('post');
+    Route::get('author/{username}', [SiteController::class, 'author'])->where('username', '[a-z0-9\-]+')->name('author');
     Route::get('search', [SiteController::class, 'search'])->middleware('throttle:30,1')->name('search');
     Route::get('contact', [SiteController::class, 'contactForm'])->name('contact');
     Route::post('comment', [CommentController::class, 'store'])->middleware('throttle:20,1')->name('comment');

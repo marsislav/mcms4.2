@@ -145,3 +145,5 @@
 | `tests/standalone.php` | Тестове на Sanitizer, EnvWriter (`php tests/standalone.php`) |
 | `docs/` | Тази документация |
 - `app/Support/Widgets.php`, `admin/partials/{footer-form,sidebar-form,widget-card,widget-area}.blade.php`, `site/partials/widget-area.blade.php`, `site/widgets/*.blade.php` — уиджети (виж 08 §23)
+- `app/Support/Options.php`, `admin/partials/options/*.blade.php` — Четене/Писане/Дата/Връзки/Медия/Скриптове/Поддръжка (виж 08 §24)
+- `app/Support/Members.php`, `RegisterController`, `site/register|author.blade.php`, миграция `…add_user_profile` — регистрация и профили (виж 08 §25)

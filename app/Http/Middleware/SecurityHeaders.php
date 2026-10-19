@@ -15,14 +15,15 @@ class SecurityHeaders
         $response = $next($request);
         $h = $response->headers;
 
+        $extra = $request->is(config('mcms.admin_path'), config('mcms.admin_path').'/*') ? '' : implode(' ', \App\Support\Options::cspHosts());
         $csp = [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}'",
+            "script-src 'self' 'nonce-{$nonce}'".($extra ? " $extra" : ''),
             "style-src 'self'",
             "style-src-attr 'unsafe-inline'", // style="" from the rich-text editor (values allow-listed by Sanitizer)
             "img-src 'self' data: https:",
             "font-src 'self'",
-            "connect-src 'self'",
+            "connect-src 'self'".($extra ? " $extra" : ''),
             'frame-src '.implode(' ', array_map(fn ($d) => 'https://'.$d, config('mcms.embed_hosts', []))),
             "object-src 'none'",
             "base-uri 'self'",

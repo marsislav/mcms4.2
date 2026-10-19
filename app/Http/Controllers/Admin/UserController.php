@@ -37,6 +37,9 @@ class UserController extends Controller
         $user = new User;
         $user->name = strip_tags($data['name']);
         $user->email = mb_strtolower($data['email']);
+        if (\App\Support\Members::ready()) {
+            $user->username = \App\Support\Members::usernameFrom($user->name, fn ($u) => User::where('username', $u)->exists());
+        }
         $user->password = $data['password'];
         $user->role = $data['role'];
         $user->active = true;
@@ -44,7 +47,7 @@ class UserController extends Controller
         $user->save();
         audit('user.create', $user->email, ['role' => $user->role]);
 
-        return redirect()->route('admin.users.index')->with('status', 'Потребителят е създаден.');
+        return redirect()->route('admin.users.index')->with('status', __('Потребителят е създаден.'));
     }
 
     public function edit(User $user)
@@ -69,7 +72,7 @@ class UserController extends Controller
 
         if ($user->isAdmin() && ($role !== 'admin' || ! $active)
             && User::where('role', 'admin')->where('active', true)->where('id', '!=', $user->id)->doesntExist()) {
-            return back()->withErrors(['role' => 'Трябва да остане поне един активен администратор.']);
+            return back()->withErrors(['role' => __('Трябва да остане поне един активен администратор.')]);
         }
 
         $user->name = strip_tags($data['name']);
@@ -88,17 +91,17 @@ class UserController extends Controller
         $user->save();
         audit('user.update', $user->email, ['role' => $user->role, 'active' => $user->active]);
 
-        return redirect()->route('admin.users.index')->with('status', 'Потребителят е обновен.');
+        return redirect()->route('admin.users.index')->with('status', __('Потребителят е обновен.'));
     }
 
     public function destroy(Request $request, User $user)
     {
-        abort_if($user->id === $request->user()->id, 422, 'Не можете да изтриете себе си.');
-        abort_if($user->isAdmin() && User::where('role', 'admin')->where('id', '!=', $user->id)->doesntExist(), 422, 'Последният администратор не може да се изтрие.');
+        abort_if($user->id === $request->user()->id, 422, __('Не можете да изтриете себе си.'));
+        abort_if($user->isAdmin() && User::where('role', 'admin')->where('id', '!=', $user->id)->doesntExist(), 422, __('Последният администратор не може да се изтрие.'));
 
         audit('user.delete', $user->email);
         $user->delete();
 
-        return back()->with('status', 'Потребителят е изтрит.');
+        return back()->with('status', __('Потребителят е изтрит.'));
     }
 }

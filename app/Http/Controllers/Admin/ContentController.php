@@ -23,7 +23,10 @@ class ContentController extends Controller
 
     private function authorize(Request $r, Content $content): void
     {
-        abort_unless($r->user()->allows('content.all') || $content->author_id === $r->user()->id, 403);
+        $u = $r->user();
+        abort_unless($u->allows('content.all') || $content->author_id === $u->id, 403);
+        // like WordPress: a contributor can no longer edit a post once it is published
+        abort_if(! $u->allows('publish') && $content->status === 'published', 403, __('Публикувана статия се редактира от автор или редактор.'));
     }
 
     public function index(Request $request)
@@ -35,7 +38,7 @@ class ContentController extends Controller
         $q = Content::with(['translations', 'author', 'category.translations'])->where('type', $type)
             ->when($trash, fn ($q) => $q->onlyTrashed())
             ->when(! $user->allows('content.all'), fn ($q) => $q->where('author_id', $user->id))
-            ->when($request->filled('status') && in_array($request->status, ['draft', 'published'], true), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('status') && in_array($request->status, ['draft', 'pending', 'published'], true), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('q'), function ($q) use ($request) {
                 $term = '%'.addcslashes($request->string('q')->limit(100), '%_\\').'%';
                 $q->whereHas('translations', fn ($t) => $t->where('title', 'like', $term));
@@ -62,7 +65,7 @@ class ContentController extends Controller
 
         return view('admin.content.form', [
             'type' => $type,
-            'content' => new Content(['status' => 'draft']),
+            'content' => new Content(['status' => \App\Support\Options::get('default_status'), 'category_id' => $type === 'post' ? (\App\Support\Options::get('default_category') ?: null) : null]),
             'categories' => Category::with('translations')->orderBy('sort')->get(),
             'languages' => mcms_languages(),
         ] + $this->taxonomyData(null));
@@ -71,11 +74,15 @@ class ContentController extends Controller
     public function store(Request $request)
     {
         $type = $this->type($request);
+        abort_if($type === 'page' && ! $request->user()->allows('pages'), 403);
         $content = ContentSaver::save(null, $type, $this->validated($request), $request->input('tr', []), $request->user()->id);
+        if ($content->status === 'pending') {
+            $this->notifyPending($content, $request->user());
+        }
         $this->saveTaxonomy($request, $content);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
-        return redirect()->route("admin.{$type}s.edit", $content)->with('status', 'Записано.');
+        return redirect()->route("admin.{$type}s.edit", $content)->with('status', __('Записано.'));
     }
 
     public function edit(Request $request, Content $content)
@@ -94,24 +101,28 @@ class ContentController extends Controller
     public function update(Request $request, Content $content)
     {
         $this->authorize($request, $content);
+        $was = $content->status;
         ContentSaver::save($content, $content->type, $this->validated($request), $request->input('tr', []), $request->user()->id);
+        if ($content->fresh()->status === 'pending' && $was !== 'pending') {
+            $this->notifyPending($content, $request->user());
+        }
         $this->saveTaxonomy($request, $content);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
-        return back()->with('status', 'Промените са записани.');
+        return back()->with('status', __('Промените са записани.'));
     }
 
     public function destroy(Request $request, Content $content)
     {
         $this->authorize($request, $content);
-        abort_if($content->is_home, 422, 'Началната страница не може да се изтрие. Първо задайте друга.');
+        abort_if($content->is_home, 422, __('Началната страница не може да се изтрие. Първо задайте друга.'));
         $title = $content->adminTitle();
         $type = $content->type;
         $content->delete();
         audit($type.'.delete', (string) $content->id, $title);
 
         return redirect()->route("admin.{$type}s.index")
-            ->with('status', Trash::ready() ? 'Преместено в кошчето.' : 'Изтрито.');
+            ->with('status', Trash::ready() ? __('Преместено в кошчето.') : __('Изтрито.'));
     }
 
     private function trashed(Request $request, int $id): Content
@@ -130,7 +141,7 @@ class ContentController extends Controller
         \Illuminate\Support\Facades\Cache::forget('mcms.sitemap');
         audit($content->type.'.restore', (string) $content->id, $content->adminTitle());
 
-        return back()->with('status', 'Възстановено от кошчето.');
+        return back()->with('status', __('Възстановено от кошчето.'));
     }
 
     public function purge(Request $request, int $id)
@@ -139,7 +150,7 @@ class ContentController extends Controller
         audit($content->type.'.purge', (string) $content->id, $content->adminTitle());
         $content->forceDelete(); // translations, revisions, tag/related links cascade in the database
 
-        return back()->with('status', 'Изтрито завинаги.');
+        return back()->with('status', __('Изтрито завинаги.'));
     }
 
     public function emptyTrash(Request $request)
@@ -154,7 +165,7 @@ class ContentController extends Controller
         }
         audit($type.'.trash.empty', null, (string) $items->count());
 
-        return redirect()->route("admin.{$type}s.index")->with('status', 'Кошчето е изпразнено ('.$items->count().').');
+        return redirect()->route("admin.{$type}s.index")->with('status', __('Кошчето е изпразнено (:n).', ['n' => $items->count()]));
     }
 
     public function restore(Request $request, Revision $revision)
@@ -173,7 +184,7 @@ class ContentController extends Controller
         $translation->update(['title' => $revision->title, 'body' => $revision->body]);
         audit('revision.restore', (string) $translation->content_id);
 
-        return back()->with('status', 'Версията е възстановена.');
+        return back()->with('status', __('Версията е възстановена.'));
     }
 
     /** Tags + related posts apply to posts only and need the "tags" migration. */
@@ -213,10 +224,28 @@ class ContentController extends Controller
         ];
     }
 
+    private function notifyPending(Content $content, $user): void
+    {
+        if (! \App\Support\Options::on('reg_notify')) {
+            return;
+        }
+        $to = setting('contact_email') ?: \App\Models\User::where('role', 'admin')->where('active', true)->value('email');
+        if (! $to) {
+            return;
+        }
+        try {
+            \Illuminate\Support\Facades\Mail::raw(__(':name изпрати статия за одобрение: :title', ['name' => $user->name, 'title' => $content->adminTitle()])."\n".route('admin.posts.edit', $content), function ($m) use ($to) {
+                $m->to($to)->subject('['.setting('site_name', 'mCMS').'] '.__('Статия чака одобрение'));
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
     private function validated(Request $request): array
     {
         $data = $request->validate([
-            'status' => 'required|in:draft,published',
+            'status' => 'required|in:draft,pending,published',
             'publish_at' => 'nullable|date',
             'category_id' => 'nullable|integer|exists:categories,id',
             'featured_media_id' => 'nullable|integer|exists:media,id',
@@ -233,6 +262,10 @@ class ContentController extends Controller
             'tr.*.meta_description' => 'nullable|string|max:300',
         ]);
         unset($data['tr']);
+        // no 'publish' permission (contributor): "published" becomes "pending review"
+        if ($data['status'] === 'published' && ! $request->user()->allows('publish')) {
+            $data['status'] = 'pending';
+        }
         // per-content comment override: '' = site default (NULL). Column exists only after the database update.
         if (\App\Support\Discussion::ready()) {
             $data['comments_open'] = ($data['comments_open'] ?? '') === '' ? null : (bool) (int) $data['comments_open'];

@@ -1,4 +1,4 @@
 @extends('errors.layout')
 @section('code', '429')
-@section('title', 'Твърде много заявки')
-@section('message', 'Моля, изчакайте малко и опитайте отново.')
+@section('title', __('Твърде много заявки'))
+@section('message', __('Моля, изчакайте малко и опитайте отново.'))

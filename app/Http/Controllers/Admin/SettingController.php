@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Support\Design;
 use App\Support\Discussion;
 use App\Support\Widgets;
+use App\Support\Options;
 use App\Support\Sanitizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -26,6 +27,8 @@ class SettingController extends Controller
             'footerCols' => Widgets::footerCols(),
             'footerAll' => collect(range(1, Widgets::MAX_COLS))->mapWithKeys(fn ($c) => [$c => Widgets::decode(setting('widgets.footer.c'.$c))])->all(),
             'sidebar' => Widgets::sidebar(),
+            'opt' => Options::all(),
+            'optCategories' => \App\Models\Category::with('translations')->orderBy('sort')->get(),
             'menus' => \App\Models\Menu::orderBy('id')->get(),
             'ogImage' => ($id = setting('og_media_id')) ? Media::find($id) : null,
         ]);
@@ -89,7 +92,42 @@ class SettingController extends Controller
         Setting::putMany($values);
         audit('settings.update', null, ['maintenance' => $values['maintenance_mode']]);
 
-        return back()->with('status', 'Настройките са записани.');
+        return back()->with('status', __('Настройките са записани.'));
+    }
+
+    /** WordPress-like groups: reading, writing, datetime, permalinks, media, scripts, maintenance. */
+    public function updateOptions(Request $request, string $group)
+    {
+        abort_unless(isset(Options::GROUPS[$group]), 404);
+
+        $ctx = [];
+        if ($group === 'writing') {
+            $ctx['categories'] = \App\Models\Category::pluck('id')->map(fn ($i) => (int) $i)->all();
+        }
+        if ($group === 'permalinks') {
+            $ctx['reserved'] = config('mcms.reserved_slugs', []);
+            $ctx['current'] = array_intersect_key(Options::all(), array_flip(Options::BASE_KEYS));
+            $cand = array_map(fn ($k) => strtolower(trim((string) $request->input($k), "/ \t")), Options::BASE_KEYS);
+            $ctx['taken'] = \App\Models\ContentTranslation::whereIn('slug', array_filter($cand))
+                ->whereHas('content', fn ($q) => $q->where('type', 'page'))->pluck('slug')->all();
+        }
+
+        $r = Options::clean($group, $request->all(), $ctx);
+        $values = [];
+        foreach ($r['values'] as $k => $v) {
+            $values['opt.'.$k] = $v === '' ? null : $v;
+        }
+        Setting::putMany($values);
+        if ($group === 'permalinks') {
+            \Illuminate\Support\Facades\Cache::forget('mcms.sitemap');
+        }
+        audit('settings.'.$group);
+
+        $back = redirect(route('admin.settings').'#'.$group);
+
+        return $r['errors']
+            ? $back->withErrors($r['errors'])->with('status', __('Записано частично — вижте забележките.'))
+            : $back->with('status', __(':group: настройките са записани.', ['group' => __(Options::GROUPS[$group])]));
     }
 
     /** Footer: number of columns (0 = classic footer, 1-12) + widgets of each column. */
@@ -107,14 +145,14 @@ class SettingController extends Controller
             $list = Widgets::cleanList((array) $request->input("cols.$c", []), $locales);
             $json = $list ? json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
             if ($json !== null && strlen($json) > Widgets::MAX_JSON) {
-                throw \Illuminate\Validation\ValidationException::withMessages(["cols.$c" => "Колона $c е твърде голяма — съкратете текстовете."]);
+                throw \Illuminate\Validation\ValidationException::withMessages(["cols.$c" => __('Колона :c е твърде голяма — съкратете текстовете.', ['c' => $c])]);
             }
             $values["widgets.footer.c$c"] = $json;
         }
         Setting::putMany($values);
         audit('settings.footer', null, ['cols' => $values['footer.cols']]);
 
-        return redirect(route('admin.settings').'#footer')->with('status', 'Футърът е записан.');
+        return redirect(route('admin.settings').'#footer')->with('status', __('Футърът е записан.'));
     }
 
     /** Blog sidebar: on/off, side and widgets. */
@@ -124,7 +162,7 @@ class SettingController extends Controller
         $list = Widgets::cleanList((array) $request->input('cols.0', []), mcms_locales());
         $json = $list ? json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
         if ($json !== null && strlen($json) > Widgets::MAX_JSON) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['cols' => 'Сайдбарът е твърде голям — съкратете текстовете.']);
+            throw \Illuminate\Validation\ValidationException::withMessages(['cols' => __('Сайдбарът е твърде голям — съкратете текстовете.')]);
         }
         Setting::putMany([
             'sidebar.on' => $request->boolean('sidebar_on') ? '1' : '0',
@@ -133,7 +171,7 @@ class SettingController extends Controller
         ]);
         audit('settings.sidebar');
 
-        return redirect(route('admin.settings').'#sidebar')->with('status', 'Сайдбарът е записан.');
+        return redirect(route('admin.settings').'#sidebar')->with('status', __('Сайдбарът е записан.'));
     }
 
     public function updateDiscussion(Request $request)
@@ -163,7 +201,7 @@ class SettingController extends Controller
         Setting::putMany($values);
         audit('settings.discussion', null, ['enabled' => $values['discussion.enabled']]);
 
-        return redirect(route('admin.settings').'#discussion')->with('status', 'Настройките за дискусии са записани.');
+        return redirect(route('admin.settings').'#discussion')->with('status', __('Настройките за дискусии са записани.'));
     }
 
     public function updateDesign(Request $request)
@@ -176,7 +214,7 @@ class SettingController extends Controller
             'font_size' => 'nullable|integer|min:14|max:22',
             'logo_size' => ['required', function ($attr, $v, $fail) {
                 if ($v !== 'auto' && (! ctype_digit((string) $v) || (int) $v < 20 || (int) $v > 300)) {
-                    $fail('Големината на логото е „auto“ или число между 20 и 300 (px).');
+                    $fail(__('Големината на логото е „auto“ или число между 20 и 300 (px).'));
                 }
             }],
             'anim_page_type' => $anim,
@@ -229,7 +267,7 @@ class SettingController extends Controller
         Setting::putMany($values);
         audit('settings.design');
 
-        return redirect(route('admin.settings').'#design')->with('status', 'Дизайнът е записан.');
+        return redirect(route('admin.settings').'#design')->with('status', __('Дизайнът е записан.'));
     }
 
     public function resetDesign()
@@ -238,23 +276,23 @@ class SettingController extends Controller
         \Illuminate\Support\Facades\Cache::forget('mcms.settings');
         audit('settings.design.reset');
 
-        return redirect(route('admin.settings').'#design')->with('status', 'Дизайнът е върнат към подразбиращите се стойности.');
+        return redirect(route('admin.settings').'#design')->with('status', __('Дизайнът е върнат към подразбиращите се стойности.'));
     }
 
     public function testMail(Request $request)
     {
         $to = $request->user()->email;
         try {
-            Mail::raw('Тестово съобщение от '.setting('site_name', 'mCMS').'. Пощата работи.', function ($m) use ($to) {
-                $m->to($to)->subject('mCMS — тест на имейл');
+            Mail::raw(__('Тестово съобщение от :site. Пощата работи.', ['site' => setting('site_name', 'mCMS')]), function ($m) use ($to) {
+                $m->to($to)->subject(__('mCMS — тест на имейл'));
             });
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->with('error', 'Изпращането неуспешно: '.mb_substr($e->getMessage(), 0, 200));
+            return back()->with('error', __('Изпращането неуспешно: :err', ['err' => mb_substr($e->getMessage(), 0, 200)]));
         }
 
-        return back()->with('status', "Тестово писмо е изпратено до $to.");
+        return back()->with('status', __('Тестово писмо е изпратено до :to.', ['to' => $to]));
     }
 
     private function clean(mixed $v): ?string

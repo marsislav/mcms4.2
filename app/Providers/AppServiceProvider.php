@@ -26,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         try {
+            $this->applyOptions();
             $this->applyMailSettings();
             PluginManager::boot();
         } catch (\Throwable $e) {
@@ -39,6 +40,20 @@ class AppServiceProvider extends ServiceProvider
                 'footerMenu' => Menu::tree('footer'),
             ]);
         });
+    }
+
+    /** Settings > Дата и час / Медия: timezone and image limits override config defaults. */
+    private function applyOptions(): void
+    {
+        if ($tz = \App\Support\Options::timezone()) {
+            config(['app.timezone' => $tz]);
+            date_default_timezone_set($tz);
+        }
+        foreach (['upload_max_mb' => 'max_upload_mb', 'image_max_px' => 'image_max_px', 'thumb_px' => 'thumb_px'] as $opt => $cfg) {
+            if (($n = \App\Support\Options::mediaInt($opt)) !== null) {
+                config(['mcms.'.$cfg => $n]);
+            }
+        }
     }
 
     /** SMTP credentials managed from the panel (shared hosting has no easy .env access). */

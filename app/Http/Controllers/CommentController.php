@@ -20,13 +20,13 @@ class CommentController extends Controller
         // Rate limit per IP (on top of the route throttle)
         $key = 'comment:'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 8)) {
-            return back()->withInput()->with('comment_error', t('comments.throttle', 'Твърде много опити. Опитайте по-късно.'));
+            return back()->withInput()->with('comment_error', t('comments.throttle', __('Твърде много опити. Опитайте по-късно.')));
         }
         RateLimiter::hit($key, 600);
 
         // Honeypot: bots fill the hidden field — pretend success, store nothing
         if ($request->filled('hp_site')) {
-            return back()->with('comment_ok', t('comments.held', 'Коментарът ви чака одобрение.'));
+            return back()->with('comment_ok', t('comments.held', __('Коментарът ви чака одобрение.')));
         }
 
         // Time trap: a human needs at least 3 s (genuine, fresh token)
@@ -36,7 +36,7 @@ class CommentController extends Controller
             $age = -1;
         }
         if ($age < 3 || $age > 86400) {
-            return back()->withInput()->with('comment_error', t('comments.error', 'Моля, проверете полетата и опитайте отново.'));
+            return back()->withInput()->with('comment_error', t('comments.error', __('Моля, проверете полетата и опитайте отново.')));
         }
 
         $need = Discussion::on('require_name_email');
@@ -51,7 +51,7 @@ class CommentController extends Controller
 
         $content = Content::find($data['content_id']);
         if (! $content || ! $content->isVisible() || ! Discussion::isOpen($content)) {
-            return back()->withInput()->with('comment_error', t('comments.closed', 'Коментарите са затворени.'));
+            return back()->withInput()->with('comment_error', t('comments.closed', __('Коментарите са затворени.')));
         }
 
         $user = $request->user();
@@ -62,7 +62,7 @@ class CommentController extends Controller
             $name = $name ?: $user->name;
             $email = $email ?: $user->email;
         }
-        $name = $name !== '' ? $name : t('comments.anonymous', 'Анонимен');
+        $name = $name !== '' ? $name : t('comments.anonymous', __('Анонимен'));
         $url = Discussion::on('allow_url') ? trim((string) ($data['url'] ?? '')) : '';
         if ($url !== '' && ! preg_match('~^https?://~i', $url)) {
             $url = '';
@@ -75,13 +75,13 @@ class CommentController extends Controller
             $fk = 'comment-flood:'.$request->ip();
             if ($flood > 0) {
                 if (RateLimiter::tooManyAttempts($fk, 1)) {
-                    return back()->withInput()->with('comment_error', t('comments.throttle', 'Твърде много опити. Опитайте по-късно.'));
+                    return back()->withInput()->with('comment_error', t('comments.throttle', __('Твърде много опити. Опитайте по-късно.')));
                 }
                 RateLimiter::hit($fk, $flood);
             }
             $dup = Comment::where('content_id', $content->id)->where('author_name', $name)->where('body', $body)->exists();
             if ($dup) {
-                return back()->withInput()->with('comment_error', t('comments.duplicate', 'Този коментар вече е изпратен.'));
+                return back()->withInput()->with('comment_error', t('comments.duplicate', __('Този коментар вече е изпратен.')));
             }
         }
 
@@ -120,11 +120,11 @@ class CommentController extends Controller
         $url = $tr ? $tr->setRelation('content', $content)->url() : url('/');
 
         if ($status === 'approved') {
-            return redirect($url.'#comment-'.$comment->id)->with('comment_ok', t('comments.posted', 'Благодарим! Коментарът е публикуван.'));
+            return redirect($url.'#comment-'.$comment->id)->with('comment_ok', t('comments.posted', __('Благодарим! Коментарът е публикуван.')));
         }
 
         // spam looks like "held" to the sender (do not teach bots what worked)
-        return redirect($url.'#comments')->with('comment_ok', t('comments.held', 'Коментарът ви чака одобрение.'));
+        return redirect($url.'#comments')->with('comment_ok', t('comments.held', __('Коментарът ви чака одобрение.')));
     }
 
     private function notify(Comment $comment, Content $content, string $status): void
@@ -138,9 +138,9 @@ class CommentController extends Controller
             return;
         }
         $title = $content->translations->first()?->title ?? ('#'.$content->id);
-        $head = $status === 'approved' ? 'Нов коментар' : 'Коментар чака одобрение';
-        $text = "$head към „{$title}“\n\nАвтор: {$comment->author_name} <{$comment->author_email}>\nIP: {$comment->author_ip}\n\n{$comment->body}\n\n"
-            .'Управление: '.admin_url('comments?status='.($status === 'approved' ? 'approved' : 'pending'))."\n";
+        $head = $status === 'approved' ? __('Нов коментар') : __('Коментар чака одобрение');
+        $text = __(':head към „:title“', ['head' => $head, 'title' => $title])."\n\n".__('Автор: :name <:email>', ['name' => $comment->author_name, 'email' => $comment->author_email])."\nIP: {$comment->author_ip}\n\n{$comment->body}\n\n"
+            .__('Управление: ').admin_url('comments?status='.($status === 'approved' ? 'approved' : 'pending'))."\n";
         try {
             Mail::raw($text, function ($m) use ($to, $head, $title) {
                 $m->to($to)->subject('['.setting('site_name', 'mCMS').'] '.$head.': '.mb_substr($title, 0, 80));

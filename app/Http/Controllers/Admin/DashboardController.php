@@ -15,13 +15,25 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        if (! $user->allows('content')) {
+            return redirect()->route('admin.profile');
+        }
 
-        $stats = [
-            ['Страници', Content::where('type', 'page')->count(), route('admin.pages.index')],
-            ['Публикации', Content::where('type', 'post')->count(), route('admin.posts.index')],
-            ['Медия файлове', Media::count(), route('admin.media.index')],
-            ['Нови съобщения', Message::whereNull('read_at')->count(), route('admin.messages.index')],
-        ];
+        $own = fn ($q) => $user->allows('content.all') ? $q : $q->where('author_id', $user->id);
+        $stats = [];
+        if ($user->allows('pages')) {
+            $stats[] = [__('Страници'), Content::where('type', 'page')->count(), route('admin.pages.index')];
+        }
+        $stats[] = [$user->allows('content.all') ? __('Публикации') : __('Моите публикации'), $own(Content::where('type', 'post'))->count(), route('admin.posts.index')];
+        if ($user->allows('content.all')) {
+            $stats[] = [__('Чакат одобрение'), Content::where('status', 'pending')->count(), route('admin.posts.index', ['status' => 'pending'])];
+        }
+        if ($user->allows('media')) {
+            $stats[] = [__('Медия файлове'), Media::count(), route('admin.media.index')];
+        }
+        if ($user->allows('messages')) {
+            $stats[] = [__('Нови съобщения'), Message::whereNull('read_at')->count(), route('admin.messages.index')];
+        }
 
         return view('admin.dashboard', [
             'stats' => $stats,
@@ -38,14 +50,14 @@ class DashboardController extends Controller
     private function health(User $user): array
     {
         return [
-            ['APP_DEBUG е изключен', ! config('app.debug'), 'Задайте APP_DEBUG=false в .env'],
-            ['Сайтът работи през HTTPS', request()->isSecure(), 'Включете SSL и пренасочване към https'],
-            ['Административният път не е „panel“', config('mcms.admin_path') !== 'panel', 'Сменете MCMS_ADMIN_PATH в .env'],
-            ['public/uploads блокира изпълнение на PHP', is_file(public_path('uploads/.htaccess')), 'Липсва public/uploads/.htaccess'],
-            ['.env не е достъпен през уеб', true, 'Document root трябва да сочи към /public'],
-            ['PHP версия ≥ 8.2', version_compare(PHP_VERSION, '8.2.0', '>='), 'Обновете PHP от cPanel'],
-            ['Инсталаторът е заключен', mcms_installed(), ''],
-            ['Има скорошен архив на базата', collect(\App\Support\Backup::list())->contains(fn ($b) => str_starts_with($b['name'], 'db-') && $b['time'] > time() - 7 * 86400), 'Направете архив от „Архиви“'],
+            [__('APP_DEBUG е изключен'), ! config('app.debug'), __('Задайте APP_DEBUG=false в .env')],
+            [__('Сайтът работи през HTTPS'), request()->isSecure(), __('Включете SSL и пренасочване към https')],
+            [__('Административният път не е „panel“'), config('mcms.admin_path') !== 'panel', __('Сменете MCMS_ADMIN_PATH в .env')],
+            [__('public/uploads блокира изпълнение на PHP'), is_file(public_path('uploads/.htaccess')), __('Липсва public/uploads/.htaccess')],
+            [__('.env не е достъпен през уеб'), true, __('Document root трябва да сочи към /public')],
+            [__('PHP версия ≥ 8.2'), version_compare(PHP_VERSION, '8.2.0', '>='), __('Обновете PHP от cPanel')],
+            [__('Инсталаторът е заключен'), mcms_installed(), ''],
+            [__('Има скорошен архив на базата'), collect(\App\Support\Backup::list())->contains(fn ($b) => str_starts_with($b['name'], 'db-') && $b['time'] > time() - 7 * 86400), __('Направете архив от „Архиви“')],
         ];
     }
 }

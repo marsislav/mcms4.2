@@ -36,7 +36,7 @@ class MediaController extends Controller
 
         $redirect = back();
         if ($ok) {
-            $redirect->with('status', "Качени файлове: $ok.");
+            $redirect->with('status', __('Качени файлове: :n.', ['n' => $ok]));
         }
 
         return $errors ? $redirect->with('error', implode(' | ', $errors)) : $redirect;
@@ -73,11 +73,11 @@ class MediaController extends Controller
         $file = $request->file('upload');
         try {
             if (! $file || ! $file->isValid()) {
-                throw new \RuntimeException('Качването е неуспешно.');
+                throw new \RuntimeException(__('Качването е неуспешно.'));
             }
             $real = $file->getRealPath();
             if (! $real || ! str_starts_with((string) (new \finfo(FILEINFO_MIME_TYPE))->file($real), 'image/')) {
-                throw new \RuntimeException('В текста могат да се качват само изображения (JPG, PNG, WebP, GIF).');
+                throw new \RuntimeException(__('В текста могат да се качват само изображения (JPG, PNG, WebP, GIF).'));
             }
             $media = Uploader::store($file, $request->user()->id);
             audit('media.upload', (string) $media->id, $media->original_name);
@@ -93,7 +93,7 @@ class MediaController extends Controller
         $data = $request->validate(['alt' => 'nullable|string|max:190']);
         $media->update(['alt' => $data['alt'] ? strip_tags($data['alt']) : null]);
 
-        return back()->with('status', 'Записано.');
+        return back()->with('status', __('Записано.'));
     }
 
     public function destroy(Media $media)
@@ -101,7 +101,7 @@ class MediaController extends Controller
         audit('media.delete', (string) $media->id, $media->original_name);
         Uploader::delete($media);
 
-        return back()->with('status', 'Файлът е изтрит.');
+        return back()->with('status', __('Файлът е изтрит.'));
     }
 
     /** JSON feed for the in-editor media picker. */

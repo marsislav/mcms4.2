@@ -26,18 +26,18 @@ class Uploader
     public static function store(UploadedFile $file, ?int $userId = null): Media
     {
         if (! $file->isValid()) {
-            throw new RuntimeException('Качването е неуспешно.');
+            throw new RuntimeException(__('Качването е неуспешно.'));
         }
 
         $max = config('mcms.max_upload_mb') * 1024 * 1024;
         if ($file->getSize() > $max) {
-            throw new RuntimeException('Файлът е твърде голям (макс. '.config('mcms.max_upload_mb').' MB).');
+            throw new RuntimeException(__('Файлът е твърде голям (макс. :max MB).', ['max' => config('mcms.max_upload_mb')]));
         }
 
         $real = $file->getRealPath();
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($real);
         if (! isset(self::TYPES[$mime])) {
-            throw new RuntimeException('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF.');
+            throw new RuntimeException(__('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF.'));
         }
         $ext = self::TYPES[$mime];
 
@@ -50,7 +50,7 @@ class Uploader
         $sub = date('Y/m');
         $dir = public_path('uploads/'.$sub);
         if (! is_dir($dir) && ! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
-            throw new RuntimeException('Директорията за качване не е записваема.');
+            throw new RuntimeException(__('Директорията за качване не е записваема.'));
         }
 
         $name = bin2hex(random_bytes(12));
@@ -62,11 +62,11 @@ class Uploader
         if (str_starts_with($mime, 'image/')) {
             $info = @getimagesize($real);
             if (! $info || $info[0] < 1 || $info[1] < 1) {
-                throw new RuntimeException('Невалидно изображение.');
+                throw new RuntimeException(__('Невалидно изображение.'));
             }
             [$w, $h] = $info;
             if ($w * $h > 40_000_000) {
-                throw new RuntimeException('Изображението е с твърде голяма резолюция.');
+                throw new RuntimeException(__('Изображението е с твърде голяма резолюция.'));
             }
 
             if ($mime === 'image/gif' && $outMime === 'image/gif') { // animated GIFs stay untouched
@@ -78,10 +78,10 @@ class Uploader
             }
         } else { // pdf
             if (! str_starts_with((string) file_get_contents($real, false, null, 0, 5), '%PDF-')) {
-                throw new RuntimeException('Невалиден PDF файл.');
+                throw new RuntimeException(__('Невалиден PDF файл.'));
             }
             if (! @move_uploaded_file($real, $abs) && ! @copy($real, $abs)) {
-                throw new RuntimeException('Файлът не може да бъде записан.');
+                throw new RuntimeException(__('Файлът не може да бъде записан.'));
             }
         }
 
@@ -152,10 +152,10 @@ class Uploader
     private static function passThrough(string $from, string $to): void
     {
         if (preg_match('/<\?(php|=)|<script/i', (string) file_get_contents($from))) {
-            throw new RuntimeException('Файлът съдържа забранено съдържание.');
+            throw new RuntimeException(__('Файлът съдържа забранено съдържание.'));
         }
         if (! @copy($from, $to)) {
-            throw new RuntimeException('Файлът не може да бъде записан.');
+            throw new RuntimeException(__('Файлът не може да бъде записан.'));
         }
     }
 
@@ -163,7 +163,7 @@ class Uploader
     private static function reencode(string $from, string $to, string $mime, ?string $outMime = null): array
     {
         if (! function_exists('imagecreatetruecolor')) {
-            throw new RuntimeException('PHP GD разширението не е налично.');
+            throw new RuntimeException(__('PHP GD разширението не е налично.'));
         }
         self::ensureMemory();
 
@@ -175,7 +175,7 @@ class Uploader
             default => false,
         };
         if (! $img) {
-            throw new RuntimeException('Изображението не може да бъде обработено.');
+            throw new RuntimeException(__('Изображението не може да бъде обработено.'));
         }
         $outMime ??= $mime;
         if (! imageistruecolor($img)) { // palette PNG/GIF: WebP needs truecolor
@@ -262,7 +262,7 @@ class Uploader
             default => false,
         };
         if (! $ok) {
-            throw new RuntimeException('Изображението не може да бъде записано.');
+            throw new RuntimeException(__('Изображението не може да бъде записано.'));
         }
     }
 

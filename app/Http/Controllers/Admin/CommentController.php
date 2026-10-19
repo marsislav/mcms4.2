@@ -39,7 +39,7 @@ class CommentController extends Controller
     public function bulk(Request $request)
     {
         if (! $request->filled('action') || ! $request->input('ids')) {
-            return back()->with('error', 'Изберете коментари и действие.');
+            return back()->with('error', __('Изберете коментари и действие.'));
         }
         $data = $request->validate([
             'action' => 'required|in:approve,unapprove,spam,notspam,trash,restore,delete',
@@ -62,7 +62,7 @@ class CommentController extends Controller
         };
         audit('comments.'.$data['action'], null, ['count' => $n]);
 
-        return back()->with('status', 'Готово ('.$n.').');
+        return back()->with('status', __('Готово (:n).', ['n' => $n]));
     }
 
     public function emptyTrash(Request $request)
@@ -71,7 +71,7 @@ class CommentController extends Controller
         $n = Comment::where('status', $status)->delete();
         audit('comments.empty_'.$status, null, ['count' => $n]);
 
-        return back()->with('status', "Изтрити за постоянно: $n.");
+        return back()->with('status', __('Изтрити за постоянно: :n.', ['n' => $n]));
     }
 
     public function edit(Comment $comment)
@@ -97,7 +97,7 @@ class CommentController extends Controller
         ]);
         audit('comments.update', (string) $comment->id);
 
-        return back()->with('status', 'Коментарът е записан.');
+        return back()->with('status', __('Коментарът е записан.'));
     }
 
     /** Reply from the panel: published at once under the logged-in user's name. */
@@ -121,6 +121,6 @@ class CommentController extends Controller
         }
         audit('comments.reply', (string) $reply->id);
 
-        return redirect()->route('admin.comments.index')->with('status', 'Отговорът е публикуван.');
+        return redirect()->route('admin.comments.index')->with('status', __('Отговорът е публикуван.'));
     }
 }

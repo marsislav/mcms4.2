@@ -12,7 +12,7 @@
     <p class="code">@yield('code')</p>
     <h1>@yield('title')</h1>
     <p>@yield('message')</p>
-    <p><a href="{{ url('/') }}">{{ t('error.home', 'Към началото') }}</a></p>
+    <p><a href="{{ url('/') }}">{{ t('error.home', __('Към началото')) }}</a></p>
 </main>
 </body>
 </html>

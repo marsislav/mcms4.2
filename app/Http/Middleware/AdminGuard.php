@@ -18,18 +18,18 @@ class AdminGuard
         $user = Auth::user();
 
         if (! $user || ! $user->active) {
-            return $this->kick($request, $user ? 'Профилът е деактивиран.' : null);
+            return $this->kick($request, $user ? __('Профилът е деактивиран.') : null);
         }
 
         $session = $request->session();
 
         if (hash('sha256', (string) $request->userAgent()) !== $session->get('mcms_ua')) {
-            return $this->kick($request, 'Сесията е невалидна. Влезте отново.');
+            return $this->kick($request, __('Сесията е невалидна. Влезте отново.'));
         }
 
         $last = (int) $session->get('mcms_last_activity', 0);
         if ($last && time() - $last > config('mcms.idle_minutes') * 60) {
-            return $this->kick($request, 'Сесията изтече поради неактивност.');
+            return $this->kick($request, __('Сесията изтече поради неактивност.'));
         }
         $session->put('mcms_last_activity', time());
 

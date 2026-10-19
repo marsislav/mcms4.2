@@ -17,8 +17,8 @@
       var editor = this.editor;
       editor.ui.componentFactory.add('mediaLibrary', function (locale) {
         var view = new ButtonView(locale);
-        view.set({ label: 'Медия', tooltip: true, withText: true });
-        if (CK.icons && CK.icons.IconImage) { view.set({ icon: CK.icons.IconImage, withText: false, label: 'Медия (библиотека)' }); }
+        view.set({ label: T('Медия'), tooltip: true, withText: true });
+        if (CK.icons && CK.icons.IconImage) { view.set({ icon: CK.icons.IconImage, withText: false, label: T('Медия (библиотека)') }); }
         view.on('execute', function () {
           if (typeof window.mcmsOpenPicker !== 'function') { return; }
           window.mcmsOpenPicker(function (m) {
@@ -63,14 +63,14 @@
   plugins.push(MediaLibrary);
   if (window.McmsGridLayout) { plugins.push(window.McmsGridLayout); }
   if (window.McmsFontAwesome) { plugins.push(window.McmsFontAwesome); }
-  if (missing.length && window.console) { console.warn('CKEditor: липсват плъгини:', missing.join(', ')); }
+  if (missing.length && window.console) { console.warn(T('CKEditor: липсват плъгини:'), missing.join(', ')); }
 
   var meta = function (n) { var m = document.querySelector('meta[name="' + n + '"]'); return m ? m.content : ''; };
   var cls = function (name, className, title) { return { name: name, className: className, title: title }; };
 
   var config = {
     licenseKey: 'GPL',
-    language: 'bg',
+    language: T.lang,
     plugins: plugins,
     /* Image upload (drag & drop, paste, toolbar button): stored in the media library by the server (re-encoded, random name) */
     simpleUpload: {
@@ -91,10 +91,10 @@
     },
     heading: {
       options: [
-        { model: 'paragraph', title: 'Параграф', class: 'ck-heading_paragraph' },
-        { model: 'heading2', view: 'h2', title: 'Заглавие 2', class: 'ck-heading_heading2' },
-        { model: 'heading3', view: 'h3', title: 'Заглавие 3', class: 'ck-heading_heading3' },
-        { model: 'heading4', view: 'h4', title: 'Заглавие 4', class: 'ck-heading_heading4' }
+        { model: 'paragraph', title: T('Параграф'), class: 'ck-heading_paragraph' },
+        { model: 'heading2', view: 'h2', title: T('Заглавие 2'), class: 'ck-heading_heading2' },
+        { model: 'heading3', view: 'h3', title: T('Заглавие 3'), class: 'ck-heading_heading3' },
+        { model: 'heading4', view: 'h4', title: T('Заглавие 4'), class: 'ck-heading_heading4' }
       ]
     },
     alignment: {
@@ -112,7 +112,7 @@
     link: {
       addTargetToExternalLinks: true,
       defaultProtocol: 'https://',
-      decorators: { openInNewTab: { mode: 'manual', label: 'Отвори в нов прозорец', attributes: { target: '_blank' } } }
+      decorators: { openInNewTab: { mode: 'manual', label: T('Отвори в нов прозорец'), attributes: { target: '_blank' } } }
     },
     list: { properties: { styles: true, startIndex: true, reversed: false } },
     image: {
@@ -129,7 +129,7 @@
     },
     codeBlock: {
       languages: [
-        { language: 'plaintext', label: 'Обикновен текст' }, { language: 'html', label: 'HTML' },
+        { language: 'plaintext', label: T('Обикновен текст') }, { language: 'html', label: 'HTML' },
         { language: 'css', label: 'CSS' }, { language: 'javascript', label: 'JavaScript' },
         { language: 'php', label: 'PHP' }, { language: 'sql', label: 'SQL' }, { language: 'bash', label: 'Bash' },
         { language: 'json', label: 'JSON' }
@@ -161,7 +161,7 @@
       ]
     },
     typing: { transformations: { include: ['symbols', 'mathematical', 'typography'] } },
-    placeholder: 'Пишете тук…'
+    placeholder: T('Пишете тук…')
   };
 
   var editors = [];
@@ -172,7 +172,7 @@
     host.parentNode.insertBefore(box, host.nextSibling);
     var wc = editor.plugins.has('WordCount') ? editor.plugins.get('WordCount') : null;
     if (!wc) { return; }
-    var upd = function () { box.textContent = 'Думи: ' + wc.words + ' · Знаци: ' + wc.characters; };
+    var upd = function () { box.textContent = T('Думи: ') + wc.words + T(' · Знаци: ') + wc.characters; };
     wc.on('update', upd);
     upd();
   }

@@ -12,7 +12,7 @@ class ProfileController extends Controller
 {
     public function show(Request $request)
     {
-        return view('admin.profile', ['user' => $request->user()]);
+        return view('admin.profile', ['user' => $request->user(), 'members' => \App\Support\Members::ready()]);
     }
 
     public function updateInfo(Request $request)
@@ -28,7 +28,29 @@ class ProfileController extends Controller
         $user->save();
         audit('profile.update');
 
-        return back()->with('status', 'Профилът е обновен.');
+        return back()->with('status', __('Профилът е обновен.'));
+    }
+
+    /** "Резюме": public bio shown on the author page, plus website. */
+    public function updateBio(Request $request)
+    {
+        abort_unless(\App\Support\Members::ready(), 404);
+        $user = $request->user();
+        $data = $request->validate([
+            'bio' => 'nullable|string|max:30000',
+            'website' => 'nullable|url|max:190',
+        ]);
+
+        $user->forceFill([
+            'bio' => ($b = trim(\App\Support\Sanitizer::clean((string) ($data['bio'] ?? '')))) === '' ? null : $b,
+            'website' => preg_match('~^https?://~i', (string) ($data['website'] ?? '')) ? $data['website'] : null,
+        ])->save();
+        if (empty($user->username)) {
+            $user->forceFill(['username' => \App\Support\Members::usernameFrom($user->name, fn ($u) => \App\Models\User::where('username', $u)->exists())])->save();
+        }
+        audit('profile.bio');
+
+        return back()->with('status', __('Резюмето е запазено.'));
     }
 
     public function updatePassword(Request $request)
@@ -48,13 +70,13 @@ class ProfileController extends Controller
         Auth::logoutOtherDevices($data['password']);
         audit('password.change');
 
-        return back()->with('status', 'Паролата е променена. Другите сесии са прекратени.');
+        return back()->with('status', __('Паролата е променена. Другите сесии са прекратени.'));
     }
 
     private function requirePassword($user, string $password): void
     {
         if (! Hash::check($password, $user->password)) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => 'Грешна текуща парола.']);
+            throw \Illuminate\Validation\ValidationException::withMessages(['current_password' => __('Грешна текуща парола.')]);
         }
     }
 }

@@ -1,49 +1,48 @@
 @extends('admin.layout')
-@section('title', 'Категории')
+@section('title', __('Категории'))
 
 @section('content')
 <section class="card">
-    <h2>Нова категория</h2>
+    <h2>{{ __('Нова категория') }}</h2>
     <form method="post" action="{{ route('admin.categories.store') }}" class="grid-form">
         @csrf
         @foreach ($languages as $lang)
-            <label>Име ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][name]" maxlength="150" @if($lang->is_default) required @endif></label>
+            <label>{{ __('Име (:p1)', ['p1' => strtoupper($lang->code)]) }} <input name="tr[{{ $lang->code }}][name]" maxlength="150" @if($lang->is_default) required @endif></label>
             <label>Slug ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][slug]" maxlength="150" pattern="[a-z0-9\-]*"></label>
         @endforeach
-        <label>Подредба <input type="number" name="sort" value="0" min="0" max="65000"></label>
-        <div><button class="btn primary">Добави</button></div>
+        <label>{{ __('Подредба') }} <input type="number" name="sort" value="0" min="0" max="65000"></label>
+        <div><button class="btn primary">{{ __('Добави') }}</button></div>
     </form>
 </section>
 
 @foreach ($categories as $cat)
 <section class="card">
-    <h3>{{ $cat->adminName() }} <small class="muted">· {{ $cat->contents_count }} публикации</small></h3>
+    <h3>{{ $cat->adminName() }} {!! __('<small class="muted">· :p1 публикации</small>', ['p1' => e($cat->contents_count)]) !!}</h3>
     <form method="post" action="{{ route('admin.categories.update', $cat) }}" class="grid-form">
         @csrf @method('PUT')
         @foreach ($languages as $lang)
             @php($t = $cat->tr($lang->code))
-            <label>Име ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][name]" value="{{ $t?->name }}" maxlength="150"></label>
+            <label>{{ __('Име (:p1)', ['p1' => strtoupper($lang->code)]) }} <input name="tr[{{ $lang->code }}][name]" value="{{ $t?->name }}" maxlength="150"></label>
             <label>Slug ({{ strtoupper($lang->code) }}) <input name="tr[{{ $lang->code }}][slug]" value="{{ $t?->slug }}" maxlength="150" pattern="[a-z0-9\-]*"></label>
         @endforeach
-        <label>Подредба <input type="number" name="sort" value="{{ $cat->sort }}" min="0" max="65000"></label>
-        <div><button class="btn">Запази</button></div>
+        <label>{{ __('Подредба') }} <input type="number" name="sort" value="{{ $cat->sort }}" min="0" max="65000"></label>
+        <div><button class="btn">{{ __('Запази') }}</button></div>
     </form>
-    <form method="post" action="{{ route('admin.categories.destroy', $cat) }}" data-confirm="{{ \App\Support\Trash::ready() ? 'Категорията ще бъде преместена в кошчето (публикациите остават).' : 'Категорията ще бъде изтрита (публикациите остават).' }}">
-        @csrf @method('DELETE')<button class="btn sm danger">{{ \App\Support\Trash::ready() ? 'В кошчето' : 'Изтрий категорията' }}</button>
+    <form method="post" action="{{ route('admin.categories.destroy', $cat) }}" data-confirm="{{ __(':p1', ['p1' => \App\Support\Trash::ready() ? __('Категорията ще бъде преместена в кошчето (публикациите остават).') : __('Категорията ще бъде изтрита (публикациите остават).')]) }}">
+        @csrf @method('DELETE')<button class="btn sm danger">{{ \App\Support\Trash::ready() ? __('В кошчето') : __('Изтрий категорията') }}</button>
     </form>
 </section>
 @endforeach
 
 @if($trashed->isNotEmpty())
 <section class="card">
-    <h2>Кошче <small class="muted">· {{ $trashed->count() }}</small></h2>
+    <h2>{!! __('Кошче <small class="muted">· :p1</small>', ['p1' => e($trashed->count())]) !!}</h2>
     @foreach ($trashed as $tc)
         <div class="row-actions" style="justify-content:space-between;border-top:1px solid var(--line);padding:.5rem 0">
-            <span>{{ $tc->adminName() }} <small class="muted">· изтрита {{ $tc->deleted_at->format('d.m.Y H:i') }}</small></span>
-            <span class="row-actions">
-                <form method="post" action="{{ route('admin.categories.untrash', $tc->id) }}">@csrf<button class="btn sm">Възстанови</button></form>
-                <form method="post" action="{{ route('admin.categories.purge', $tc->id) }}" data-confirm="Категорията ще бъде изтрита ЗАВИНАГИ (публикациите остават без категория).">
-                    @csrf @method('DELETE')<button class="btn sm danger">Изтрий завинаги</button>
+            {!! __('<span>:p1 <small class="muted">· изтрита :p2</small></span> <span class="row-actions">', ['p1' => e($tc->adminName()), 'p2' => e($tc->deleted_at->format('d.m.Y H:i'))]) !!}
+                <form method="post" action="{{ route('admin.categories.untrash', $tc->id) }}">@csrf<button class="btn sm">{{ __('Възстанови') }}</button></form>
+                <form method="post" action="{{ route('admin.categories.purge', $tc->id) }}" data-confirm="{{ __('Категорията ще бъде изтрита ЗАВИНАГИ (публикациите остават без категория).') }}">
+                    @csrf @method('DELETE')<button class="btn sm danger">{{ __('Изтрий завинаги') }}</button>
                 </form>
             </span>
         </div>

@@ -16,14 +16,15 @@ class SystemController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->with('error', 'Обновяването на базата не успя: '.mb_substr($e->getMessage(), 0, 300));
+            return back()->with('error', __('Обновяването на базата не успя: :err', ['err' => mb_substr($e->getMessage(), 0, 300)]));
         }
         Cache::forget('mcms.tags_ready');
         \App\Support\Trash::forget();
         \App\Support\Discussion::forget();
         Cache::forget('mcms.menu_extras');
+        \App\Support\Members::forget();
         audit('system.migrate');
 
-        return back()->with('status', 'Базата данни е обновена.');
+        return back()->with('status', __('Базата данни е обновена.'));
     }
 }

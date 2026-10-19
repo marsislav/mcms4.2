@@ -26,6 +26,6 @@ class MessageController extends Controller
         audit('message.delete', (string) $message->id);
         $message->delete();
 
-        return redirect()->route('admin.messages.index')->with('status', 'Съобщението е изтрито.');
+        return redirect()->route('admin.messages.index')->with('status', __('Съобщението е изтрито.'));
     }
 }

@@ -33,19 +33,19 @@
     var wrap = document.createElement('div');
     wrap.className = 'modal'; wrap.hidden = true;
     var box = document.createElement('div');
-    box.className = 'modal-box'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Икони');
+    box.className = 'modal-box'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', T('Икони'));
     var head = document.createElement('div'); head.className = 'modal-head';
-    var title = document.createElement('strong'); title.textContent = 'Икони (Font Awesome)';
-    var q = document.createElement('input'); q.type = 'search'; q.placeholder = 'Търсене (напр. home, user, arrow)…'; q.className = 'picker-q';
+    var title = document.createElement('strong'); title.textContent = T('Икони (Font Awesome)');
+    var q = document.createElement('input'); q.type = 'search'; q.placeholder = T('Търсене (напр. home, user, arrow)…'); q.className = 'picker-q';
     var style = document.createElement('select'); style.className = 'fa-style';
-    [['all', 'Всички'], ['s', 'Solid'], ['r', 'Regular'], ['b', 'Brands']].forEach(function (o) {
+    [['all', T('Всички')], ['s', 'Solid'], ['r', 'Regular'], ['b', 'Brands']].forEach(function (o) {
       var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; style.appendChild(op);
     });
     var close = document.createElement('button'); close.type = 'button'; close.className = 'btn sm picker-close'; close.textContent = '✕';
     head.appendChild(title); head.appendChild(q); head.appendChild(style); head.appendChild(close);
     var grid = document.createElement('div'); grid.className = 'picker-grid fa-grid';
     var foot = document.createElement('div'); foot.className = 'modal-foot';
-    var more = document.createElement('button'); more.type = 'button'; more.className = 'btn sm'; more.textContent = 'Още…'; more.hidden = true;
+    var more = document.createElement('button'); more.type = 'button'; more.className = 'btn sm'; more.textContent = T('Още…'); more.hidden = true;
     foot.appendChild(more);
     box.appendChild(head); box.appendChild(grid); box.appendChild(foot); wrap.appendChild(box);
     document.body.appendChild(wrap);
@@ -86,7 +86,7 @@
       });
       state.shown += slice.length;
       more.hidden = state.shown >= state.matches.length;
-      if (!state.matches.length) { grid.textContent = 'Няма намерени икони.'; }
+      if (!state.matches.length) { grid.textContent = T('Няма намерени икони.'); }
     }
 
     function refresh() { clearTimeout(state.timer); state.timer = setTimeout(function () { if (state.icons) { render(true); } }, 150); }
@@ -100,9 +100,9 @@
     return {
       open: function (onPick) {
         state.onPick = onPick; wrap.hidden = false; document.body.classList.add('modal-open'); q.value = '';
-        grid.textContent = 'Зареждане…';
+        grid.textContent = T('Зареждане…');
         loadIcons().then(function (icons) { state.icons = icons; render(true); q.focus(); })
-          .catch(function () { grid.textContent = 'Списъкът с икони не може да се зареди (assets/vendor/fontawesome/icons.json).'; });
+          .catch(function () { grid.textContent = T('Списъкът с икони не може да се зареди (assets/vendor/fontawesome/icons.json).'); });
       }
     };
   }
@@ -160,7 +160,7 @@
         model: 'faIcon',
         view: function (m, api) {
           var span = api.writer.createContainerElement('span', { class: m.getAttribute('faClass') + ' mc-fa-widget' });
-          return toWidget(span, api.writer, { label: 'икона' });
+          return toWidget(span, api.writer, { label: T('икона') });
         }
       });
 
@@ -168,7 +168,7 @@
 
       editor.ui.componentFactory.add('faIcons', function (locale) {
         var view = new ButtonView(locale), cmd = editor.commands.get('insertFaIcon');
-        view.set({ label: 'Икона (Font Awesome)', tooltip: true, withText: false,
+        view.set({ label: T('Икона (Font Awesome)'), tooltip: true, withText: false,
           icon: '<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 1.5l2.5 5.4 5.9.7-4.4 4 1.2 5.8L10 14.5 4.8 17.4 6 11.6 1.6 7.6l5.9-.7z"/></svg>' });
         view.bind('isEnabled').to(cmd);
         view.on('execute', function () {

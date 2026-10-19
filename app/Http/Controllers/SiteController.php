@@ -9,6 +9,7 @@ use App\Models\ContentTranslation;
 use App\Models\Message;
 use App\Models\Redirect;
 use App\Models\TagTranslation;
+use App\Support\Options;
 use App\Support\Taxonomy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class SiteController extends Controller
 
     public function home()
     {
-        $home = $this->scope(Content::query())->where('type', 'page')->where('is_home', true)
+        $home = Options::get('front_mode') === 'posts' ? null : $this->scope(Content::query())->where('type', 'page')->where('is_home', true)
             ->with(['translations', 'featured'])->first();
 
         if ($home) {
@@ -65,7 +66,7 @@ class SiteController extends Controller
 
     private function renderContent(Content $content, ContentTranslation $tr, string $view, array $extra = [])
     {
-        $content->loadMissing('translations', 'featured', 'category.translations');
+        $content->loadMissing('translations', 'featured', 'category.translations', 'author');
 
         $alternates = [];
         foreach ($content->translations as $t) {
@@ -120,6 +121,33 @@ class SiteController extends Controller
             ],
             'switch' => $this->builtinAlternates($asHome ? 'home' : 'blog'),
             'category' => null,
+        ]);
+    }
+
+    /** Public author page: resume + their posts (needs the profile columns from the database update). */
+    public function author(Request $request, string $username)
+    {
+        abort_unless(\App\Support\Members::ready(), 404);
+        $author = \App\Models\User::where('username', $username)->where('active', true)
+            ->whereIn('role', \App\Support\Members::AUTHOR_ROLES)->first();
+        if (! $author) {
+            return $this->notFound($request);
+        }
+
+        $posts = $this->postQuery()->where('author_id', $author->id)->paginate((int) setting('posts_per_page', 9));
+        $url = lroute('author', ['username' => $author->username]);
+
+        return view('site.author', [
+            'author' => $author,
+            'posts' => $posts,
+            'seo' => [
+                'title' => $author->name,
+                'description' => excerpt($author->bio, 160) ?: setting_l('meta_description'),
+                'canonical' => $url,
+                'type' => 'profile',
+                'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
+            ],
+            'switch' => [],
         ]);
     }
 
@@ -198,7 +226,7 @@ class SiteController extends Controller
     {
         return $this->scope(Content::query())->where('type', 'post')
             ->whereHas('translations', fn ($q) => $q->where('locale', app()->getLocale()))
-            ->with(['translations', 'featured', 'category.translations'])
+            ->with(['translations', 'featured', 'category.translations', 'author'])
             ->orderByDesc('publish_at')->orderByDesc('id');
     }
 
@@ -276,9 +304,9 @@ class SiteController extends Controller
 
         if ($to = setting('contact_email')) {
             try {
-                Mail::raw("От: $name <{$data['email']}>\n\n".strip_tags($data['message']), function ($m) use ($to, $data, $name, $subject) {
+                Mail::raw(__('От: :name <:email>', ['name' => $name, 'email' => $data['email']])."\n\n".strip_tags($data['message']), function ($m) use ($to, $data, $name, $subject) {
                     $m->to($to)->replyTo($data['email'], $name)
-                        ->subject('['.setting('site_name', 'mCMS').'] '.($subject ?: 'Ново съобщение'));
+                        ->subject('['.setting('site_name', 'mCMS').'] '.($subject ?: __('Ново съобщение')));
                 });
             } catch (\Throwable $e) {
                 report($e); // the message is safely stored in the panel anyway
@@ -354,7 +382,7 @@ class SiteController extends Controller
 
     public function designCss()
     {
-        return response(\App\Support\Design::css(), 200, [
+        return response(\App\Support\Design::css().(($c = \App\Support\Options::get('custom_css')) !== '' ? "\n/* custom CSS */\n".$c."\n" : ''), 200, [
             'Content-Type' => 'text/css; charset=UTF-8',
             'Cache-Control' => 'public, max-age=86400', // URL carries ?v=<hash>, so changes are picked up at once
         ]);
@@ -363,10 +391,15 @@ class SiteController extends Controller
     public function robots()
     {
         $lines = ['User-agent: *', 'Disallow: /search', 'Disallow: /*/search', 'Disallow: /install'];
+        if (Options::on('noindex')) {
+            $lines = ['User-agent: *', 'Disallow: /'];
+        }
         if ($extra = setting('robots_extra')) {
             $lines[] = trim($extra);
         }
-        $lines[] = 'Sitemap: '.url('sitemap.xml');
+        if (! Options::on('noindex')) {
+            $lines[] = 'Sitemap: '.url('sitemap.xml');
+        }
 
         return response(implode("\n", $lines)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
@@ -375,7 +408,7 @@ class SiteController extends Controller
     {
         $posts = Content::visible()->where('type', 'post')
             ->whereHas('translations', fn ($q) => $q->where('locale', app()->getLocale()))
-            ->with('translations')->orderByDesc('publish_at')->limit(20)->get();
+            ->with('translations')->orderByDesc('publish_at')->limit(Options::feedCount())->get();
 
         $site = setting('site_name', config('app.name'));
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n"
@@ -390,7 +423,7 @@ class SiteController extends Controller
             $tr->setRelation('content', $post);
             $xml .= '<item><title>'.e($tr->title).'</title><link>'.e($tr->url()).'</link><guid isPermaLink="true">'.e($tr->url()).'</guid>'
                 .'<pubDate>'.($post->publish_at ?? $post->created_at)->toRssString().'</pubDate>'
-                .'<description>'.e($tr->excerpt ?: excerpt($tr->body, 300)).'</description></item>';
+                .'<description>'.e(Options::on('feed_full') ? trim(strip_tags((string) $tr->body)) : ($tr->excerpt ?: excerpt($tr->body, 300))).'</description></item>';
         }
 
         return response($xml.'</channel></rss>', 200, ['Content-Type' => 'application/rss+xml; charset=UTF-8']);
@@ -415,6 +448,11 @@ class SiteController extends Controller
             $redirect->increment('hits');
 
             return redirect()->away($redirect->to_url, $redirect->code);
+        }
+
+        // blog / category / tag prefixes were renamed in Settings > Връзки: send old links to the new ones
+        if ($new = Options::legacyPath(ltrim($path, '/'), Options::get('blog_base'), Options::get('category_base'), Options::get('tag_base'))) {
+            return redirect('/'.$new, 301);
         }
 
         abort(404);

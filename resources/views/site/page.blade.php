@@ -2,7 +2,7 @@
 
 @section('content')
 <article class="entry">
-    @if($preview)<div class="preview-banner">Преглед — тази страница още не е публично видима.</div>@endif
+    @if($preview)<div class="preview-banner">{{ __('Преглед — тази страница още не е публично видима.') }}</div>@endif
     <header>
         <h1>{{ $tr->title }}</h1>
     </header>

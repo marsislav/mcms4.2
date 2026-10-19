@@ -215,7 +215,7 @@ class Design
         // animation speed -------------------------------------------------
         $r[] = ':root{--anim-ms:'.self::speed().'ms}';
 
-        return "/* mCMS design — generated from Settings > Дизайн */\n".implode("\n", $r)."\n";
+        return "/* mCMS design — generated from Settings > Design */\n".implode("\n", $r)."\n";
     }
 
     /* -------------------------------------------------------------- helpers */

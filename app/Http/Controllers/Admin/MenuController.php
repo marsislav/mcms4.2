@@ -44,8 +44,8 @@ class MenuController extends Controller
             'items.*.css_class' => ['nullable', 'string', 'max:200', 'regex:/^\s*([A-Za-z_][A-Za-z0-9_\-]*(\s+|\s*$))*$/'],
             'items.*.css_id' => ['nullable', 'string', 'max:80', 'regex:/^[A-Za-z][A-Za-z0-9_\-:.]*$/'],
         ], [
-            'items.*.css_class.regex' => 'CSS клас: само букви, цифри, „-“ и „_“, разделени с интервал (не започва с цифра).',
-            'items.*.css_id.regex' => 'CSS ID: започва с буква; само букви, цифри, „-“, „_“, „:“ и „.“ (без интервали).',
+            'items.*.css_class.regex' => __('CSS клас: само букви, цифри, „-“ и „_“, разделени с интервал (не започва с цифра).'),
+            'items.*.css_id.regex' => __('CSS ID: започва с буква; само букви, цифри, „-“, „_“, „:“ и „.“ (без интервали).'),
         ]);
 
         // each ID may be used only once in the menu (and the page must not get duplicate ids)
@@ -57,7 +57,7 @@ class MenuController extends Controller
                 }
                 $id = trim((string) $row['css_id']);
                 if (isset($ids[$id])) {
-                    throw ValidationException::withMessages(["items.$key.css_id" => "CSS ID „{$id}“ се повтаря."]);
+                    throw ValidationException::withMessages(["items.$key.css_id" => __('CSS ID „:id“ се повтаря.', ['id' => $id])]);
                 }
                 $ids[$id] = true;
             }
@@ -94,7 +94,7 @@ class MenuController extends Controller
                 } else {
                     $url = trim((string) ($row['url'] ?? ''));
                     if (! $this->safeUrl($url)) {
-                        throw ValidationException::withMessages(["items.$key.url" => 'Невалиден адрес. Позволени: /път, #котва, http(s)://, mailto:, tel:']);
+                        throw ValidationException::withMessages(["items.$key.url" => __('Невалиден адрес. Позволени: /път, #котва, http(s)://, mailto:, tel:')]);
                     }
                 }
 
@@ -149,7 +149,7 @@ class MenuController extends Controller
 
         audit('menu.update', $menu->location);
 
-        return back()->with('status', 'Менюто е записано.');
+        return back()->with('status', __('Менюто е записано.'));
     }
 
     private function safeUrl(string $url): bool

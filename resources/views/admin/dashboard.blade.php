@@ -1,11 +1,11 @@
 @extends('admin.layout')
-@section('title', 'Табло')
+@section('title', __('Табло'))
 
 @section('content')
 @if(auth()->user()->isAdmin() && (! \App\Support\Taxonomy::ready() || ! \App\Support\Trash::ready() || ! \App\Support\Discussion::ready() || ! \App\Models\MenuItem::hasExtras()))
 <section class="card warn-card">
-    <strong>Има налично обновяване на базата данни</strong> (тагове, свързани публикации, кошче, коментари, CSS в менюта).
-    <form method="post" action="{{ route('admin.system.migrate') }}" class="inline-form" style="margin-top:.6rem">@csrf <button class="btn primary">Обнови базата</button></form>
+    {!! __('<strong>Има налично обновяване на базата данни</strong> (тагове, свързани публикации, кошче, коментари, CSS в менюта).') !!}
+    <form method="post" action="{{ route('admin.system.migrate') }}" class="inline-form" style="margin-top:.6rem">@csrf <button class="btn primary">{{ __('Обнови базата') }}</button></form>
 </section>
 @endif
 <div class="stats">
@@ -16,18 +16,18 @@
 
 <div class="cols">
     <section class="card">
-        <h2>Чернови</h2>
+        <h2>{{ __('Чернови') }}</h2>
         @forelse ($drafts as $d)
             <p><a href="{{ route($d->type === 'post' ? 'admin.posts.edit' : 'admin.pages.edit', $d) }}">{{ $d->adminTitle() }}</a>
-                <small class="muted">· {{ $d->type === 'post' ? 'публикация' : 'страница' }} · {{ $d->updated_at->diffForHumans() }}</small></p>
+                <small class="muted">· {{ $d->type === 'post' ? __('публикация') : __('страница') }} · {{ $d->updated_at->diffForHumans() }}</small></p>
         @empty
-            <p class="muted">Няма чернови.</p>
+            <p class="muted">{{ __('Няма чернови.') }}</p>
         @endforelse
     </section>
 
     @if ($messages->isNotEmpty())
     <section class="card">
-        <h2>Последни съобщения</h2>
+        <h2>{{ __('Последни съобщения') }}</h2>
         @foreach ($messages as $m)
             <p><a href="{{ route('admin.messages.show', $m) }}">{{ $m->read_at ? '' : '● ' }}{{ $m->name }}</a>
                 <small class="muted">· {{ $m->created_at->diffForHumans() }}</small></p>
@@ -37,7 +37,7 @@
 
     @if (count($health))
     <section class="card">
-        <h2>Здраве и сигурност</h2>
+        <h2>{{ __('Здраве и сигурност') }}</h2>
         <ul class="health">
             @foreach ($health as [$label, $ok, $hint])
                 <li class="{{ $ok ? 'ok' : 'warn' }}">
@@ -51,7 +51,7 @@
 
     @if ($audit->isNotEmpty())
     <section class="card">
-        <h2>Последни действия</h2>
+        <h2>{{ __('Последни действия') }}</h2>
         <table class="table compact">
             @foreach ($audit as $a)
                 <tr><td>{{ $a->action }}</td><td class="muted">{{ $a->user?->name ?? '—' }}</td><td class="muted">{{ $a->created_at->diffForHumans() }}</td></tr>

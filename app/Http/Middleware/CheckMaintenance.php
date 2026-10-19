@@ -12,6 +12,7 @@ class CheckMaintenance
     {
         if (setting('maintenance_mode') === '1'
             && ! $request->is(config('mcms.admin_path'), config('mcms.admin_path').'/*')
+            && ! \App\Support\Options::ipAllowed((string) $request->ip())
             && ! (Auth::check() && Auth::user()->active)) {
             return response()->view('errors.503', [], 503)->header('Retry-After', '3600');
         }

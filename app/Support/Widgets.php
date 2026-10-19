@@ -18,6 +18,7 @@ class Widgets
         'recent_comments' => 'Последни коментари',
         'search' => 'Търсене',
         'social' => 'Социални мрежи',
+        'account' => 'Вход / Регистрация',
     ];
 
     public const MAX_COLS = 12;

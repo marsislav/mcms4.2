@@ -121,9 +121,9 @@
       headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
-        if (r.status === 419) { throw new Error('Сесията е изтекла — презаредете страницата.'); }
-        if (r.status === 413) { throw new Error('Файлът е твърде голям за сървъра.'); }
-        if (!r.ok && !(j.errors && j.errors.length)) { throw new Error((j.message) || ('Грешка ' + r.status)); }
+        if (r.status === 419) { throw new Error(T('Сесията е изтекла — презаредете страницата.')); }
+        if (r.status === 413) { throw new Error(T('Файлът е твърде голям за сървъра.')); }
+        if (!r.ok && !(j.errors && j.errors.length)) { throw new Error((j.message) || (T('Грешка ') + r.status)); }
         return { data: j.data || [], errors: j.errors || [] };
       });
     });
@@ -137,14 +137,14 @@
     var wrap = document.createElement('div');
     wrap.className = 'modal'; wrap.hidden = true;
     wrap.innerHTML =
-      '<div class="modal-box" role="dialog" aria-modal="true" aria-label="Медия">' +
-      '<div class="modal-head"><strong>Избор на файл</strong>' +
-      '<input type="search" placeholder="Търсене…" class="picker-q">' +
-      '<button type="button" class="btn sm primary picker-upload">⬆ Качи</button><input type="file" class="picker-file" multiple hidden>' +
+      T('<div class="modal-box" role="dialog" aria-modal="true" aria-label="Медия">') +
+      T('<div class="modal-head"><strong>Избор на файл</strong>') +
+      T('<input type="search" placeholder="Търсене…" class="picker-q">') +
+      T('<button type="button" class="btn sm primary picker-upload">⬆ Качи</button><input type="file" class="picker-file" multiple hidden>') +
       '<button type="button" class="btn sm picker-close">✕</button></div>' +
       '<div class="picker-msg" role="status" hidden></div>' +
       '<div class="picker-grid"></div>' +
-      '<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>Още…</button></div></div>';
+      T('<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>Още…</button></div></div>');
     document.body.appendChild(wrap);
 
     var state = { next: null, onPick: null, imagesOnly: false, timer: null };
@@ -163,10 +163,10 @@
             b.addEventListener('click', function () { var cb = state.onPick; close(); if (cb) { cb(m); } });
             grid.appendChild(b);
           });
-          if (!res.data.length && replace) { grid.textContent = 'Няма файлове.'; }
+          if (!res.data.length && replace) { grid.textContent = T('Няма файлове.'); }
           state.next = res.next; more.hidden = !res.next;
         })
-        .catch(function () { grid.textContent = 'Грешка при зареждане.'; });
+        .catch(function () { grid.textContent = T('Грешка при зареждане.'); });
     }
     function query() {
       var u = adminBase + '/media/picker?q=' + encodeURIComponent(q.value) + (state.imagesOnly ? '&images=1' : '');
@@ -179,14 +179,14 @@
     function say(text, bad) { msg.hidden = !text; msg.textContent = text || ''; msg.className = 'picker-msg' + (bad ? ' bad' : ''); }
     function doUpload(files) {
       files = Array.prototype.filter.call(files, function (f) { return !state.imagesOnly || /^image\//.test(f.type); });
-      if (!files.length) { say(state.imagesOnly ? 'Тук се качват само изображения.' : '', true); return; }
-      say('Качване…'); upBtn.disabled = true;
+      if (!files.length) { say(state.imagesOnly ? T('Тук се качват само изображения.') : '', true); return; }
+      say(T('Качване…')); upBtn.disabled = true;
       uploadFiles(files).then(function (res) {
         upBtn.disabled = false;
         if (res.errors.length) { say(res.errors.join(' | '), true); } else { say(''); }
         if (res.data.length === 1 && !res.errors.length) { var cb = state.onPick; close(); if (cb) { cb(res.data[0]); } return; }
         if (res.data.length) { query(); }
-      }).catch(function (e) { upBtn.disabled = false; say(e.message || 'Качването е неуспешно.', true); });
+      }).catch(function (e) { upBtn.disabled = false; say(e.message || T('Качването е неуспешно.'), true); });
     }
     upBtn.addEventListener('click', function () { fileIn.click(); });
     fileIn.addEventListener('change', function () { if (fileIn.files.length) { doUpload(fileIn.files); } fileIn.value = ''; });
@@ -221,11 +221,11 @@
       var set = function (m) { input.value = m.id; img.src = m.thumb; img.hidden = false; input.dispatchEvent(new Event('input', { bubbles: true })); };
       var go = function (file) {
         if (!file) { return; }
-        note.hidden = false; note.textContent = 'Качване…'; up.disabled = true;
+        note.hidden = false; note.textContent = T('Качване…'); up.disabled = true;
         uploadFiles([file]).then(function (res) {
           up.disabled = false;
-          if (res.data.length) { set(res.data[0]); note.hidden = true; } else { note.textContent = res.errors.join(' | ') || 'Качването е неуспешно.'; }
-        }).catch(function (e) { up.disabled = false; note.textContent = e.message || 'Качването е неуспешно.'; });
+          if (res.data.length) { set(res.data[0]); note.hidden = true; } else { note.textContent = res.errors.join(' | ') || T('Качването е неуспешно.'); }
+        }).catch(function (e) { up.disabled = false; note.textContent = e.message || T('Качването е неуспешно.'); });
       };
       up.addEventListener('click', function () { fi.click(); });
       fi.addEventListener('change', function () { go(fi.files[0]); fi.value = ''; });
@@ -273,7 +273,7 @@
         var chip = document.createElement('span'); chip.className = 'chip sel';
         chip.appendChild(document.createTextNode(m[1]));
         var h = document.createElement('input'); h.type = 'hidden'; h.name = 'related[]'; h.value = id; chip.appendChild(h);
-        var x = document.createElement('button'); x.type = 'button'; x.setAttribute('data-chip-remove', ''); x.setAttribute('aria-label', 'Махни'); x.textContent = '×'; chip.appendChild(x);
+        var x = document.createElement('button'); x.type = 'button'; x.setAttribute('data-chip-remove', ''); x.setAttribute('aria-label', T('Махни')); x.textContent = '×'; chip.appendChild(x);
         chips.appendChild(chip);
       }
       input.value = '';
@@ -323,10 +323,10 @@
         e.preventDefault(); var n = card.nextElementSibling; if (n) { card.parentNode.insertBefore(n, card); }
       } else if (t.closest('[data-w-del]')) {
         e.preventDefault();
-        if (window.confirm('Да се премахне ли този уиджет?')) { card.parentNode.removeChild(card); }
+        if (window.confirm(T('Да се премахне ли този уиджет?'))) { card.parentNode.removeChild(card); }
       } else if (t.closest('[data-fa-pick]')) {
         var mode = t.closest('[data-fa-pick]').getAttribute('data-fa-pick');
-        if (!window.mcmsFaPicker) { window.alert('Изборът на икони не е зареден (assets/js/editor-fa.js).'); return; }
+        if (!window.mcmsFaPicker) { window.alert(T('Изборът на икони не е зареден (assets/js/editor-fa.js).')); return; }
         window.mcmsFaPicker(function (cls) {
           if (mode === 'icon') {
             var inp = card.querySelector('[data-fa-input]'); if (inp) { inp.value = cls; }
@@ -370,7 +370,7 @@
         if (ta.getAttribute('data-editor-ready')) { return; }
         var n = document.createElement('div');
         n.className = 'flash err';
-        n.textContent = 'Редакторът CKEditor не е зареден (полето работи като обикновен HTML). Проверете дали public/assets/vendor/ckeditor5/ckeditor5.umd.js е качен (≈1.9 MB), опреснете с Ctrl+F5 и вижте конзолата (F12).';
+        n.textContent = T('Редакторът CKEditor не е зареден (полето работи като обикновен HTML). Проверете дали public/assets/vendor/ckeditor5/ckeditor5.umd.js е качен (≈1.9 MB), опреснете с Ctrl+F5 и вижте конзолата (F12).');
         ta.parentNode.insertBefore(n, ta);
       });
     }, 4000);

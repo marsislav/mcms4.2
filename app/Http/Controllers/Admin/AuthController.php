@@ -37,7 +37,7 @@ class AuthController extends Controller
             $wait = max(RateLimiter::availableIn($throttle), RateLimiter::availableIn($ipThrottle));
 
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => "Твърде много опити. Опитайте отново след {$wait} сек."]);
+                ->withErrors(['email' => __('Твърде много опити. Опитайте отново след :s сек.', ['s' => $wait])]);
         }
 
         $user = User::where('email', $email)->first();
@@ -65,7 +65,7 @@ class AuthController extends Controller
             audit('login.failed', $email);
 
             return back()->withInput($request->only('email'))
-                ->withErrors(['email' => 'Невалидни данни за вход.']);
+                ->withErrors(['email' => __('Невалидни данни за вход.')]);
         }
 
         RateLimiter::clear($throttle);
@@ -80,7 +80,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login')->with('status', 'Излязохте успешно.');
+        return redirect()->route('admin.login')->with('status', __('Излязохте успешно.'));
     }
 
     private function completeLogin(Request $request, User $user)
@@ -102,6 +102,6 @@ class AuthController extends Controller
         audit('login', $user->email);
         do_action('user.login', $user);
 
-        return redirect()->intended(route('admin.dashboard'));
+        return $user->allows('content') ? redirect()->intended(route('admin.dashboard')) : redirect()->route('admin.profile');
     }
 }

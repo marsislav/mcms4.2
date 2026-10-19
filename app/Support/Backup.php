@@ -54,7 +54,7 @@ class Backup
     public static function database(): string
     {
         if (DB::getDriverName() !== 'mysql') {
-            throw new RuntimeException('Вграденото архивиране поддържа само MySQL/MariaDB.');
+            throw new RuntimeException(__('Вграденото архивиране поддържа само MySQL/MariaDB.'));
         }
         @set_time_limit(300);
 
@@ -62,7 +62,7 @@ class Backup
         $path = self::dir().'/'.$name;
         $gz = gzopen($path, 'wb9');
         if (! $gz) {
-            throw new RuntimeException('Не мога да създам файла за архив.');
+            throw new RuntimeException(__('Не мога да създам файла за архив.'));
         }
 
         $pdo = DB::connection()->getPdo();
@@ -101,7 +101,7 @@ class Backup
     public static function uploads(): string
     {
         if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('PHP ZipArchive не е наличен на този хостинг.');
+            throw new RuntimeException(__('PHP ZipArchive не е наличен на този хостинг.'));
         }
         @set_time_limit(300);
 
@@ -109,7 +109,7 @@ class Backup
         $path = self::dir().'/'.$name;
         $zip = new ZipArchive;
         if ($zip->open($path, ZipArchive::CREATE) !== true) {
-            throw new RuntimeException('Не мога да създам ZIP архив.');
+            throw new RuntimeException(__('Не мога да създам ZIP архив.'));
         }
 
         $base = realpath(public_path('uploads'));

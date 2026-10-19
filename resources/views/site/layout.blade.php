@@ -2,7 +2,7 @@
     $seo = $seo ?? [];
     $siteName = setting('site_name', config('app.name'));
     $pageTitle = $seo['title'] ?? $siteName;
-    $fullTitle = ($pageTitle === $siteName) ? $siteName : $pageTitle.' — '.$siteName;
+    $fullTitle = ($pageTitle === $siteName) ? $siteName.(($tl = trim(strip_tags((string) setting_l('tagline')))) !== '' ? ' — '.$tl : '') : $pageTitle.' — '.$siteName;
     $desc = $seo['description'] ?? setting_l('meta_description');
     $canonical = $seo['canonical'] ?? url()->current();
     $ogImage = $seo['image'] ?? (($id = setting('og_media_id')) ? upload_url(optional(\App\Models\Media::find($id))->path) : null);
@@ -25,7 +25,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $fullTitle }}</title>
     @if($desc)<meta name="description" content="{{ \Illuminate\Support\Str::limit(strip_tags((string) $desc), 160) }}">@endif
-    <meta name="robots" content="{{ $seo['robots'] ?? 'index, follow, max-image-preview:large' }}">
+    <meta name="robots" content="{{ \App\Support\Options::on('noindex') ? 'noindex, nofollow' : ($seo['robots'] ?? 'index, follow, max-image-preview:large') }}">
     <link rel="canonical" href="{{ $canonical }}">
     @foreach (($seo['alternates'] ?? []) as $loc => $href)
         <link rel="alternate" hreflang="{{ $loc }}" href="{{ $href }}">
@@ -45,9 +45,10 @@
     <link rel="alternate" type="application/rss+xml" title="{{ t('site.rss') }}" href="{{ lroute('feed') }}">
     @if($favicon)<link rel="icon" href="{{ $favicon->url() }}">@endif
     <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome/css/all.min.css') }}?v=7.3.1">
-    <link rel="stylesheet" href="{{ asset('assets/css/site.css') }}?v={{ config('mcms.version') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/grid.css') }}?v={{ config('mcms.version') }}">
-    <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}">
+    <link rel="stylesheet" href="{{ asset_v('assets/css/site.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('assets/css/grid.css') }}">
+    <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}{{ substr(md5(\App\Support\Options::get('custom_css')), 0, 6) }}">
+    {!! \App\Support\Options::scripts('head', csp_nonce()) !!}
     @php(do_action('head'))
 </head>
 <body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
@@ -104,7 +105,7 @@
 <main id="main" @class(['wrap', 'main', 'has-sidebar sb-'.$sidebarW['side'] => $showSidebar])>
     @if($showSidebar)
         <div class="main-col">@yield('content')</div>
-        <aside class="sidebar" aria-label="{{ t('site.sidebar', 'Страничен панел') }}">
+        <aside class="sidebar" aria-label="{{ __(':p1', ['p1' => t('site.sidebar', __('Страничен панел'))]) }}">
             @include('site.partials.widget-area', ['widgets' => $sidebarW['widgets']])
         </aside>
     @else
@@ -121,8 +122,23 @@
     </div>
     <div class="wrap foot-bottom">
         <p class="muted">{{ setting_l('footer_text', '© '.date('Y').' '.$siteName) }}</p>
+        @php
+            $fTypes = collect($footerW['columns'])->flatten(1)->pluck('type')->all();
+            $socials = collect(['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube'])->filter(fn ($l, $k) => setting('social_'.$k));
+        @endphp
+        <nav class="foot-links" aria-label="Footer">
+            <ul>
+                @unless(in_array('menu', $fTypes, true))
+                    @foreach ($footerMenu as $item)<li><a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>@endforeach
+                @endunless
+                @unless(in_array('social', $fTypes, true))
+                    @foreach ($socials as $k => $label)<li><a href="{{ setting('social_'.$k) }}" rel="noopener noreferrer me" target="_blank">{{ $label }}</a></li>@endforeach
+                @endunless
+                <li><a href="{{ lroute('feed') }}">RSS</a></li>
+            </ul>
+        </nav>
             @if($hasAnim && \App\Support\Design::get('anim_pause_btn') === '1')
-                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ t('site.anim_pause', 'Спри анимациите') }}" data-off="{{ t('site.anim_play', 'Пусни анимациите') }}">{{ t('site.anim_pause', 'Спри анимациите') }}</button>
+                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ __(':p1', ['p1' => t('site.anim_pause', __('Спри анимациите'))]) }}" data-off="{{ __(':p1', ['p1' => t('site.anim_play', __('Пусни анимациите'))]) }}">{{ t('site.anim_pause', __('Спри анимациите')) }}</button>
             @endif
     </div>
 @else
@@ -141,7 +157,7 @@
                 <li><a href="{{ lroute('feed') }}">RSS</a></li>
             </ul>
             @if($hasAnim && \App\Support\Design::get('anim_pause_btn') === '1')
-                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ t('site.anim_pause', 'Спри анимациите') }}" data-off="{{ t('site.anim_play', 'Пусни анимациите') }}">{{ t('site.anim_pause', 'Спри анимациите') }}</button>
+                <button type="button" class="anim-toggle" data-anim-toggle aria-pressed="false" data-on="{{ __(':p1', ['p1' => t('site.anim_pause', __('Спри анимациите'))]) }}" data-off="{{ __(':p1', ['p1' => t('site.anim_play', __('Пусни анимациите'))]) }}">{{ t('site.anim_pause', __('Спри анимациите')) }}</button>
             @endif
         </nav>
         <nav class="social" aria-label="Social">
@@ -153,7 +169,10 @@
 @endif
 </footer>
 
-<script src="{{ asset('assets/js/site.js') }}?v={{ config('mcms.version') }}" nonce="{{ csp_nonce() }}" defer></script>
+@if(\App\Support\Options::on('back_to_top'))<a class="to-top" href="#" aria-label="{{ t('site.top', __('Към началото')) }}">↑</a>@endif
+
+<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer></script>
+{!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php(do_action('footer'))
 </body>
 </html>

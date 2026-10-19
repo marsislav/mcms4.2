@@ -11,13 +11,13 @@
                 <strong class="comment-author">
                     @if($c->author_url)<a href="{{ $c->author_url }}" rel="nofollow ugc noopener noreferrer" target="_blank">{{ $c->author_name }}</a>@else {{ $c->author_name }} @endif
                 </strong>
-                @if($c->user_id)<span class="badge-staff">{{ t('comments.staff', 'Автор') }}</span>@endif
-                <a class="comment-date muted" href="#comment-{{ $c->id }}"><time datetime="{{ $c->created_at->toAtomString() }}">{{ $c->created_at->translatedFormat('j F Y, H:i') }}</time></a>
+                @if($c->user_id)<span class="badge-staff">{{ t('comments.staff', __('Автор')) }}</span>@endif
+                <a class="comment-date muted" href="#comment-{{ $c->id }}"><time datetime="{{ $c->created_at->toAtomString() }}">{{ mcms_date($c->created_at, true) }}</time></a>
             </div>
         </header>
         <div class="comment-body">{!! \App\Support\Discussion::format($c->body) !!}</div>
         @if($open && $threaded && $node['depth'] < $max)
-            <p class="comment-reply"><a href="{{ request()->fullUrlWithQuery(['reply' => $c->id]) }}#respond" rel="nofollow">{{ t('comments.reply', 'Отговор') }}</a></p>
+            <p class="comment-reply"><a href="{{ request()->fullUrlWithQuery(['reply' => $c->id]) }}#respond" rel="nofollow">{{ t('comments.reply', __('Отговор')) }}</a></p>
         @endif
     </article>
     @if(! empty($node['children']))

@@ -1,12 +1,12 @@
 @extends('admin.layout')
-@section('title', 'Потребители')
+@section('title', __('Потребители'))
 
-@section('actions')<a class="btn primary" href="{{ route('admin.users.create') }}">+ Нов потребител</a>@endsection
+@section('actions'){!! __('<a class="btn primary" href=":p1">+ Нов потребител</a>', ['p1' => e(route('admin.users.create'))]) !!}@endsection
 
 @section('content')
 <div class="table-wrap">
 <table class="table">
-    <thead><tr><th>Име</th><th>Имейл</th><th>Роля</th><th>Статус</th><th>Последен вход</th><th></th></tr></thead>
+    <thead><tr><th>{{ __('Име') }}</th><th>{{ __('Имейл') }}</th><th>{{ __('Роля') }}</th><th>{{ __('Статус') }}</th><th>{{ __('Последен вход') }}</th><th></th></tr></thead>
     <tbody>
     @foreach ($users as $u)
         <tr>
@@ -14,15 +14,15 @@
             <td>{{ $u->email }}</td>
             <td>{{ $u->roleLabel() }}</td>
             <td>
-                @if(! $u->active)<span class="tag warn">деактивиран</span>
-                @elseif($u->isLocked())<span class="tag warn">заключен</span>
-                @else<span class="tag ok">активен</span>@endif
+                @if(! $u->active){!! __('<span class="tag warn">деактивиран</span>') !!}
+                @elseif($u->isLocked()){!! __('<span class="tag warn">заключен</span>') !!}
+                @else{!! __('<span class="tag ok">активен</span>') !!}@endif
             </td>
             <td class="muted">{{ $u->last_login_at?->format('d.m.Y H:i') ?? '—' }}</td>
             <td class="row-actions">
-                <a class="btn sm" href="{{ route('admin.users.edit', $u) }}">Редакция</a>
+                {!! __('<a class="btn sm" href=":p1">Редакция</a>', ['p1' => e(route('admin.users.edit', $u))]) !!}
                 @if($u->id !== auth()->id())
-                <form method="post" action="{{ route('admin.users.destroy', $u) }}" data-confirm="Да изтрия ли потребителя {{ $u->email }}?">@csrf @method('DELETE')<button class="btn sm danger">Изтрий</button></form>
+                <form method="post" action="{{ route('admin.users.destroy', $u) }}" data-confirm="{{ __('Да изтрия ли потребителя :p1?', ['p1' => $u->email]) }}">@csrf @method('DELETE')<button class="btn sm danger">{{ __('Изтрий') }}</button></form>
                 @endif
             </td>
         </tr>
