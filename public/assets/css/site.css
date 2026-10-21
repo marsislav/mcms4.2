@@ -243,3 +243,5 @@ html.anim-off [data-rv]{opacity:1;transform:none}
 .share{display:flex;flex-wrap:wrap;gap:.4rem .9rem;align-items:center;margin:1.5rem 0;font-size:.95rem}.share a{text-decoration:none;border-bottom:1px solid currentColor}
 .to-top{position:fixed;right:1rem;bottom:1rem;width:2.5rem;height:2.5rem;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent,#2563eb);color:#fff;text-decoration:none;font-size:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:50}
 html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.page-main{max-width:60rem;margin-inline:auto;padding-block:2rem}
+.contact-form .check{display:flex;gap:.5rem;align-items:center}.contact-form .check input{width:auto}

@@ -353,3 +353,10 @@ Tabs in **Settings** (administrator only). No migration — `opt.*` keys in `set
 - **Settings → Reading:** reading time, last-modified date, “Share” buttons (plain links, no external scripts), “Back to top” button (↑). Keys `opt.reading_time`, `opt.show_updated`, `opt.share_buttons`, `opt.back_to_top`.
 - **Settings → Scripts:** “Custom CSS” (`opt.custom_css`) — appended to `/design.css` (CSP-compatible), stripped of `<`, `>`, `@import`, `expression()`. Code: `Options::cleanCss()`, `SiteController::designCss()`.
 - `Options::readingMinutes()` — 200 words/min, at least 1.
+
+## 28. Extra fields in the contact form
+
+- **Settings → Contact form.** Types: text, long text, email, phone, website, number, date, dropdown, checkbox. Per field: a label in each language, required, options (for the dropdown), “Delete”. The order is the order in the list; after saving, 3 more empty rows are added.
+- Storage: the `contact.fields` setting (JSON) — no migration. Values are appended to the message text as “Label: value” lines after `— — —`, so they show in “Messages” and in the email to you.
+- Per-type validation in `ContactFields::rules()`; the protections (honeypot, timing, rate limit) are unchanged.
+- Code: `app/Support/ContactFields.php`, `SiteController::contactForm/contactSend`, `SettingController::updateContact`, `site/contact.blade.php`, `admin/partials/contact-form.blade.php`.

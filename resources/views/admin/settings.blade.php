@@ -13,6 +13,7 @@
     <button type="button" data-stab="discussion" role="tab">{{ __('Дискусии') }}</button>
     <button type="button" data-stab="footer" role="tab">{{ __('Футър') }}</button>
     <button type="button" data-stab="sidebar" role="tab">{{ __('Сайдбар') }}</button>
+    <button type="button" data-stab="contact" role="tab">{{ __('Контактна форма') }}</button>
     @foreach (\App\Support\Options::GROUPS as $g => $gl)<button type="button" data-stab="{{ $g }}" role="tab">{{ __($gl) }}</button>@endforeach
 </div>
 
@@ -102,6 +103,10 @@
 
 <div data-spanel="footer">
     @include('admin.partials.footer-form')
+</div>
+
+<div data-spanel="contact" hidden>
+    @include('admin.partials.contact-form')
 </div>
 
 <div data-spanel="sidebar">

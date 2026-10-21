@@ -353,3 +353,10 @@ add_action('footer', function () {
 - **Настройки → Четене:** време за четене, дата на последна промяна, бутони „Сподели“ (само връзки, без външни скриптове), бутон „Към началото“ (↑). Ключове `opt.reading_time`, `opt.show_updated`, `opt.share_buttons`, `opt.back_to_top`.
 - **Настройки → Скриптове:** „Собствен CSS“ (`opt.custom_css`) — добавя се към `/design.css` (CSP-съвместимо), чисти се от `<`, `>`, `@import`, `expression()`. Код: `Options::cleanCss()`, `SiteController::designCss()`.
 - `Options::readingMinutes()` — 200 думи/мин, минимум 1.
+
+## 28. Допълнителни полета в контактната форма
+
+- **Настройки → Контактна форма.** Типове: текст, дълъг текст, имейл, телефон, уебсайт, число, дата, падащ списък, отметка. За всяко поле: етикет на всеки език, задължително, опции (за списък), „Изтрий“. Редът е редът в списъка; след запис се добавят още 3 празни реда.
+- Съхранение: настройка `contact.fields` (JSON) — без миграция. Стойностите се добавят към текста на съобщението като редове „Етикет: стойност“ след `— — —`, така се виждат в „Съобщения“ и в писмото до вас.
+- Валидация по тип в `ContactFields::rules()`; защити (honeypot, време, лимит) са непроменени.
+- Код: `app/Support/ContactFields.php`, `SiteController::contactForm/contactSend`, `SettingController::updateContact`, `site/contact.blade.php`, `admin/partials/contact-form.blade.php`.

@@ -259,6 +259,7 @@ class SiteController extends Controller
     {
         return view('site.contact', [
             'ts' => Crypt::encryptString((string) time()),
+            'fields' => \App\Support\ContactFields::all(),
             'seo' => ['title' => t('contact.title'), 'description' => t('contact.intro'), 'canonical' => lroute('contact'), 'alternates' => $this->builtinAlternates('contact')],
             'switch' => $this->builtinAlternates('contact'),
         ]);
@@ -287,24 +288,29 @@ class SiteController extends Controller
             return back()->withInput()->with('contact_error', t('contact.error'));
         }
 
+        $extra = \App\Support\ContactFields::all();
         $data = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email:rfc|max:190',
             'subject' => 'nullable|string|max:150',
             'message' => 'required|string|min:5|max:5000',
-        ]);
+        ] + \App\Support\ContactFields::rules($extra));
+        $body = strip_tags($data['message']);
+        if ($extraLines = \App\Support\ContactFields::lines($extra, $data)) {
+            $body .= "\n\n— — —\n".$extraLines;
+        }
 
         $subject = trim(preg_replace('/[\r\n\t]+/', ' ', strip_tags((string) ($data['subject'] ?? ''))));
         $name = trim(preg_replace('/[\r\n\t]+/', ' ', strip_tags($data['name'])));
 
         $message = Message::create([
             'name' => $name, 'email' => $data['email'], 'subject' => $subject ?: null,
-            'body' => strip_tags($data['message']), 'ip' => $request->ip(), 'locale' => app()->getLocale(),
+            'body' => $body, 'ip' => $request->ip(), 'locale' => app()->getLocale(),
         ]);
 
         if ($to = setting('contact_email')) {
             try {
-                Mail::raw(__('От: :name <:email>', ['name' => $name, 'email' => $data['email']])."\n\n".strip_tags($data['message']), function ($m) use ($to, $data, $name, $subject) {
+                Mail::raw(__('От: :name <:email>', ['name' => $name, 'email' => $data['email']])."\n\n".$body, function ($m) use ($to, $data, $name, $subject) {
                     $m->to($to)->replyTo($data['email'], $name)
                         ->subject('['.setting('site_name', 'mCMS').'] '.($subject ?: __('Ново съобщение')));
                 });

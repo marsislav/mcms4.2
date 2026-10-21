@@ -27,6 +27,7 @@ class SettingController extends Controller
             'footerCols' => Widgets::footerCols(),
             'footerAll' => collect(range(1, Widgets::MAX_COLS))->mapWithKeys(fn ($c) => [$c => Widgets::decode(setting('widgets.footer.c'.$c))])->all(),
             'sidebar' => Widgets::sidebar(),
+            'contactFields' => \App\Support\ContactFields::all(),
             'opt' => Options::all(),
             'optCategories' => \App\Models\Category::with('translations')->orderBy('sort')->get(),
             'menus' => \App\Models\Menu::orderBy('id')->get(),
@@ -156,6 +157,20 @@ class SettingController extends Controller
     }
 
     /** Blog sidebar: on/off, side and widgets. */
+    public function updateContact(Request $request)
+    {
+        $request->validate(['fields' => 'nullable|array|max:60']);
+        $list = \App\Support\ContactFields::clean((array) $request->input('fields', []), mcms_locales());
+        $json = $list ? json_encode($list, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+        if ($json !== null && strlen($json) > \App\Support\ContactFields::MAX_JSON) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['fields' => __('Формулярът е твърде голям — съкратете текстовете.')]);
+        }
+        Setting::putMany(['contact.fields' => $json]);
+        audit('settings.contact');
+
+        return redirect(route('admin.settings').'#contact')->with('status', __('Полетата на формуляра са записани.'));
+    }
+
     public function updateSidebar(Request $request)
     {
         $request->validate(['sidebar_side' => 'required|in:left,right', 'cols' => 'nullable|array']);
