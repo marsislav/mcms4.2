@@ -1,4 +1,4 @@
-@extends('site.layout')
+@extends('site.layout-page')
 
 @section('content')
 <article class="entry">

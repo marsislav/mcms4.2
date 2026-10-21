@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
             report($e); // database temporarily unavailable: keep error pages working
         }
 
-        View::composer('site.layout', function ($view) {
+        View::composer(['site.layout', 'site.layout-page'], function ($view) {
             $view->with([
                 'languages' => mcms_languages(),
                 'headerMenu' => Menu::tree('header'),
