@@ -80,16 +80,17 @@ class ContentSaver
                 ];
 
                 if ($existing) {
-                    if ($existing->title !== $fields['title'] || $existing->body !== $fields['body']) {
+                    $keepN = (int) Options::get('revisions_keep'); // Settings > Writing; 0 = no revisions
+                    if ($keepN > 0 && ($existing->title !== $fields['title'] || $existing->body !== $fields['body'])) {
                         Revision::create([
                             'content_translation_id' => $existing->id,
                             'user_id' => $userId,
                             'title' => $existing->title,
                             'body' => $existing->body,
                         ]);
-                        $keep = Revision::where('content_translation_id', $existing->id)->orderByDesc('id')->offset(20)->limit(PHP_INT_MAX)->pluck('id');
-                        if ($keep->isNotEmpty()) {
-                            Revision::whereIn('id', $keep)->delete();
+                        $old = Revision::where('content_translation_id', $existing->id)->orderByDesc('id')->offset($keepN)->limit(PHP_INT_MAX)->pluck('id');
+                        if ($old->isNotEmpty()) {
+                            Revision::whereIn('id', $old)->delete();
                         }
                     }
                     $existing->update($fields);

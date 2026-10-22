@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\SiteController;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -49,6 +50,8 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
                 }
             });
         }
+        Route::get('revisions/compare/{translation}', [Admin\ContentController::class, 'compare'])
+            ->middleware('admin:content')->whereNumber('translation')->name('revisions.compare');
         Route::post('revisions/{revision}/restore', [Admin\ContentController::class, 'restore'])
             ->middleware('admin:content')->whereNumber('revision')->name('revisions.restore');
 
@@ -106,6 +109,36 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::delete('{redirect}', [Admin\RedirectController::class, 'destroy'])->whereNumber('redirect')->name('destroy');
         });
 
+        Route::middleware('admin:notfound')->prefix('notfound')->name('notfound.')->group(function () {
+            Route::get('/', [Admin\NotFoundController::class, 'index'])->name('index');
+            Route::post('clear', [Admin\NotFoundController::class, 'clear'])->name('clear');
+            Route::post('{id}/redirect', [Admin\NotFoundController::class, 'redirect'])->whereNumber('id')->name('redirect');
+            Route::delete('{id}', [Admin\NotFoundController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
+
+        Route::middleware('admin:blocks')->prefix('blocks')->name('blocks.')->group(function () {
+            Route::get('/', [Admin\BlockController::class, 'index'])->name('index');
+            Route::get('create', [Admin\BlockController::class, 'create'])->name('create');
+            Route::post('/', [Admin\BlockController::class, 'store'])->name('store');
+            Route::get('{id}/edit', [Admin\BlockController::class, 'edit'])->whereNumber('id')->name('edit');
+            Route::put('{id}', [Admin\BlockController::class, 'update'])->whereNumber('id')->name('update');
+            Route::delete('{id}', [Admin\BlockController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
+
+        Route::get('stats', [Admin\StatsController::class, 'index'])->middleware('admin:stats')->name('stats.index');
+
+        Route::middleware('admin:subscribers')->prefix('subscribers')->name('subscribers.')->group(function () {
+            Route::get('/', [Admin\SubscriberController::class, 'index'])->name('index');
+            Route::get('export', [Admin\SubscriberController::class, 'export'])->name('export');
+            Route::delete('{subscriber}', [Admin\SubscriberController::class, 'destroy'])->whereNumber('subscriber')->name('destroy');
+        });
+
+        Route::middleware('admin:errors')->prefix('errors')->name('errors.')->group(function () {
+            Route::get('/', [Admin\ErrorLogController::class, 'index'])->name('index');
+            Route::get('download', [Admin\ErrorLogController::class, 'download'])->name('download');
+            Route::post('clear', [Admin\ErrorLogController::class, 'clear'])->name('clear');
+        });
+
         Route::middleware('admin:translations')->prefix('translations')->name('translations.')->group(function () {
             Route::get('/', [Admin\TranslationController::class, 'index'])->name('index');
             Route::put('/', [Admin\TranslationController::class, 'update'])->name('update');
@@ -139,6 +172,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
             Route::post('settings/design/reset', [Admin\SettingController::class, 'resetDesign'])->name('settings.design-reset');
             Route::post('settings/test-mail', [Admin\SettingController::class, 'testMail'])->name('settings.mail-test');
+            Route::get('system/migrations', [Admin\SystemController::class, 'migrations'])->name('system.migrations');
             Route::post('system/migrate', [Admin\SystemController::class, 'migrate'])->name('system.migrate');
         });
 
@@ -164,11 +198,11 @@ Route::get('design.css', [SiteController::class, 'designCss'])->name('site.desig
 Route::get('robots.txt', [SiteController::class, 'robots'])->name('site.robots');
 
 /* ------------------------------------------------------------- public site */
-// Public registration (Settings > Потребители); 'register' is a reserved slug
+// Public registration (Settings > Users); 'register' is a reserved slug
 Route::get('register', [\App\Http\Controllers\RegisterController::class, 'show'])->name('register');
 Route::post('register', [\App\Http\Controllers\RegisterController::class, 'store'])->middleware('throttle:20,1')->name('register.store');
 
-// URL prefixes of the blog / categories / tags come from Settings > Връзки (defaults: blog, category, tag)
+// URL prefixes of the blog / categories / tags come from Settings > Permalinks (defaults: blog, category, tag)
 $blogBase = \App\Support\Options::get('blog_base');
 $catBase = \App\Support\Options::get('category_base');
 $tagBase = \App\Support\Options::get('tag_base');
@@ -181,6 +215,10 @@ $public = function () use ($blogBase, $catBase, $tagBase) {
     Route::get("$blogBase/{slug}", [SiteController::class, 'post'])->name('post');
     Route::get('author/{username}', [SiteController::class, 'author'])->where('username', '[a-z0-9\-]+')->name('author');
     Route::get('search', [SiteController::class, 'search'])->middleware('throttle:30,1')->name('search');
+    Route::get('search/live', [SiteController::class, 'liveSearch'])->middleware('throttle:60,1')->name('search.live');
+    Route::post('newsletter', [NewsletterController::class, 'subscribe'])->middleware('throttle:6,1')->name('newsletter.subscribe');
+    Route::get('newsletter/confirm/{token}', [NewsletterController::class, 'confirm'])->where('token', '[a-f0-9]{40}')->name('newsletter.confirm');
+    Route::get('newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe'])->where('token', '[a-f0-9]{40}')->name('newsletter.unsubscribe');
     Route::get('contact', [SiteController::class, 'contactForm'])->name('contact');
     Route::post('comment', [CommentController::class, 'store'])->middleware('throttle:20,1')->name('comment');
     Route::post('contact', [SiteController::class, 'contactSend'])->middleware('throttle:10,1')->name('contact.send');

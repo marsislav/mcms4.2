@@ -2,7 +2,10 @@
 
 @section('has_sidebar', '1')
 
+@section('kind', 'post')
+
 @section('content')
+@include('site.partials.breadcrumbs')
 <article class="entry">
     @if($preview)<div class="preview-banner">{{ __('Преглед — тази публикация още не е публично видима.') }}</div>@endif
     <header>

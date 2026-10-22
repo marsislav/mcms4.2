@@ -1,4 +1,4 @@
-/* mCMS rows & columns (CKEditor "Колони" button). Used by the public site and the editor.
+/* mCMS rows & columns (CKEditor "Columns" button). Used by the public site and the editor.
  * Row: .mc-row.mc-cols-N (N = 1..12 tracks)   Column: .mc-col.mc-span-K (K tracks)
  * Responsive: > 900px as designed · 641–900px = 2 columns · ≤ 640px = 1 column. */
 .mc-row{--n:1;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:1.5rem;margin:1.5rem 0}

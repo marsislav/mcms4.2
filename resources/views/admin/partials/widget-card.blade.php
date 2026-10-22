@@ -69,6 +69,23 @@
         @elseif($type === 'recent_comments')
             <label>{{ __('Брой') }} <input type="number" name="{{ $name('count') }}" min="1" max="20" value="{{ $w['count'] ?? 5 }}" class="narrow"></label>
             {!! __('<small class="muted">Показва се само ако коментарите са включени (Дискусии).</small>') !!}
+        @elseif($type === 'popular_posts')
+            <div class="grid-form">
+                <label>{{ __('Брой') }} <input type="number" name="{{ $name('count') }}" min="1" max="20" value="{{ $w['count'] ?? 5 }}"></label>
+                <label>{!! __('Период (дни) <small class="muted">-1 = от „Статистика“, 0 = за всички времена</small>') !!} <input type="number" name="{{ $name('days') }}" min="-1" max="3650" value="{{ $w['days'] ?? -1 }}"></label>
+            </div>
+            <label class="check"><input type="checkbox" name="{{ $name('show_views') }}" value="1" @checked($checked('show_views'))> {{ __('Показвай броя прочитания') }}</label>
+            <label class="check"><input type="checkbox" name="{{ $name('show_thumb') }}" value="1" @checked($checked('show_thumb'))> {{ __('Показвай малка снимка') }}</label>
+            {!! __('<small class="muted">Изисква включена статистика (Настройки → Статистика) и обновена база данни.</small>') !!}
+        @elseif($type === 'newsletter')
+            {!! __('<small class="muted">Формуляр за бюлетин. Текстовете и поведението са в Настройки → Бюлетин.</small>') !!}
+        @elseif($type === 'block')
+            <label>{{ __('Блок') }}
+                <select name="{{ $name('block') }}">
+                    <option value="">—</option>
+                    @foreach (\App\Support\Blocks::options() as $slug => $bn)<option value="{{ $slug }}" @selected(($w['block'] ?? '') === $slug)>{{ $bn }} ({{ $slug }})</option>@endforeach
+                </select>
+            </label>
         @elseif($type === 'search')
             {!! __('<small class="muted">Поле за търсене в сайта.</small>') !!}
         @elseif($type === 'account')

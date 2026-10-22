@@ -101,7 +101,7 @@ class SettingController extends Controller
     {
         abort_unless(isset(Options::GROUPS[$group]), 404);
 
-        $ctx = [];
+        $ctx = ['locales' => mcms_locales()];
         if ($group === 'writing') {
             $ctx['categories'] = \App\Models\Category::pluck('id')->map(fn ($i) => (int) $i)->all();
         }
@@ -235,6 +235,9 @@ class SettingController extends Controller
             'anim_page_type' => $anim,
             'anim_speed' => 'required|integer|min:150|max:2000',
             'topbar_cols' => 'required|integer|min:1|max:'.Design::MAX_COLS,
+            'progress_height' => 'required|integer|min:1|max:12',
+            'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
+            'progress_scope' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_SCOPE))],
             'topbar' => 'nullable|array',
             'topbar.*' => 'nullable|array',
             'topbar.*.*' => 'nullable|string|max:2000',

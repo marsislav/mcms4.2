@@ -17,6 +17,9 @@ class Widgets
         'tags' => 'Тагове',
         'recent_comments' => 'Последни коментари',
         'search' => 'Търсене',
+        'popular_posts' => 'Най-четени',
+        'newsletter' => 'Бюлетин',
+        'block' => 'Блок',
         'social' => 'Социални мрежи',
         'account' => 'Вход / Регистрация',
     ];
@@ -131,6 +134,16 @@ class Widgets
                 $w['limit'] = self::int($raw['limit'] ?? 30, 1, 100, 30);
                 $w['style'] = ($raw['style'] ?? '') === 'list' ? 'list' : 'cloud';
                 $w['show_count'] = self::bool($raw['show_count'] ?? null);
+                break;
+            case 'popular_posts':
+                $w['count'] = self::int($raw['count'] ?? 5, 1, 20, 5);
+                $w['days'] = self::int($raw['days'] ?? -1, -1, 3650, -1); // -1 = use Settings > Statistics
+                $w['show_views'] = self::bool($raw['show_views'] ?? null);
+                $w['show_thumb'] = self::bool($raw['show_thumb'] ?? null);
+                break;
+            case 'block':
+                $b = (string) ($raw['block'] ?? '');
+                $w['block'] = preg_match('/^[a-z0-9\-]{1,80}$/', $b) ? $b : '';
                 break;
             case 'recent_comments':
                 $w['count'] = self::int($raw['count'] ?? 5, 1, 20, 5);

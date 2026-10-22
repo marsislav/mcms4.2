@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Comments ("Дискусии", modelled on WordPress > Settings > Discussion).
+ * Comments ("Discussion", modelled on WordPress > Settings > Discussion).
  * Settings are stored as `discussion.<key>`. Pure helpers (decide, format, thread) have no Laravel dependency
  * except setting(), so they can be tested with php tests/standalone.php.
  */

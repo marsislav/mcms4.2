@@ -1,6 +1,9 @@
 @extends('site.layout-page')
 
+@section('kind', 'page')
+
 @section('content')
+@include('site.partials.breadcrumbs')
 <article class="entry">
     @if($preview)<div class="preview-banner">{{ __('Преглед — тази страница още не е публично видима.') }}</div>@endif
     <header>

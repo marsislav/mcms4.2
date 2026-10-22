@@ -1,6 +1,6 @@
 <?php
 
-/** Default UI strings (editable later from Admin → Преводи). */
+/** Default UI strings (editable later from Admin → Translations). */
 return [
     'bg' => [
         'nav.home' => 'Начало',

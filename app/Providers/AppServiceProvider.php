@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    /** Settings > Дата и час / Медия: timezone and image limits override config defaults. */
+    /** Settings > Date & time / Media: timezone and image limits override config defaults. */
     private function applyOptions(): void
     {
         if ($tz = \App\Support\Options::timezone()) {

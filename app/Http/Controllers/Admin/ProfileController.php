@@ -31,7 +31,7 @@ class ProfileController extends Controller
         return back()->with('status', __('Профилът е обновен.'));
     }
 
-    /** "Резюме": public bio shown on the author page, plus website. */
+    /** "Résumé": public bio shown on the author page, plus website. */
     public function updateBio(Request $request)
     {
         abort_unless(\App\Support\Members::ready(), 404);

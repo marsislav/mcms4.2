@@ -7,15 +7,26 @@
     $media = fn ($name, $label, $m) => view('admin.partials.media-field', compact('name', 'label', 'm'));
 @endphp
 
-<div class="tabs" data-stabs role="tablist">
-    <button type="button" class="active" data-stab="general" role="tab">{{ __('Общи') }}</button>
-    <button type="button" data-stab="design" role="tab">{{ __('Дизайн') }}</button>
-    <button type="button" data-stab="discussion" role="tab">{{ __('Дискусии') }}</button>
-    <button type="button" data-stab="footer" role="tab">{{ __('Футър') }}</button>
-    <button type="button" data-stab="sidebar" role="tab">{{ __('Сайдбар') }}</button>
-    <button type="button" data-stab="contact" role="tab">{{ __('Контактна форма') }}</button>
-    @foreach (\App\Support\Options::GROUPS as $g => $gl)<button type="button" data-stab="{{ $g }}" role="tab">{{ __($gl) }}</button>@endforeach
+@php
+    // Settings navigation: [group heading => [tab id => label]]. Option groups (Options::GROUPS) are listed by id.
+    $og = \App\Support\Options::GROUPS;
+    $navGroups = [
+        'Сайт' => ['general' => __('Общи'), 'permalinks' => __($og['permalinks']), 'datetime' => __($og['datetime']), 'maintenance' => __($og['maintenance'])],
+        'Съдържание' => ['reading' => __($og['reading']), 'writing' => __($og['writing']), 'media' => __($og['media']), 'contact' => __('Контактна форма'), 'discussion' => __('Дискусии')],
+        'Външен вид' => ['design' => __('Дизайн'), 'footer' => __('Футър'), 'sidebar' => __('Сайдбар'), 'scripts' => __($og['scripts'])],
+        'Посетители' => ['search' => __($og['search']), 'newsletter' => __($og['newsletter']), 'privacy' => __($og['privacy']), 'users' => __($og['users'])],
+        'SEO и статистика' => ['seo' => __($og['seo']), 'stats' => __($og['stats'])],
+        'Система' => ['admin' => __($og['admin'])],
+    ];
+@endphp
+<div class="settings-layout">
+<div class="tabs settings-nav" data-stabs role="tablist" aria-orientation="vertical">
+    @foreach ($navGroups as $gTitle => $items)
+        <div class="nav-group">{{ __($gTitle) }}</div>
+        @foreach ($items as $id => $lbl)<button type="button" @class(['active' => $id === 'general']) data-stab="{{ $id }}" role="tab">{{ $lbl }}</button>@endforeach
+    @endforeach
 </div>
+<div class="settings-panels">
 
 <div data-spanel="general">
 <form method="post" action="{{ route('admin.settings.update') }}" class="settings-form">
@@ -135,4 +146,6 @@
 @push('scripts')
 <script src="{{ asset_v('assets/js/editor-fa.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 @endpush
+</div>
+</div>
 @endsection

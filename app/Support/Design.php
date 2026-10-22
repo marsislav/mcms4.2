@@ -3,7 +3,7 @@
 namespace App\Support;
 
 /**
- * Site design settings (tab "Дизайн"): colours, fonts, logo size, sticky header,
+ * Site design settings (tab "Design"): colours, fonts, logo size, sticky header,
  * animations and the top bar. Values live in the `settings` table as `design.<key>`
  * (top-bar texts as `design.topbar_cN.<locale>`), so no migration is needed.
  * The generated stylesheet is served from /design.css (CSP: style-src 'self').
@@ -53,11 +53,14 @@ class Design
         'el_header' => 'none', 'el_logo' => 'none', 'el_menu' => 'none', 'el_cards' => 'none',
         'el_images' => 'none', 'el_headings' => 'none', 'el_footer' => 'none',
         'topbar_on' => '0', 'topbar_cols' => '2', 'topbar_bg' => '', 'topbar_fg' => '', 'topbar_mobile' => '1',
+        'progress_on' => '0', 'progress_color' => '', 'progress_bg' => '', 'progress_height' => '3', 'progress_pos' => 'top', 'progress_scope' => 'posts',
         'topbar_c1_align' => 'left', 'topbar_c2_align' => 'right', 'topbar_c3_align' => 'center', 'topbar_c4_align' => 'right',
     ];
 
-    public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg'];
-    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile'];
+    public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg'];
+    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on'];
+    public const PROGRESS_POS = ['top' => 'Най-горе', 'bottom' => 'Най-долу'];
+    public const PROGRESS_SCOPE = ['posts' => 'Само публикации', 'content' => 'Публикации и страници', 'all' => 'Навсякъде'];
     public const MAX_COLS = 4;
 
     /* ------------------------------------------------------------ reading */
@@ -89,6 +92,20 @@ class Design
     public static function pageAnim(): string
     {
         return self::get('anim_page_on') === '1' ? self::animType(self::get('anim_page_type')) : 'none';
+    }
+
+    /** Whether the reading progress bar shows on the given page kind (post | page | list). */
+    public static function progressFor(string $kind): bool
+    {
+        if (self::get('progress_on') !== '1') {
+            return false;
+        }
+
+        return match (self::get('progress_scope')) {
+            'all' => true,
+            'content' => in_array($kind, ['post', 'page'], true),
+            default => $kind === 'post',
+        };
     }
 
     /** Element animations as [key => type] (only the active ones). */
@@ -210,6 +227,16 @@ class Design
         }
         if (self::get('topbar_mobile') !== '1') {
             $r[] = '@media (max-width:760px){.topbar{display:none}}';
+        }
+
+        // reading progress bar --------------------------------------------
+        if (self::get('progress_on') === '1') {
+            $h = max(1, min(12, (int) self::get('progress_height')));
+            $pc = self::color('progress_color');
+            $pb = self::color('progress_bg');
+            $bottom = self::get('progress_pos') === 'bottom';
+            $r[] = '.read-progress{height:'.$h.'px;'.($bottom ? 'bottom:0;top:auto' : 'top:0;bottom:auto').($pb ? ';background:'.$pb : '').'}'
+                .'.read-progress span{'.($pc ? 'background:'.$pc : '').'}';
         }
 
         // animation speed -------------------------------------------------

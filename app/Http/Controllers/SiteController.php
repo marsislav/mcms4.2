@@ -87,7 +87,20 @@ class SiteController extends Controller
             'published' => $content->type === 'post' ? $content->publish_at : null,
         ];
 
-        return response()->view($view, ['content' => $content, 'tr' => $tr, 'seo' => $seo, 'preview' => ! $content->isVisible(), 'switch' => $alternates] + $extra);
+        \App\Support\Stats::hit('c:'.$content->id, $tr->title, $content->id);
+
+        $trail = [];
+        if ($content->type === 'post') {
+            $trail[] = [t('blog.title'), lroute('blog')];
+            $cat = $content->category?->tr();
+            if ($cat) {
+                $trail[] = [$cat->name, $cat->url()];
+            }
+        }
+        $trail[] = [$tr->title, null];
+        $isHome = request()->routeIs('home');
+
+        return response()->view($view, ['content' => $content, 'tr' => $tr, 'seo' => $seo, 'preview' => ! $content->isVisible(), 'switch' => $alternates, 'crumbs' => $isHome ? [] : $this->crumbs($trail)] + $extra);
     }
 
     private function findTranslation(string $slug, string $type): ?ContentTranslation
@@ -107,6 +120,7 @@ class SiteController extends Controller
 
     public function blog(Request $request, bool $asHome = false)
     {
+        \App\Support\Stats::hit('p:'.($asHome ? 'home' : 'blog'), $asHome ? __('Начало') : t('blog.title'));
         $posts = $this->postQuery()->paginate((int) setting('posts_per_page', 9));
 
         return view('site.blog', [
@@ -121,6 +135,7 @@ class SiteController extends Controller
             ],
             'switch' => $this->builtinAlternates($asHome ? 'home' : 'blog'),
             'category' => null,
+            'crumbs' => $asHome ? [] : $this->crumbs([[t('blog.title'), null]]),
         ]);
     }
 
@@ -134,6 +149,7 @@ class SiteController extends Controller
             return $this->notFound($request);
         }
 
+        \App\Support\Stats::hit('p:author:'.$author->username, $author->name);
         $posts = $this->postQuery()->where('author_id', $author->id)->paginate((int) setting('posts_per_page', 9));
         $url = lroute('author', ['username' => $author->username]);
 
@@ -148,6 +164,7 @@ class SiteController extends Controller
                 'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
             ],
             'switch' => [],
+            'crumbs' => $this->crumbs([[$author->name, null]]),
         ]);
     }
 
@@ -158,6 +175,7 @@ class SiteController extends Controller
             return $this->notFound($request);
         }
 
+        \App\Support\Stats::hit('cat:'.$ct->category_id, $ct->name);
         $posts = $this->postQuery()->where('category_id', $ct->category_id)->paginate((int) setting('posts_per_page', 9));
 
         $alternates = [];
@@ -179,6 +197,7 @@ class SiteController extends Controller
                 'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
             ],
             'switch' => $alternates,
+            'crumbs' => $this->crumbs([[t('blog.title'), lroute('blog')], [$ct->name, null]]),
         ]);
     }
 
@@ -195,6 +214,7 @@ class SiteController extends Controller
         }
         $tag = $found->tag()->with('translations')->first();
         $name = $tag->display($locale)?->name ?? $found->name;
+        \App\Support\Stats::hit('tag:'.$tag->id, $name);
 
         $posts = $this->postQuery()->whereHas('tags', fn ($q) => $q->where('tags.id', $tag->id))
             ->paginate((int) setting('posts_per_page', 9));
@@ -219,6 +239,7 @@ class SiteController extends Controller
                 'robots' => $posts->currentPage() > 1 ? 'noindex, follow' : null,
             ],
             'switch' => $alternates,
+            'crumbs' => $this->crumbs([[t('blog.title'), lroute('blog')], [$heading, null]]),
         ]);
     }
 
@@ -250,18 +271,39 @@ class SiteController extends Controller
             'results' => $results,
             'seo' => ['title' => t('nav.search'), 'canonical' => lroute('search'), 'robots' => 'noindex, follow', 'alternates' => []],
             'switch' => $this->builtinAlternates('search'),
+            'crumbs' => $this->crumbs([[t('nav.search'), null]]),
         ]);
+    }
+
+    /** JSON for the live-search dropdown (Settings > Search). */
+    public function liveSearch(Request $request)
+    {
+        abort_unless(Options::on('livesearch'), 404);
+        $q = trim(mb_substr((string) $request->query('q', ''), 0, 80));
+        if (mb_strlen($q) < max(1, (int) Options::get('live_min'))) {
+            return response()->json([]);
+        }
+        $like = '%'.addcslashes($q, '%_\\').'%';
+        $rows = ContentTranslation::where('locale', app()->getLocale())
+            ->whereHas('content', fn ($c) => $c->visible())
+            ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('excerpt', 'like', $like))
+            ->with('content')->orderByRaw('title like ? desc', [$like])->orderByDesc('id')
+            ->limit(max(3, min(15, (int) Options::get('live_max'))))->get();
+
+        return response()->json($rows->map(fn ($t) => ['title' => $t->title, 'url' => $t->url(), 'type' => $t->content->type === 'post' ? __('Статия') : __('Страница')])->all());
     }
 
     /* ---------------------------------------------------------- contact */
 
     public function contactForm()
     {
+        \App\Support\Stats::hit('p:contact', t('contact.title'));
         return view('site.contact', [
             'ts' => Crypt::encryptString((string) time()),
             'fields' => \App\Support\ContactFields::all(),
             'seo' => ['title' => t('contact.title'), 'description' => t('contact.intro'), 'canonical' => lroute('contact'), 'alternates' => $this->builtinAlternates('contact')],
             'switch' => $this->builtinAlternates('contact'),
+            'crumbs' => $this->crumbs([[t('contact.title'), null]]),
         ]);
     }
 
@@ -447,6 +489,14 @@ class SiteController extends Controller
         return $this->notFound($request);
     }
 
+    /** Breadcrumb trail: "Home" + $trail ([label, url|null] pairs, last = current page). */
+    private function crumbs(array $trail): array
+    {
+        $home = \App\Support\Options::loc('bc_home', __('Начало'));
+
+        return \App\Support\Breadcrumbs::make(array_map(fn ($c) => ['label' => $c[0], 'url' => $c[1] ?? null], $trail), $home, lroute('home'));
+    }
+
     private function notFound(Request $request)
     {
         $path = '/'.trim($request->path(), '/');
@@ -456,10 +506,12 @@ class SiteController extends Controller
             return redirect()->away($redirect->to_url, $redirect->code);
         }
 
-        // blog / category / tag prefixes were renamed in Settings > Връзки: send old links to the new ones
+        // blog / category / tag prefixes were renamed in Settings > Permalinks: send old links to the new ones
         if ($new = Options::legacyPath(ltrim($path, '/'), Options::get('blog_base'), Options::get('category_base'), Options::get('tag_base'))) {
             return redirect('/'.$new, 301);
         }
+
+        \App\Support\NotFoundLog::record($request);
 
         abort(404);
     }

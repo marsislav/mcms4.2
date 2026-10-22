@@ -2,7 +2,10 @@
 
 @section('has_sidebar', '1')
 
+@section('kind', 'list')
+
 @section('content')
+@include('site.partials.breadcrumbs')
 <header class="page-head author-head">
     <h1>{{ $author->name }}</h1>
     @if($author->website)<p class="muted"><a href="{{ $author->website }}" rel="nofollow noopener noreferrer me" target="_blank">{{ preg_replace('~^https?://(www\.)?~i', '', rtrim($author->website, '/')) }}</a></p>@endif

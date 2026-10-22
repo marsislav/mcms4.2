@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
-/** Public self-registration (Settings > Потребители). */
+/** Public self-registration (Settings > Users). */
 class RegisterController extends Controller
 {
     public function show()

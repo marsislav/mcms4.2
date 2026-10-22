@@ -13,3 +13,7 @@
     </label>
 </div>
 <p class="muted">{{ __('Коментарите (отваряне, одобрение, нишки) са в таб „Дискусии“.') }}</p>
+
+<div class="grid-form">
+    <label>{!! __('Пази ревизии на статия <small class="muted">0 = не пазя</small>') !!} <input type="number" name="revisions_keep" min="0" max="500" value="{{ $opt['revisions_keep'] }}"></label>
+</div>

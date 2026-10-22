@@ -49,9 +49,11 @@
     <link rel="stylesheet" href="{{ asset_v('assets/css/grid.css') }}">
     <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}{{ substr(md5(\App\Support\Options::get('custom_css')), 0, 6) }}">
     {!! \App\Support\Options::scripts('head', csp_nonce()) !!}
+    @include('site.partials.head-extra')
     @php do_action('head'); @endphp
 </head>
 <body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
+@include('site.partials.after-body')
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
 
 @if($topbar)
@@ -169,8 +171,8 @@
 @endif
 </footer>
 
-@if(\App\Support\Options::on('back_to_top'))<a class="to-top" href="#" aria-label="{{ t('site.top', __('Към началото')) }}">↑</a>@endif
 
+@include('site.partials.before-close')
 <script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php do_action('footer'); @endphp

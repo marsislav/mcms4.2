@@ -3,8 +3,8 @@
 namespace App\Support;
 
 /**
- * WordPress-like site options (Settings tabs: Четене, Писане, Дата и час, Връзки, Медия,
- * Скриптове, Поддръжка). Stored in the `settings` table as `opt.<key>` — no migration needed.
+ * WordPress-like site options (Settings tabs: Reading, Writing, Date & time, Permalinks, Media,
+ * Scripts, Maintenance). Stored in the `settings` table as `opt.<key>` — no migration needed.
  * clean() is pure PHP (no Laravel) so it can be unit-tested; get() reads through setting().
  */
 class Options
@@ -18,7 +18,19 @@ class Options
         'scripts' => 'Скриптове',
         'users' => 'Потребители',
         'maintenance' => 'Поддръжка',
+        'seo' => 'SEO и навигация',
+        'stats' => 'Статистика',
+        'search' => 'Търсене',
+        'newsletter' => 'Бюлетин',
+        'privacy' => 'Бисквитки (GDPR)',
+        'admin' => 'Администрация',
     ];
+
+    /** Option keys that hold a text per language (stored as opt.<key>.<locale>). */
+    public const LOCALIZED = ['nl_title', 'nl_text', 'nl_consent', 'nl_button', 'cc_title', 'cc_text', 'cc_accept', 'cc_reject', 'cc_settings', 'cc_policy_label', 'bc_home'];
+
+    public const BC_SEPARATORS = ['›' => '›', '»' => '»', '/' => '/', '→' => '→', '·' => '·'];
+    public const CC_POSITIONS = ['bottom' => 'Долу (лента)', 'bottom-left' => 'Долу вляво (кутия)', 'bottom-right' => 'Долу вдясно (кутия)', 'center' => 'Център (прозорец)'];
 
     public const DEFAULTS = [
         // reading
@@ -38,6 +50,22 @@ class Options
         'scripts_head' => '', 'scripts_footer' => '', 'csp_hosts' => '', 'custom_css' => '',
         // maintenance
         'maintenance_message' => '', 'maintenance_ips' => '',
+        // writing (extra)
+        'revisions_keep' => '20',
+        // seo & navigation
+        'breadcrumbs' => '1', 'bc_separator' => '›', 'bc_show_current' => '1', 'bc_on_pages' => '1', 'bc_on_posts' => '1', 'bc_on_lists' => '1',
+        'jsonld' => '1', 'notfound_log' => '1', 'notfound_keep_days' => '90',
+        // stats
+        'stats_on' => '1', 'stats_skip_logged' => '1', 'stats_skip_bots' => '1', 'stats_keep_days' => '365', 'popular_days' => '30',
+        // live search
+        'livesearch' => '1', 'live_min' => '2', 'live_max' => '6',
+        // newsletter
+        'nl_on' => '0', 'nl_double_optin' => '1', 'nl_ask_name' => '0', 'nl_notify_admin' => '1', 'nl_require_consent' => '1',
+        // privacy / cookie consent
+        'cc_on' => '0', 'cc_position' => 'bottom', 'cc_policy_url' => '', 'cc_analytics' => '1', 'cc_marketing' => '0', 'cc_days' => '180', 'cc_reopen' => '1',
+        'scripts_analytics' => '', 'scripts_marketing' => '',
+        // administration
+        'adminbar' => '1', 'log_tail_kb' => '300',
     ];
 
     public const DATE_FORMATS = ['j F Y' => 1, 'd.m.Y' => 1, 'Y-m-d' => 1, 'F j, Y' => 1, 'j M Y' => 1, 'd/m/Y' => 1];
@@ -48,7 +76,7 @@ class Options
     public const RESERVED_BASES = [
         'search', 'contact', 'comment', 'install', 'sitemap', 'robots', 'feed', 'uploads', 'assets', 'storage', 'vendor',
         'up', 'admin', 'panel', 'login', 'logout', 'api', 'design', 'app', 'config', 'database', 'resources', 'routes',
-        'plugins', 'lang', 'bootstrap', 'tests', 'public',
+        'plugins', 'lang', 'bootstrap', 'tests', 'public', 'newsletter',
     ];
 
     /* ------------------------------------------------------------ reading */
@@ -63,6 +91,20 @@ class Options
         }
 
         return ($v === null || $v === '') ? (self::DEFAULTS[$key] ?? '') : (string) $v;
+    }
+
+    /** Per-language option text: current locale, then the default language, then $default. */
+    public static function loc(string $key, string $default = '', ?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+        foreach ([$locale, mcms_default_locale()] as $l) {
+            $v = self::get($key.'.'.$l);
+            if ($v !== '') {
+                return $v;
+            }
+        }
+
+        return $default;
     }
 
     public static function on(string $key): bool
@@ -201,6 +243,14 @@ class Options
         $err = [];
         $int = fn ($k, $min, $max, $def) => (string) (isset($in[$k]) && is_numeric($in[$k]) ? max($min, min($max, (int) $in[$k])) : $def);
         $bool = fn ($k) => ! empty($in[$k]) && $in[$k] !== '0' ? '1' : '0';
+        $locales = $ctx['locales'] ?? ['bg'];
+        $text = function (array $keys, int $max = 500) use (&$v, $in, $locales) {
+            foreach ($keys as $k) {
+                foreach ($locales as $l) {
+                    $v[$k.'.'.$l] = mb_substr(trim(strip_tags((string) ($in[$k][$l] ?? ''))), 0, $max);
+                }
+            }
+        };
         $enum = fn ($k, array $allowed, $def) => in_array((string) ($in[$k] ?? ''), $allowed, true) ? (string) $in[$k] : $def;
 
         switch ($group) {
@@ -228,6 +278,7 @@ class Options
                 $valid = $ctx['categories'] ?? null;
                 $v['default_category'] = ctype_digit($cat) && ($valid === null || in_array((int) $cat, $valid, true)) ? $cat : '';
                 $v['default_status'] = $enum('default_status', ['draft', 'published'], 'draft');
+                $v['revisions_keep'] = (string) (isset($in['revisions_keep']) && is_numeric($in['revisions_keep']) ? max(0, min(500, (int) $in['revisions_keep'])) : 20);
                 break;
 
             case 'datetime':
@@ -309,6 +360,66 @@ class Options
                     $hosts = array_slice($hosts, 0, 15, true);
                 }
                 $v['csp_hosts'] = implode("\n", $hosts);
+                break;
+
+            case 'seo':
+                foreach (['breadcrumbs', 'bc_show_current', 'bc_on_pages', 'bc_on_posts', 'bc_on_lists', 'jsonld', 'notfound_log'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $v['bc_separator'] = $enum('bc_separator', array_keys(self::BC_SEPARATORS), '›');
+                $v['notfound_keep_days'] = $int('notfound_keep_days', 1, 3650, 90);
+                $text(['bc_home'], 60);
+                break;
+
+            case 'stats':
+                foreach (['stats_on', 'stats_skip_logged', 'stats_skip_bots'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $v['stats_keep_days'] = $int('stats_keep_days', 7, 3650, 365);
+                $v['popular_days'] = $int('popular_days', 0, 3650, 30);
+                break;
+
+            case 'search':
+                $v['livesearch'] = $bool('livesearch');
+                $v['live_min'] = $int('live_min', 1, 6, 2);
+                $v['live_max'] = $int('live_max', 3, 15, 6);
+                break;
+
+            case 'newsletter':
+                foreach (['nl_on', 'nl_double_optin', 'nl_ask_name', 'nl_notify_admin', 'nl_require_consent'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $text(['nl_title', 'nl_button'], 120);
+                $text(['nl_text', 'nl_consent'], 400);
+                break;
+
+            case 'privacy':
+                foreach (['cc_on', 'cc_analytics', 'cc_marketing', 'cc_reopen'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $v['cc_position'] = $enum('cc_position', array_keys(self::CC_POSITIONS), 'bottom');
+                $v['cc_days'] = $int('cc_days', 1, 730, 180);
+                $url = trim((string) ($in['cc_policy_url'] ?? ''));
+                if ($url !== '' && ! preg_match('~^(/(?!/)|https?://)[^\s\x00-\x1f]*$~i', $url)) {
+                    $err[] = __('Невалиден адрес. Позволени: /път, #котва, http(s)://, mailto:, tel:');
+                    $url = '';
+                }
+                $v['cc_policy_url'] = $url;
+                $text(['cc_title', 'cc_accept', 'cc_reject', 'cc_settings', 'cc_policy_label'], 120);
+                $text(['cc_text'], 600);
+                foreach (['scripts_analytics', 'scripts_marketing'] as $k) {
+                    $c = trim((string) ($in[$k] ?? ''));
+                    if (mb_strlen($c) > 20000) {
+                        $err[] = __('Кодът е твърде дълъг (макс. 20 000 знака).');
+                        $c = mb_substr($c, 0, 20000);
+                    }
+                    $v[$k] = $c;
+                }
+                break;
+
+            case 'admin':
+                $v['adminbar'] = $bool('adminbar');
+                $v['log_tail_kb'] = $int('log_tail_kb', 50, 2000, 300);
                 break;
 
             case 'maintenance':

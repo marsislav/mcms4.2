@@ -62,10 +62,18 @@ class ContentController extends Controller
     public function create(Request $request)
     {
         $type = $this->type($request);
+        $content = new Content(['status' => \App\Support\Options::get('default_status'), 'category_id' => $type === 'post' ? (\App\Support\Options::get('default_category') ?: null) : null]);
+
+        // start from a template (Blocks & templates): pre-fill the default-language body
+        $templates = \App\Support\Blocks::templatesFor($type);
+        $picked = collect($templates)->firstWhere('id', (int) $request->query('template'));
+        $content->setRelation('translations', collect($picked ? [new \App\Models\ContentTranslation(['locale' => mcms_default_locale(), 'body' => (string) $picked->body])] : []));
 
         return view('admin.content.form', [
             'type' => $type,
-            'content' => new Content(['status' => \App\Support\Options::get('default_status'), 'category_id' => $type === 'post' ? (\App\Support\Options::get('default_category') ?: null) : null]),
+            'templates' => $templates,
+            'pickedTemplate' => $picked?->id,
+            'content' => $content,
             'categories' => Category::with('translations')->orderBy('sort')->get(),
             'languages' => mcms_languages(),
         ] + $this->taxonomyData(null));
@@ -166,6 +174,32 @@ class ContentController extends Controller
         audit($type.'.trash.empty', null, (string) $items->count());
 
         return redirect()->route("admin.{$type}s.index")->with('status', __('Кошчето е изпразнено (:n).', ['n' => $items->count()]));
+    }
+
+    /** Compare two versions of one translation: ?a=<revision id|current>&b=<revision id|current>. */
+    public function compare(Request $request, \App\Models\ContentTranslation $translation)
+    {
+        $translation->load('content');
+        abort_unless($translation->content, 404);
+        $this->authorize($request, $translation->content);
+
+        $revs = Revision::where('content_translation_id', $translation->id)->orderByDesc('id')->with('user')->get();
+        $pick = function (?string $id) use ($revs, $translation) {
+            if ($id !== null && ctype_digit($id) && ($r = $revs->firstWhere('id', (int) $id))) {
+                return ['id' => (string) $r->id, 'label' => $r->created_at?->format('d.m.Y H:i').($r->user ? ' · '.$r->user->name : ''), 'title' => $r->title, 'body' => $r->body, 'rev' => $r];
+            }
+
+            return ['id' => 'current', 'label' => __('Текуща версия'), 'title' => $translation->title, 'body' => $translation->body, 'rev' => null];
+        };
+        $a = $pick($request->query('a', (string) ($revs->first()->id ?? 'current')));
+        $b = $pick($request->query('b', 'current'));
+
+        $ops = \App\Support\Diff::lines(
+            array_merge(['# '.$a['title']], \App\Support\Diff::toLines((string) $a['body'])),
+            array_merge(['# '.$b['title']], \App\Support\Diff::toLines((string) $b['body']))
+        );
+
+        return view('admin.content.compare', ['t' => $translation, 'revs' => $revs, 'a' => $a, 'b' => $b, 'ops' => $ops, 'stats' => \App\Support\Diff::stats($ops)]);
     }
 
     public function restore(Request $request, Revision $revision)

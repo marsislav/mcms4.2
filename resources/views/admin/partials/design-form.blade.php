@@ -124,6 +124,22 @@
         </div>
     </section>
 
+    <section class="card">
+        <h2>{{ __('Лента за прогрес на четенето') }}</h2>
+        <label class="check"><input type="checkbox" name="progress_on" value="1" @checked($v('progress_on') === '1')> {{ __('Показвай лента за прогрес при скролиране') }}</label>
+        <div class="grid-form">
+            {!! $color('progress_color', __('Цвят на лентата'), __('празно = акцентният цвят')) !!}
+            {!! $color('progress_bg', __('Фон на пистата')) !!}
+            <label>{{ __('Дебелина (px)') }} <input type="number" name="progress_height" min="1" max="12" value="{{ $v('progress_height') }}" required></label>
+            <label>{{ __('Позиция') }}
+                <select name="progress_pos">@foreach (\App\Support\Design::PROGRESS_POS as $k => $l)<option value="{{ $k }}" @selected($v('progress_pos') === $k)>{{ __($l) }}</option>@endforeach</select>
+            </label>
+            <label>{{ __('Къде се показва') }}
+                <select name="progress_scope">@foreach (\App\Support\Design::PROGRESS_SCOPE as $k => $l)<option value="{{ $k }}" @selected($v('progress_scope') === $k)>{{ __($l) }}</option>@endforeach</select>
+            </label>
+        </div>
+    </section>
+
     <div class="btn-row">
         <button class="btn primary">{{ __('Запази дизайна') }}</button>
         {!! __('<a class="btn" href=":p1" target="_blank" rel="noopener">Виж сайта ↗</a>', ['p1' => e(url('/'))]) !!}

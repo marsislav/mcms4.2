@@ -5,7 +5,7 @@ namespace App\Support;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
-/** Is the soft-delete ("кошче") migration applied? Until then models behave as before (hard delete). */
+/** Is the soft-delete ("trash") migration applied? Until then models behave as before (hard delete). */
 class Trash
 {
     public static function ready(): bool

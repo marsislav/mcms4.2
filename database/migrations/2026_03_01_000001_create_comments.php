@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Comments (Settings > Дискусии): table + per-content override "comments_open" (NULL = use the default). */
+/** Comments (Settings > Discussion): table + per-content override "comments_open" (NULL = use the default). */
 return new class extends Migration {
     public function up(): void
     {

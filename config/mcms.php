@@ -21,13 +21,13 @@ return [
     'reserved_slugs' => [
         'blog', 'search', 'contact', 'comment', 'install', 'sitemap', 'robots', 'feed', 'uploads',
         'assets', 'storage', 'vendor', 'up', 'admin', 'panel', 'login', 'logout', 'api',
-        'register', 'author', 'app', 'config', 'database', 'resources', 'routes', 'plugins', 'lang', 'bootstrap', 'tests', 'public',
+        'register', 'author', 'newsletter', 'app', 'config', 'database', 'resources', 'routes', 'plugins', 'lang', 'bootstrap', 'tests', 'public',
     ],
 
     // Role => permissions ('*' = everything)
     'roles' => [
         'admin' => ['*'],
-        'editor' => ['content', 'content.all', 'pages', 'publish', 'categories', 'media', 'menus', 'messages', 'comments', 'redirects', 'translations'],
+        'editor' => ['content', 'content.all', 'pages', 'publish', 'categories', 'media', 'menus', 'messages', 'comments', 'redirects', 'translations', 'blocks', 'notfound', 'stats'],
         'author' => ['content', 'media', 'publish'],       // writes and publishes own posts
         'contributor' => ['content'],                       // writes own posts; they wait for approval ("pending")
         'subscriber' => [],                                 // registered account: only own profile

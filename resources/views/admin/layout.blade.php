@@ -31,10 +31,16 @@
         ['admin.translations.index', 'Преводи', 'translations', null],
         ['admin.languages.index', 'Езици', 'languages', null],
         ['admin.redirects.index', 'Пренасочвания', 'redirects', null],
+        ['admin.notfound.index', 'Журнал 404', 'notfound', null],
+        ['admin.blocks.index', 'Блокове и шаблони', 'blocks', null],
+        ['admin.stats.index', 'Статистика', 'stats', null],
+        ['admin.subscribers.index', 'Абонати', 'subscribers', null],
         ['admin.settings', 'Настройки', 'settings', null],
         ['—', 'Система'],
         ['admin.users.index', 'Потребители', 'users', null],
         ['admin.audit', 'Журнал', 'audit', null],
+        ['admin.errors.index', 'Журнал на грешките', 'errors', null],
+        ['admin.system.migrations', 'Миграции', 'settings', null],
         ['admin.backups.index', 'Архиви', 'backups', null],
         ['admin.plugins.index', 'Плъгини', 'plugins', null],
     ];
@@ -68,10 +74,26 @@
     <header class="topbar">
         <label for="nav-toggle" class="burger" aria-label="{{ __('Меню') }}">☰</label>
         <h1>@yield('title', __('Табло'))</h1>
-        <div class="topbar-actions">@yield('actions')</div>
+        <div class="topbar-actions">
+            @yield('actions')
+            @if($me->allows('content') || $me->allows('pages') || $me->allows('categories'))
+            <details class="quick-new">
+                <summary class="btn sm">＋ {{ __('Ново') }}</summary>
+                <div class="quick-menu">
+                    @if($me->allows('content'))<a href="{{ route('admin.posts.create') }}">{{ __('Статия') }}</a>@endif
+                    @if($me->allows('pages'))<a href="{{ route('admin.pages.create') }}">{{ __('Страница') }}</a>@endif
+                    @if($me->allows('categories'))<a href="{{ route('admin.categories.index') }}#new">{{ __('Категория') }}</a>@endif
+                    @if($me->allows('blocks') && \App\Support\Tables::has('blocks'))<a href="{{ route('admin.blocks.create') }}">{{ __('Блок') }}</a>@endif
+                </div>
+            </details>
+            @endif
+        </div>
     </header>
 
     <div class="content">
+        @if ($me->allows('settings') && ! request()->routeIs('admin.system.*') && collect(\App\Support\Tables::OPTIONAL)->contains(fn ($t) => ! \App\Support\Tables::has($t)))
+            <div class="flash err" role="alert">{{ __('Базата данни се нуждае от обновяване за новите функции.') }} <a href="{{ route('admin.system.migrations') }}">{{ __('Обнови') }}</a></div>
+        @endif
         @if (session('status'))<div class="flash ok" role="status">{{ session('status') }}</div>@endif
         @if (session('error'))<div class="flash err" role="alert">{{ session('error') }}</div>@endif
         @if ($errors->any())

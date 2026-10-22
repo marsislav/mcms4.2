@@ -20,7 +20,7 @@
     t.parentNode.insertBefore(w, t); w.appendChild(t);
   });
 
-  /* ---- animations (configured in Settings > Дизайн) ---- */
+  /* ---- animations (configured in Settings > Design) ---- */
   var TYPES = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'zoom'];
   var SELECTORS = {
     header: '.site-header',
@@ -83,5 +83,121 @@
         io.observe(el);
       });
     });
+  }
+
+  /* ---- reading progress bar (look: Settings > Design) ---- */
+  var bar = document.querySelector('[data-read-progress] span');
+  if (bar) {
+    var art = document.querySelector('article.entry') || document.querySelector('main') || document.body;
+    var ticking = false;
+    var update = function () {
+      ticking = false;
+      var r = art.getBoundingClientRect();
+      var total = r.height - window.innerHeight;
+      var done = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : (r.bottom <= window.innerHeight ? 1 : 0);
+      bar.style.transform = 'scaleX(' + done.toFixed(4) + ')';
+    };
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+
+  /* ---- GDPR cookie consent ---- */
+  var scriptEl = document.currentScript;
+  var NONCE = scriptEl ? (scriptEl.nonce || scriptEl.getAttribute('nonce') || '') : '';
+  var banner = document.getElementById('cc-banner');
+  var reopen = document.querySelector('.cc-reopen');
+  var COOKIE = 'mcms_consent';
+  var readConsent = function () {
+    var m = document.cookie.match(/(?:^|;\s*)mcms_consent=([^;]*)/);
+    if (!m) { return null; }
+    var o = { analytics: false, marketing: false };
+    decodeURIComponent(m[1]).split(',').forEach(function (k) { if (k in o) { o[k] = true; } });
+    return o;
+  };
+  var injected = {};
+  var injectScripts = function (cat) {
+    if (injected[cat]) { return; }
+    var tpl = document.querySelector('template[data-cc-scripts="' + cat + '"]');
+    if (!tpl) { return; }
+    injected[cat] = true;
+    Array.prototype.forEach.call(tpl.content.childNodes, function (node) {
+      if (node.nodeType !== 1) { return; }
+      if (node.tagName === 'SCRIPT') {
+        var sc = document.createElement('script');
+        Array.prototype.forEach.call(node.attributes, function (a) { if (a.name !== 'nonce') { sc.setAttribute(a.name, a.value); } });
+        if (NONCE) { sc.setAttribute('nonce', NONCE); }
+        sc.text = node.text;
+        document.body.appendChild(sc);
+      } else {
+        document.body.appendChild(document.importNode(node, true));
+      }
+    });
+  };
+  var applyConsent = function (c) { if (c) { ['analytics', 'marketing'].forEach(function (k) { if (c[k]) { injectScripts(k); } }); } };
+  if (banner) {
+    var days = parseInt(banner.getAttribute('data-cc-days'), 10) || 180;
+    var prefs = banner.querySelector('.cc-prefs');
+    var boxes = banner.querySelectorAll('[data-cc-cat]');
+    var save = function (c) {
+      var list = ['necessary'];
+      ['analytics', 'marketing'].forEach(function (k) { if (c[k]) { list.push(k); } });
+      document.cookie = COOKIE + '=' + encodeURIComponent(list.join(',')) + ';max-age=' + (days * 86400) + ';path=/;SameSite=Lax' + (location.protocol === 'https:' ? ';Secure' : '');
+      banner.hidden = true;
+      if (reopen) { reopen.hidden = false; }
+      applyConsent(c);
+    };
+    var current = readConsent();
+    if (current) {
+      boxes.forEach(function (b) { b.checked = !!current[b.getAttribute('data-cc-cat')]; });
+      if (reopen) { reopen.hidden = false; }
+      applyConsent(current);
+    } else {
+      banner.hidden = false;
+    }
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-cc]');
+      if (!b) { return; }
+      var act = b.getAttribute('data-cc');
+      if (act === 'accept') { save({ analytics: true, marketing: true }); }
+      else if (act === 'reject') { save({ analytics: false, marketing: false }); }
+      else if (act === 'save') {
+        var c = { analytics: false, marketing: false };
+        boxes.forEach(function (x) { c[x.getAttribute('data-cc-cat')] = x.checked; });
+        save(c);
+      } else if (act === 'prefs') { if (prefs) { prefs.hidden = !prefs.hidden; } }
+      else if (act === 'open') { banner.hidden = false; if (prefs) { prefs.hidden = false; } }
+    });
+  }
+
+  /* ---- live search: <input data-live="/search/live"> ---- */
+  var li = document.querySelector('input[data-live]');
+  if (li && window.fetch) {
+    var box = document.createElement('div');
+    box.className = 'live-results'; box.hidden = true; box.setAttribute('role', 'listbox');
+    li.setAttribute('autocomplete', 'off');
+    li.parentNode.style.position = 'relative';
+    li.parentNode.appendChild(box);
+    var min = parseInt(li.getAttribute('data-live-min'), 10) || 2;
+    var timer = null, seq = 0;
+    var esc = function (t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+    li.addEventListener('input', function () {
+      clearTimeout(timer);
+      var q = li.value.trim();
+      if (q.length < min) { box.hidden = true; return; }
+      timer = setTimeout(function () {
+        var n = ++seq;
+        fetch(li.getAttribute('data-live') + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (items) {
+            if (n !== seq) { return; }
+            box.innerHTML = items.map(function (i) { return '<a role="option" href="' + esc(i.url) + '">' + esc(i.title) + (i.type ? ' <small>' + esc(i.type) + '</small>' : '') + '</a>'; }).join('');
+            box.hidden = !items.length;
+          })
+          .catch(function () { box.hidden = true; });
+      }, 200);
+    });
+    document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== li) { box.hidden = true; } });
+    li.addEventListener('keydown', function (e) { if (e.key === 'Escape') { box.hidden = true; } });
   }
 })();

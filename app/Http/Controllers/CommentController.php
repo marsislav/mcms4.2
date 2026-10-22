@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
-/** Public comment form handler (Settings > Дискусии). */
+/** Public comment form handler (Settings > Discussion). */
 class CommentController extends Controller
 {
     public function store(Request $request)

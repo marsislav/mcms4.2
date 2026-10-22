@@ -13,6 +13,14 @@
 @endsection
 
 @section('content')
+@if(! $exists && ! empty($templates))
+<form method="get" class="inline-field template-pick" action="{{ route($routeBase.'.create') }}">
+    <label>{{ __('Започни от шаблон') }}
+        <select name="template"><option value="">—</option>@foreach ($templates as $tpl)<option value="{{ $tpl->id }}" @selected(($pickedTemplate ?? null) === $tpl->id)>{{ $tpl->name }}</option>@endforeach</select>
+    </label>
+    <button class="btn sm">{{ __('Зареди') }}</button>
+</form>
+@endif
 <form method="post" action="{{ $exists ? route($routeBase.'.update', $content) : route($routeBase.'.store') }}" class="editor-form">
     @csrf
     @if($exists) @method('PUT') @endif
@@ -54,6 +62,7 @@
                         <ul class="revisions">
                             @foreach ($t->revisions->take(10) as $rev)
                                 <li>{{ $rev->created_at?->format('d.m.Y H:i') }} — {{ \Illuminate\Support\Str::limit($rev->title, 50) }}
+                                    <a class="btn sm" href="{{ route('admin.revisions.compare', ['translation' => $t->id, 'a' => $rev->id, 'b' => 'current']) }}">{{ __('Сравни') }}</a>
                                     <button class="btn sm" form="rev-{{ $rev->id }}">{{ __('Възстанови') }}</button></li>
                             @endforeach
                         </ul>

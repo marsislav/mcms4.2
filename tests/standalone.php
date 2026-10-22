@@ -11,8 +11,16 @@ require __DIR__.'/../app/Support/Discussion.php';
 require __DIR__.'/../app/Support/Widgets.php';
 require __DIR__.'/../app/Support/Options.php';
 require __DIR__.'/../app/Support/Members.php';
+require __DIR__.'/../app/Support/ContactFields.php';
+require __DIR__.'/../app/Support/Breadcrumbs.php';
+require __DIR__.'/../app/Support/StructuredData.php';
+require __DIR__.'/../app/Support/Diff.php';
+require __DIR__.'/../app/Support/Blocks.php';
+require __DIR__.'/../app/Support/ErrorLog.php';
+require __DIR__.'/../app/Support/Stats.php';
+require __DIR__.'/../app/Support/NotFoundLog.php';
 
-use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members};
+use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members, ContactFields, Breadcrumbs, StructuredData, Diff, Blocks, ErrorLog, Stats, NotFoundLog};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -225,6 +233,93 @@ $check('default role author', Members::defaultRole() === 'author');
 $r = Options::clean('users', ['registration' => '1', 'default_role' => 'editor']);
 $check('users options: invalid role -> subscriber', $r['values']['default_role'] === 'subscriber' && $r['values']['registration'] === '1' && $r['values']['reg_approval'] === '0');
 $GLOBALS['S'] = [];
+
+
+/* ---- contact form fields ---- */
+$cf = ContactFields::clean([
+    ['type' => 'text', 'label' => ['bg' => 'Фирма', 'en' => 'Company'], 'required' => '1'],
+    ['type' => 'select', 'label' => ['bg' => 'Услуга'], 'options' => "Уеб\nSEO\n\nУеб"],
+    ['type' => 'select', 'label' => ['bg' => 'Празен избор'], 'options' => ''],
+    ['type' => 'bogus', 'label' => ['bg' => '<b>Х</b>']],
+    ['type' => 'text', 'label' => ['bg' => '', 'en' => '']],
+    ['type' => 'text', 'label' => ['bg' => 'Изтрито'], 'del' => '1', 'key' => 'abc123'],
+    ['type' => 'checkbox', 'label' => ['bg' => 'Съгласен съм'], 'required' => '1', 'key' => 'abc123'],
+    ['type' => 'text', 'label' => ['bg' => 'Дубликат на ключ'], 'key' => 'abc123'],
+], ['bg', 'en']);
+$check('contact fields: kept/removed rows', count($cf) === 6);
+$check('contact fields: select options deduped', $cf[1]['options'] === ['Уеб', 'SEO']);
+$check('contact fields: select without options -> text', $cf[2]['type'] === 'text');
+$check('contact fields: bad type -> text, tags stripped', $cf[3]['type'] === 'text' && $cf[3]['label']['bg'] === 'Х');
+$check('contact fields: keys unique', count(array_unique(array_column($cf, 'key'))) === 6);
+$check('contact fields: valid key preserved', $cf[3 + 1]['key'] === 'abc123');
+$check('contact fields: label fallback', ContactFields::label($cf[0], 'en') === 'Company' && ContactFields::label($cf[1], 'en') !== '');
+$rules = ContactFields::rules($cf);
+$check('contact fields: rules keyed with prefix', isset($rules['f_'.$cf[0]['key']]) && $rules['f_'.$cf[0]['key']][0] === 'required');
+$in = ['f_'.$cf[0]['key'] => "  Acme\n Ltd ", 'f_'.$cf[1]['key'] => 'SEO', 'f_'.$cf[4]['key'] => '1'];
+$lines = ContactFields::lines($cf, $in, 'bg');
+$check('contact fields: lines format', str_contains($lines, "Фирма: Acme Ltd") && str_contains($lines, 'Услуга: SEO') && str_contains($lines, 'Съгласен съм: Да'));
+$check('contact fields: empty skipped', ! str_contains($lines, 'Празен избор'));
+$check('contact fields: max count', count(ContactFields::clean(array_fill(0, 40, ['type' => 'text', 'label' => ['bg' => 'x']]), ['bg'])) === ContactFields::MAX);
+$check('contact fields: decode garbage', ContactFields::decode('not json') === [] && ContactFields::decode(null) === []);
+
+// contact form builder v2
+$v2 = ContactFields::clean([
+    ['type' => 'radio', 'label' => ['bg' => 'Начин'], 'options' => "Имейл\nТелефон", 'default' => 'Имейл', 'width' => 'half', 'class' => 'my-class x2'],
+    ['type' => 'checkboxes', 'label' => ['bg' => 'Теми'], 'options' => "A\nB\nC", 'required' => '1'],
+    ['type' => 'number', 'label' => ['bg' => 'Бюджет'], 'min' => '10', 'max' => 'abc', 'placeholder' => ['bg' => '100'], 'width' => 'bogus'],
+    ['type' => 'text', 'label' => ['bg' => 'Код'], 'minlen' => '3', 'maxlen' => '9999', 'class' => 'bad class!'],
+    ['type' => 'heading', 'label' => ['bg' => 'Секция'], 'required' => '1', 'default' => 'x'],
+    ['type' => 'radio', 'label' => ['bg' => 'Празно'], 'options' => ''],
+], ['bg']);
+$check('contact v2: radio kept with width/class/default', $v2[0]['type'] === 'radio' && $v2[0]['width'] === 'half' && $v2[0]['class'] === 'my-class x2' && $v2[0]['default'] === 'Имейл');
+$check('contact v2: checkboxes options', $v2[1]['type'] === 'checkboxes' && $v2[1]['options'] === ['A', 'B', 'C']);
+$check('contact v2: number min kept, bad max dropped, bad width -> full', $v2[2]['min'] === '10' && $v2[2]['max'] === '' && $v2[2]['width'] === 'full');
+$check('contact v2: maxlen clamped, bad class dropped', $v2[3]['minlen'] === 3 && $v2[3]['maxlen'] === 2000 && $v2[3]['class'] === '');
+$check('contact v2: heading is never required, no default', $v2[4]['required'] === false && $v2[4]['default'] === '');
+$check('contact v2: choice without options -> text', $v2[5]['type'] === 'text');
+$r2 = ContactFields::rules($v2);
+$check('contact v2: rules (heading skipped, checkboxes .*)', ! isset($r2['f_'.$v2[4]['key']]) && isset($r2['f_'.$v2[1]['key'].'.*']) && in_array('min:10', $r2['f_'.$v2[2]['key']], true));
+$l2 = ContactFields::lines($v2, ['f_'.$v2[1]['key'] => ['A', 'C', 'ZZ'], 'f_'.$v2[0]['key'] => 'Телефон'], 'bg');
+$check('contact v2: lines for checkboxes/radio', str_contains($l2, 'Теми: A, C') && ! str_contains($l2, 'ZZ') && str_contains($l2, 'Начин: Телефон') && ! str_contains($l2, 'Секция'));
+$check('contact v2: old field normalized', ContactFields::normalize(['key' => 'abc', 'type' => 'text'])['width'] === 'full');
+
+// breadcrumbs + structured data
+$bc = Breadcrumbs::make([['label' => 'Blog', 'url' => '/blog'], ['label' => '', 'url' => '/x'], ['label' => 'Post', 'url' => '/blog/p']], 'Home', '/');
+$check('breadcrumbs: empty labels dropped, last is current', count($bc) === 3 && $bc[2]['url'] === null && $bc[0]['url'] === '/');
+$check('breadcrumbs: nothing for home only', Breadcrumbs::make([], 'Home', '/') === []);
+$ld = StructuredData::breadcrumbList($bc);
+$check('jsonld: breadcrumb positions', $ld['@type'] === 'BreadcrumbList' && $ld['itemListElement'][2]['position'] === 3 && ! isset($ld['itemListElement'][2]['item']));
+$check('jsonld: no list for one crumb', StructuredData::breadcrumbList([['label' => 'a', 'url' => null]]) === null);
+$e = StructuredData::entry(['type' => 'post', 'title' => str_repeat('a', 200), 'url' => 'https://x/p', 'published' => '2026-01-01', 'author_name' => 'Ann']);
+$check('jsonld: post entry', $e['@type'] === 'BlogPosting' && mb_strlen($e['headline']) === 110 && $e['author']['name'] === 'Ann');
+$check('jsonld: page entry has no dates', StructuredData::entry(['type' => 'page', 'title' => 'T', 'url' => 'u', 'published' => 'x'])['@type'] === 'WebPage');
+$check('jsonld: website search action', isset(StructuredData::website('S', 'u', 'u?q={q}')['potentialAction']));
+
+// revision diff
+$ops = Diff::lines(Diff::toLines('<p>One</p><p>Two <b>old</b> words</p><p>Three</p>'), Diff::toLines('<p>One</p><p>Two new words</p><p>Three</p><p>Four</p>'));
+$st = Diff::stats($ops);
+$check('diff: changed + added lines', $st['chg'] === 1 && $st['add'] === 1 && $st['del'] === 0);
+$check('diff: identical text has no changes', Diff::stats(Diff::lines(['a', 'b'], ['a', 'b'])) === ['add' => 0, 'del' => 0, 'chg' => 0]);
+[$o, $n] = Diff::words('Two old words', 'Two new words');
+$check('diff: word marks', str_contains($o, '<del>old</del>') && str_contains($n, '<ins>new</ins>') && ! str_contains($o, '<ins>'));
+[$o2] = Diff::words('<script>x</script>', 'y');
+$check('diff: words are escaped', ! str_contains($o2, '<script>'));
+$check('diff: html to lines', Diff::toLines('<h2>T</h2><ul><li>a</li><li>b&amp;c</li></ul>') === ['T', 'a', 'b&c']);
+// blocks
+$res = fn ($s) => ['a' => 'A [block b]', 'b' => '<b>B</b>', 'loop' => '[block loop]'][$s] ?? null;
+$check('blocks: expand + nested', Blocks::expandWith('x [block a] y', $res) === 'x A <b>B</b> y');
+$check('blocks: unknown removed', Blocks::expandWith('x[block nope]y', $res) === 'xy');
+$check('blocks: recursion limited', strlen(Blocks::expandWith('[block loop]', $res)) === 0);
+$check('blocks: slugify', Blocks::slugify('Контактна кутия') === 'kontaktna-kutiya' && Blocks::slugify('A b', ['a-b']) === 'a-b-2' && Blocks::slugify('!!!') === 'block');
+// error log
+$log = "[2026-10-01 10:00:00] production.ERROR: Boom happened {\"x\":1}\n#0 /app/a.php(1): f()\n#1 {main}\n[2026-10-01 10:05:00] production.WARNING: Careful\n";
+$ent = ErrorLog::parse($log);
+$check('errorlog: two entries', count($ent) === 2 && $ent[0]['level'] === 'error' && $ent[1]['level'] === 'warning');
+$check('errorlog: detail kept', str_contains($ent[0]['detail'], '#1 {main}') && $ent[1]['detail'] === '' && str_starts_with($ent[0]['message'], 'Boom happened'));
+// stats / 404 log helpers
+$check('stats: bots', Stats::isBot('Googlebot/2.1') && Stats::isBot('') && ! Stats::isBot('Mozilla/5.0 (Windows NT 10.0) Firefox/120'));
+$check('404 log: scanner noise ignored', ! NotFoundLog::loggable('/wp-login.php', 'GET', 'panel') && ! NotFoundLog::loggable('/x.php', 'GET', 'panel') && NotFoundLog::loggable('/old-page', 'GET', 'panel'));
+$check('404 log: admin path + POST ignored', ! NotFoundLog::loggable('/panel/x', 'GET', 'panel') && ! NotFoundLog::loggable('/old', 'POST', 'panel'));
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

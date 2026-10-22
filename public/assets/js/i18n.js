@@ -1,4 +1,4 @@
-/* mCMS admin i18n: T('Български текст') returns the text in the current panel language.
+/* mCMS admin i18n: T('Bulgarian text') returns the text in the current panel language.
    The dictionary is printed by admin/partials/i18n.blade.php as <script type="application/json" id="mcms-i18n">. */
 (function () {
   'use strict';

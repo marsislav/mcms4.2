@@ -360,3 +360,26 @@ Tabs in **Settings** (administrator only). No migration — `opt.*` keys in `set
 - Storage: the `contact.fields` setting (JSON) — no migration. Values are appended to the message text as “Label: value” lines after `— — —`, so they show in “Messages” and in the email to you.
 - Per-type validation in `ContactFields::rules()`; the protections (honeypot, timing, rate limit) are unchanged.
 - Code: `app/Support/ContactFields.php`, `SiteController::contactForm/contactSend`, `SettingController::updateContact`, `site/contact.blade.php`, `admin/partials/contact-form.blade.php`.
+
+## 29. Contact form builder v2
+
+- Fields are added with “Add field”, removed with ✕ and **reordered with ↑ ↓** (the saved order is the order on the site).
+- Types: text, long text, email, phone, website, number, date, time, dropdown, radio buttons, checkbox, several checkboxes, heading/divider.
+- Per field: label, placeholder and help text (per language), default value, required, width (full, 1/2, 1/3, 2/3), min/max characters, number/date range, textarea rows, CSS class.
+- Code: `ContactFields::clean/rules/lines/normalize`, `site/partials/contact-field.blade.php`, `admin/partials/contact-field-row.blade.php`, builder JS at the end of `admin.js`. Fields saved by an older version keep working (`normalize()` fills defaults).
+
+## 30. Growth pack (needs “Update the database”: Settings → Administration → Migrations)
+
+- **Migrations page** (`/admin/system/migrations`): runs pending migrations in the panel (no SSH). New tables: `page_views`, `not_found_log`, `subscribers`, `blocks`; every feature checks `Tables::has()` and degrades gracefully until they exist.
+- **Breadcrumbs + JSON-LD** (Settings → SEO & navigation): `Breadcrumbs`, `StructuredData`, `site/partials/breadcrumbs.blade.php`; views declare their kind with `@section('kind', 'page|post|list')`.
+- **404 log**: `NotFoundLog::record()` is called from `SiteController::notFound()`; admin list “404 log” turns an entry into a redirect with one click.
+- **Revisions**: Settings → Writing → number of revisions kept (0 = none); “Compare” in the editor opens a side-by-side diff (`Diff`), any version can be restored (the current text is saved as a revision first).
+- **Blocks & templates**: `[block slug]` in any content/HTML widget, “Block” widget, templates offered when creating a post/page (`Blocks`).
+- **Newsletter**: widget “Newsletter”, double opt-in, unsubscribe link, admin list + CSV export (admin only). Settings → Newsletter.
+- **GDPR cookie banner** (Settings → Cookies (GDPR)): categories Statistics/Marketing; scripts in those two fields load only after consent (re-injected with the CSP nonce by `site.js`); cookie `mcms_consent`.
+- **Live search** (Settings → Search): `/search/live?q=` JSON + dropdown (`data-live` attribute on the search input).
+- **Reading progress bar**: look in Settings → Design; `read-progress` element + script in `site.js`.
+- **Visit counter** (Settings → Statistics): `Stats::hit()`, one row per day and URL, no IPs/cookies; “Statistics” page; “Most read” widget for Sidebar/Footer.
+- **Quick create**: “＋ New” menu in the panel top bar and an admin bar on the public site (Settings → Administration).
+- **Error log** (admin only): reads `storage/logs/*.log`, filter by level, download, clear (`ErrorLog`).
+- **Settings** now has a grouped side navigation (Site, Content, Appearance, Visitors, SEO & statistics, System).

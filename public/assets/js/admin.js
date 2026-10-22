@@ -35,7 +35,7 @@
   });
 
 
-  /* ---- settings page tabs (Общи / Дизайн); #design in the URL opens the design tab ---- */
+  /* ---- settings page tabs (General / Design); #design in the URL opens the design tab ---- */
   $$('[data-stabs]').forEach(function (bar) {
     var panels = $$('[data-spanel]');
     var show = function (name) {
@@ -282,7 +282,7 @@
   });
 
 
-  /* widgets repeater (Settings → Футър / Сайдбар) */
+  /* widgets repeater (Settings → Footer / Sidebar) */
   (function () {
     var lists = $$('[data-widget-list]');
     if (!lists.length) { return; }
@@ -375,5 +375,64 @@
         ta.parentNode.insertBefore(n, ta);
       });
     }, 4000);
+  });
+
+  /* ---- contact form builder: add / remove / reorder fields, show options per type ---- */
+  $$('[data-cf-form]').forEach(function (form) {
+    var list = form.querySelector('[data-cf-list]');
+    var tpl = form.querySelector('[data-cf-tpl]');
+    var next = list.children.length + 1000;
+    var sync = function (row) {
+      var type = row.querySelector('[data-cf-type]').value;
+      row.querySelectorAll('[data-cf-for]').forEach(function (el) {
+        var show = el.getAttribute('data-cf-for').split(' ').indexOf(type) !== -1;
+        el.hidden = !show;
+        el.querySelectorAll('input,select,textarea').forEach(function (i) { i.disabled = !show; });
+      });
+      var opt = row.querySelector('[data-cf-type] option:checked');
+      var tl = row.querySelector('.cf-type-label');
+      if (tl && opt) { tl.textContent = opt.textContent; }
+    };
+    var title = function (row) {
+      var first = row.querySelector('[data-cf-label]');
+      var t = row.querySelector('.cf-title');
+      if (first && t && first.value.trim()) { t.textContent = first.value.trim(); }
+    };
+    var wire = function (row) {
+      sync(row);
+      row.querySelector('[data-cf-type]').addEventListener('change', function () { sync(row); });
+      row.querySelectorAll('[data-cf-label]').forEach(function (i) { i.addEventListener('input', function () { title(row); }); });
+    };
+    list.querySelectorAll('[data-cf-row]').forEach(wire);
+    form.addEventListener('click', function (e) {
+      var row = e.target.closest('[data-cf-row]');
+      if (e.target.closest('[data-cf-add]') && tpl) {
+        var holder = document.createElement('div');
+        holder.innerHTML = tpl.innerHTML.replace(/__I__/g, String(next++));
+        var el = holder.firstElementChild;
+        list.appendChild(el); wire(el);
+        var f = el.querySelector('input:not([type=hidden])'); if (f) { f.focus(); }
+        return;
+      }
+      if (!row) { return; }
+      var btn = e.target.closest('[data-cf-up],[data-cf-down],[data-cf-del]');
+      if (!btn) { return; }
+      e.preventDefault();
+      if (btn.hasAttribute('data-cf-del')) {
+        if (window.confirm(T('Да премахна ли полето?'))) { row.remove(); }
+      } else if (btn.hasAttribute('data-cf-up') && row.previousElementSibling) {
+        list.insertBefore(row, row.previousElementSibling);
+      } else if (btn.hasAttribute('data-cf-down') && row.nextElementSibling) {
+        list.insertBefore(row.nextElementSibling, row);
+      }
+    });
+    // renumber so the submitted order is the visual order
+    form.addEventListener('submit', function () {
+      list.querySelectorAll('[data-cf-row]').forEach(function (row, idx) {
+        row.querySelectorAll('[name^="fields["]').forEach(function (i) {
+          i.name = i.name.replace(/^fields\[[^\]]*\]/, 'fields[' + idx + ']');
+        });
+      });
+    });
   });
 })();

@@ -2,7 +2,10 @@
 
 @section('has_sidebar', '1')
 
+@section('kind', 'list')
+
 @section('content')
+@include('site.partials.breadcrumbs')
 <header class="page-head">
     <h1>{{ $heading }}</h1>
     @if($category && $category->description)<p class="muted">{{ $category->description }}</p>@endif

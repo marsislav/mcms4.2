@@ -1,10 +1,13 @@
 @extends('site.layout')
 
+@section('kind', 'list')
+
 @section('content')
+@include('site.partials.breadcrumbs')
 <header class="page-head">
     <h1>{{ t('nav.search') }}</h1>
     <form class="search" method="get" action="{{ lroute('search') }}" role="search">
-        <input type="search" name="q" value="{{ $q }}" placeholder="{{ t('site.search_placeholder') }}" maxlength="80" required minlength="3" aria-label="{{ t('nav.search') }}">
+        <input type="search" name="q" @if(\App\Support\Options::on('livesearch')) data-live="{{ lroute('search.live') }}" data-live-min="{{ (int) \App\Support\Options::get('live_min') }}" @endif value="{{ $q }}" placeholder="{{ t('site.search_placeholder') }}" maxlength="80" required minlength="3" aria-label="{{ t('nav.search') }}">
         <button class="btn">{{ t('site.search_button') }}</button>
     </form>
 </header>
