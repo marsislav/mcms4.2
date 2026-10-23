@@ -60,7 +60,7 @@ class Options
         // live search
         'livesearch' => '1', 'live_min' => '2', 'live_max' => '6',
         // newsletter
-        'nl_on' => '0', 'nl_double_optin' => '1', 'nl_ask_name' => '0', 'nl_notify_admin' => '1', 'nl_require_consent' => '1',
+        'nl_on' => '0', 'nl_double_optin' => '1', 'nl_ask_name' => '0', 'nl_notify_admin' => '1', 'nl_notify_posts' => '1', 'nl_require_consent' => '1',
         // privacy / cookie consent
         'cc_on' => '0', 'cc_position' => 'bottom', 'cc_policy_url' => '', 'cc_analytics' => '1', 'cc_marketing' => '0', 'cc_days' => '180', 'cc_reopen' => '1',
         'scripts_analytics' => '', 'scripts_marketing' => '',
@@ -386,7 +386,7 @@ class Options
                 break;
 
             case 'newsletter':
-                foreach (['nl_on', 'nl_double_optin', 'nl_ask_name', 'nl_notify_admin', 'nl_require_consent'] as $k) {
+                foreach (['nl_on', 'nl_double_optin', 'nl_ask_name', 'nl_notify_admin', 'nl_notify_posts', 'nl_require_consent'] as $k) {
                     $v[$k] = $bool($k);
                 }
                 $text(['nl_title', 'nl_button'], 120);

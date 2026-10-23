@@ -88,6 +88,7 @@ class ContentController extends Controller
             $this->notifyPending($content, $request->user());
         }
         $this->saveTaxonomy($request, $content);
+        \App\Support\Newsletter::notifyPost($content);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
         return redirect()->route("admin.{$type}s.edit", $content)->with('status', __('Записано.'));
@@ -115,6 +116,7 @@ class ContentController extends Controller
             $this->notifyPending($content, $request->user());
         }
         $this->saveTaxonomy($request, $content);
+        \App\Support\Newsletter::notifyPost($content);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
         return back()->with('status', __('Промените са записани.'));
