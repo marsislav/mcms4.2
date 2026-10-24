@@ -4,7 +4,7 @@
 
 @section('content')
 @include('site.partials.breadcrumbs')
-<article class="entry">
+<article class="entry-page">
     @if($preview)<div class="preview-banner">{{ __('Преглед — тази страница още не е публично видима.') }}</div>@endif
     <header>
         <h1>{{ $tr->title }}</h1>
