@@ -275,3 +275,16 @@ html{scroll-behavior:smooth}@media (prefers-reduced-motion:reduce){html{scroll-b
 .cf-w-half{flex-basis:calc(50% - .5rem)}.cf-w-third{flex-basis:calc(33.333% - .67rem)}.cf-w-twothirds{flex-basis:calc(66.666% - .33rem)}
 @media (max-width:640px){.cf-w-half,.cf-w-third,.cf-w-twothirds{flex-basis:100%}}
 .cf legend{font-weight:600;padding:0;margin-bottom:.25rem}.cf label.check{display:flex;gap:.5rem;align-items:center;font-weight:400}.cf small{display:block;margin-top:.2rem}.cf-heading{font-size:1.15rem;margin:.5rem 0 0}
+
+/* progressive blur (Settings > Design) */
+.pblur{position:fixed;left:0;bottom:0;width:100%;height:var(--pblur-h,15vh);pointer-events:none;z-index:19;transform:scaleY(-1)}
+.pblur>div{position:absolute;inset:0;pointer-events:none}
+.pblur{opacity:1;transition:opacity .35s ease}.pblur.is-hidden{opacity:0}
+@media print{.pblur{display:none}}
+
+/* smooth scroll (Lenis) */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-smooth [data-lenis-prevent]{overscroll-behavior:contain}
+.lenis.lenis-stopped{overflow:hidden}
+.lenis.lenis-smooth iframe{pointer-events:none}

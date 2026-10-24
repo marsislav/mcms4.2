@@ -54,11 +54,13 @@ class Design
         'el_images' => 'none', 'el_headings' => 'none', 'el_footer' => 'none',
         'topbar_on' => '0', 'topbar_cols' => '2', 'topbar_bg' => '', 'topbar_fg' => '', 'topbar_mobile' => '1',
         'progress_on' => '0', 'progress_color' => '', 'progress_bg' => '', 'progress_height' => '3', 'progress_pos' => 'top', 'progress_scope' => 'posts',
+        'blur_on' => '0', 'blur_height' => '15',
+        'smooth_on' => '0', 'smooth_duration' => '1.2',
         'topbar_c1_align' => 'left', 'topbar_c2_align' => 'right', 'topbar_c3_align' => 'center', 'topbar_c4_align' => 'right',
     ];
 
     public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg'];
-    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on'];
+    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on'];
     public const PROGRESS_POS = ['top' => 'Най-горе', 'bottom' => 'Най-долу'];
     public const PROGRESS_SCOPE = ['posts' => 'Само публикации', 'content' => 'Публикации и страници', 'all' => 'Навсякъде'];
     public const MAX_COLS = 4;
@@ -237,6 +239,11 @@ class Design
             $bottom = self::get('progress_pos') === 'bottom';
             $r[] = '.read-progress{height:'.$h.'px;'.($bottom ? 'bottom:0;top:auto' : 'top:0;bottom:auto').($pb ? ';background:'.$pb : '').'}'
                 .'.read-progress span{'.($pc ? 'background:'.$pc : '').'}';
+        }
+
+        // progressive blur at the bottom of the viewport ------------------
+        if (self::get('blur_on') === '1') {
+            $r[] = ':root{--pblur-h:'.max(5, min(50, (int) self::get('blur_height'))).'vh}';
         }
 
         // animation speed -------------------------------------------------

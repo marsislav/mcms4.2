@@ -1020,5 +1020,11 @@
     "2/3": "2/3",
     "Най-четени": "Most read",
     "Изпращай имейл на абонатите при нова публикация (до 200 получатели наведнъж)": "Email subscribers about new posts (up to 200 recipients at once)",
-    "Отписване:": "Unsubscribe:"
+    "Отписване:": "Unsubscribe:",
+    "Размазване най-долу (progressive blur)": "Bottom progressive blur",
+    "Показвай постепенно размазване най-долу на екрана": "Show a gradual blur at the bottom of the screen",
+    "Височина (% от екрана)": "Height (% of screen)",
+    "Плавен скрол": "Smooth scroll",
+    "Включи плавен скрол с колелцето (Lenis)": "Enable smooth wheel scrolling (Lenis)",
+    "Продължителност (сек.)": "Duration (sec.)"
 }

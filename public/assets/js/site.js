@@ -85,6 +85,65 @@
     });
   }
 
+  /* ---- smooth scroll (Lenis, Settings > Design) ---- */
+  (function () {
+    var me = document.currentScript || document.querySelector('script[data-smooth]');
+    var dur = me && parseFloat(me.getAttribute('data-smooth'));
+    if (!dur || typeof window.Lenis !== 'function') { return; }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+    var lenis = new window.Lenis({
+      duration: dur,
+      easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+      smoothWheel: true
+    });
+    window.mcmsLenis = lenis;
+    var raf = function (time) { lenis.raf(time); requestAnimationFrame(raf); };
+    requestAnimationFrame(raf);
+
+    // in-page anchors (#id) glide too; keep room for a sticky header
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href*="#"]');
+      if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || a.target === '_blank') { return; }
+      var u; try { u = new URL(a.href, location.href); } catch (err) { return; }
+      if (u.origin !== location.origin || u.pathname !== location.pathname || u.search !== location.search || u.hash.length < 2) { return; }
+      var target; try { target = document.querySelector(decodeURIComponent(u.hash)); } catch (err) { return; }
+      if (!target) { return; }
+      e.preventDefault();
+      var hdr = document.querySelector('.site-header');
+      var pos = hdr ? getComputedStyle(hdr).position : '';
+      var off = (pos === 'sticky' || pos === 'fixed') ? -hdr.offsetHeight - 8 : 0;
+      lenis.scrollTo(target, { offset: off });
+      history.pushState(null, '', u.hash);
+    });
+  })();
+
+  /* ---- progressive blur: 8 layers, blur doubles per layer (Settings > Design) ---- */
+  var pblur = document.querySelector('[data-pblur]');
+  if (pblur && (CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'))) {
+    var LAYERS = 8, FIRST = 0.15625, STEP = 100 / LAYERS;
+    for (var i = 0; i < LAYERS; i++) {
+      var px = FIRST * Math.pow(2, i);
+      var mask = 'linear-gradient(to top, rgba(0,0,0,0) ' + (i * STEP) + '%, #000 ' + ((i + 1) * STEP) + '%)';
+      var layer = document.createElement('div');
+      layer.style.backdropFilter = layer.style.webkitBackdropFilter = 'blur(' + px + 'px)';
+      layer.style.maskImage = layer.style.webkitMaskImage = mask;
+      pblur.appendChild(layer);
+    }
+    // fade out when scrolled to the very bottom of the page
+    var pbTicking = false;
+    var pbUpdate = function () {
+      pbTicking = false;
+      var el = document.documentElement;
+      var atBottom = (window.innerHeight + window.pageYOffset) >= (Math.max(el.scrollHeight, document.body.scrollHeight) - 2);
+      pblur.classList.toggle('is-hidden', atBottom);
+    };
+    var pbQueue = function () { if (!pbTicking) { pbTicking = true; requestAnimationFrame(pbUpdate); } };
+    window.addEventListener('scroll', pbQueue, { passive: true });
+    window.addEventListener('resize', pbQueue);
+    window.addEventListener('load', pbQueue);
+    pbUpdate();
+  }
+
   /* ---- reading progress bar (look: Settings > Design) ---- */
   var bar = document.querySelector('[data-read-progress] span');
   if (bar) {

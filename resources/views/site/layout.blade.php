@@ -172,8 +172,14 @@
 </footer>
 
 
+@if(\App\Support\Design::get('blur_on') === '1')
+    <div class="pblur" data-pblur aria-hidden="true"></div>
+@endif
 @include('site.partials.before-close')
-<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer></script>
+@if(\App\Support\Design::get('smooth_on') === '1')
+<script src="{{ asset('assets/vendor/lenis/lenis.min.js') }}?v=1.1.18" nonce="{{ csp_nonce() }}" defer></script>
+@endif
+<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer @if(\App\Support\Design::get('smooth_on') === '1') data-smooth="{{ (float) \App\Support\Design::get('smooth_duration') }}" @endif></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php do_action('footer'); @endphp
 </body>

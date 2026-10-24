@@ -236,6 +236,8 @@ class SettingController extends Controller
             'anim_speed' => 'required|integer|min:150|max:2000',
             'topbar_cols' => 'required|integer|min:1|max:'.Design::MAX_COLS,
             'progress_height' => 'required|integer|min:1|max:12',
+            'blur_height' => 'required|integer|min:5|max:50',
+            'smooth_duration' => 'required|numeric|min:0.4|max:3',
             'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
             'progress_scope' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_SCOPE))],
             'topbar' => 'nullable|array',

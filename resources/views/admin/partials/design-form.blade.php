@@ -140,6 +140,22 @@
         </div>
     </section>
 
+    <section class="card">
+        <h2>{{ __('Размазване най-долу (progressive blur)') }}</h2>
+        <label class="check"><input type="checkbox" name="blur_on" value="1" @checked($v('blur_on') === '1')> {{ __('Показвай постепенно размазване най-долу на екрана') }}</label>
+        <div class="grid-form">
+            <label>{{ __('Височина (% от екрана)') }} <input type="number" name="blur_height" min="5" max="50" value="{{ $v('blur_height') }}" required></label>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>{{ __('Плавен скрол') }}</h2>
+        <label class="check"><input type="checkbox" name="smooth_on" value="1" @checked($v('smooth_on') === '1')> {{ __('Включи плавен скрол с колелцето (Lenis)') }}</label>
+        <div class="grid-form">
+            <label>{{ __('Продължителност (сек.)') }} <input type="number" name="smooth_duration" min="0.4" max="3" step="0.1" value="{{ $v('smooth_duration') }}" required></label>
+        </div>
+    </section>
+
     <div class="btn-row">
         <button class="btn primary">{{ __('Запази дизайна') }}</button>
         {!! __('<a class="btn" href=":p1" target="_blank" rel="noopener">Виж сайта ↗</a>', ['p1' => e(url('/'))]) !!}
