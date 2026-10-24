@@ -56,12 +56,15 @@ class Design
         'progress_on' => '0', 'progress_color' => '', 'progress_bg' => '', 'progress_height' => '3', 'progress_pos' => 'top', 'progress_scope' => 'posts',
         'blur_on' => '0', 'blur_height' => '15', 'bg_video_mobile' => '0',
         'grain_on' => '0', 'grain_color' => '', 'grain_opacity' => '9', 'grain_density' => '60',
+        'h1_anim' => 'none', 'h1_scope' => 'entry', 'h1_underline' => '0', 'h1_word' => 'last', 'h1_underline_color' => '', 'rotate_interval' => '2600',
+        'gd_radius' => '', 'gd_width' => '', 'gd_font' => '', 'gd_glass' => '0', 'gd_dim' => '0', 'gd_btn2_ghost' => '0',
+        'gd_btn_bg' => '', 'gd_btn_fg' => '', 'gd_btn2_bg' => '', 'gd_btn2_fg' => '', 'gd_link' => '', 'gd_reopen_bg' => '',
         'smooth_on' => '0', 'smooth_duration' => '1.2',
         'topbar_c1_align' => 'left', 'topbar_c2_align' => 'right', 'topbar_c3_align' => 'center', 'topbar_c4_align' => 'right',
     ];
 
-    public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg', 'grain_color'];
-    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on', 'bg_video_mobile', 'grain_on'];
+    public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg', 'grain_color', 'h1_underline_color', 'gd_btn_bg', 'gd_btn_fg', 'gd_btn2_bg', 'gd_btn2_fg', 'gd_link', 'gd_reopen_bg'];
+    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on', 'bg_video_mobile', 'grain_on', 'h1_underline', 'gd_glass', 'gd_dim', 'gd_btn2_ghost'];
     public const PROGRESS_POS = ['top' => 'Най-горе', 'bottom' => 'Най-долу'];
     public const PROGRESS_SCOPE = ['posts' => 'Само публикации', 'content' => 'Публикации и страници', 'all' => 'Навсякъде'];
     public const MAX_COLS = 4;
@@ -79,8 +82,20 @@ class Design
         'cards' => ['Карти в списъците', '.card'],
         'sidebar' => ['Страничен панел', '.sidebar'],
         'footer' => ['Футър', '.site-footer'],
+        'cc' => ['Банер за бисквитки (GDPR)', '.cc'],
     ];
-    public const BG_NO_VIDEO = ['cards'];   // repeated elements: a video each would be too heavy
+    public const H1_ANIMS = ['none' => 'Без анимация', 'words' => 'Думите излизат една по една'];
+    public const H1_WORD = ['last' => 'Последната дума', 'first' => 'Първата дума', 'last2' => 'Последните две думи'];
+    public const H1_SCOPE = ['entry' => 'Само заглавията на статии и страници', 'all' => 'Всички H1 заглавия'];
+    /** Word typed on a page/post to underline in its H1 (stored in settings as h1hl.<content id>.<locale>); '' = use the global rule. */
+    public static function h1Word($contentId, ?string $locale): string
+    {
+        $v = function_exists('setting') && $contentId ? setting('h1hl.'.(int) $contentId.'.'.preg_replace('/[^a-z\-]/i', '', (string) $locale)) : '';
+
+        return is_string($v) ? mb_substr(trim(strip_tags($v)), 0, 60) : '';
+    }
+
+    public const BG_NO_VIDEO = ['cards', 'cc'];   // repeated elements: a video each would be too heavy
     public const BG_CUSTOM = 5;
     public const BG_SIZE = ['cover' => 'Покрива (cover)', 'contain' => 'Побира се (contain)', 'auto' => 'Оригинален размер', '100% 100%' => 'Разтегнат'];
     public const BG_POS = [
@@ -124,7 +139,7 @@ class Design
      */
     public static function normalizeBg(array $in): array
     {
-        $pick = fn ($v, array $allowed, string $def) => in_array((string) $v, $allowed, true) ? (string) $v : $def;
+        $pick = fn ($v, array $allowed, string $def) => is_scalar($v) && in_array((string) $v, $allowed, true) ? (string) $v : $def;
         $hex = fn ($v) => self::normalizeColor(is_scalar($v) ? (string) $v : '') ?? '';
         $num = fn ($v, int $min, int $max, int $def) => (string) max($min, min($max, is_numeric($v) ? (int) $v : $def));
         $path = fn ($v) => (is_string($v) && preg_match(self::BG_PATH, $v)) ? $v : '';
@@ -274,6 +289,48 @@ class Design
             if ($c['video_path'] !== '' && $c['overlay'] !== '' && $c['overlay_op'] !== '0') {
                 $r[] = self::sfx($sel, ' > .mbg-video::after').'{background:'.self::rgba($c['overlay'], $c['overlay_op']).'}';
             }
+        }
+
+        return $r;
+    }
+
+    /** Rules for the GDPR cookie banner (radius, width, font, glass, page dimming, button and link colours). */
+    private static function ccCss(): array
+    {
+        $r = [];
+        $n = fn (string $k, int $min, int $max) => ctype_digit(self::get($k)) && (int) self::get($k) >= $min && (int) self::get($k) <= $max ? (int) self::get($k) : null;
+        if (($v = $n('gd_radius', 0, 40)) !== null) {
+            $r[] = '.cc{border-radius:'.$v.'px}';
+        }
+        if (($v = $n('gd_width', 280, 900)) !== null) {
+            $r[] = '.cc-bottom-left,.cc-bottom-right,.cc-center{width:min('.$v.'px,calc(100% - 2rem))}';
+        }
+        if (($v = $n('gd_font', 12, 20)) !== null) {
+            $r[] = '.cc .cc-box{font-size:'.$v.'px}.cc .cc-box p{font-size:1em}.cc .cc-box h2{font-size:1.2em}';
+        }
+        if (self::get('gd_glass') === '1') {
+            $bg = self::backgrounds()['cc']['color'] ?? '';
+            $r[] = '.cc{background-color:color-mix(in srgb,'.($bg !== '' ? $bg : 'var(--bg,#fff)').' 72%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}';
+        }
+        if (self::get('gd_dim') === '1') {
+            $r[] = 'body:has(#cc-banner:not([hidden]))::before{content:"";position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.45)}';
+        }
+        $bb = self::color('gd_btn_bg');
+        $bf = self::color('gd_btn_fg');
+        if ($bb || $bf) {
+            $r[] = '.cc .btn.primary{'.($bb ? 'background:'.$bb.';border-color:'.$bb.';' : '').($bf ? 'color:'.$bf : '').'}';
+        }
+        $sb = self::color('gd_btn2_bg');
+        $sf = self::color('gd_btn2_fg');
+        $ghost = self::get('gd_btn2_ghost') === '1';
+        if ($sb || $sf || $ghost) {
+            $r[] = '.cc .btn:not(.primary):not(.link){'.($ghost ? 'background:transparent;' : ($sb ? 'background:'.$sb.';' : '')).($sf ? 'color:'.$sf.';border-color:'.$sf : '').'}';
+        }
+        if (($lk = self::color('gd_link')) !== null) {
+            $r[] = '.cc a,.cc .btn.link{color:'.$lk.'}';
+        }
+        if (($rb = self::color('gd_reopen_bg')) !== null) {
+            $r[] = '.cc-reopen{background:'.$rb.'}';
         }
 
         return $r;
@@ -474,8 +531,18 @@ class Design
                 .'.read-progress span{'.($pc ? 'background:'.$pc : '').'}';
         }
 
+        // animated H1 underline colour -----------------------------------
+        if (($u = self::color('h1_underline_color')) !== null) {
+            $r[] = ':root{--h1u:'.$u.'}';
+        }
+
         // per-element backgrounds (colour / gradient / image / video overlay) ---
         foreach (self::bgCss() as $rule) {
+            $r[] = $rule;
+        }
+
+        // GDPR cookie banner look --------------------------------------------
+        foreach (self::ccCss() as $rule) {
             $r[] = $rule;
         }
 

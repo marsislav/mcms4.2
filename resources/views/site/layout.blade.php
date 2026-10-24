@@ -15,6 +15,8 @@
     $elAnim = \App\Support\Design::elementAnims();
     $hasAnim = $pageAnim !== 'none' || $elAnim;
     $bgVideos = \App\Support\Design::bgVideos();
+    $h1Cfg = (\App\Support\Design::get('h1_anim') === 'words' || \App\Support\Design::get('h1_underline') === '1')
+        ? ['a' => \App\Support\Design::get('h1_anim') === 'words' ? 1 : 0, 'u' => \App\Support\Design::get('h1_underline') === '1' ? 1 : 0, 'w' => \App\Support\Design::get('h1_word'), 's' => \App\Support\Design::get('h1_scope')] : null;
     $footerW = \App\Support\Widgets::footer();
     $sidebarW = \App\Support\Widgets::sidebar();
     $showSidebar = $sidebarW['on'] && $sidebarW['widgets'] !== [] && trim($__env->yieldContent('has_sidebar')) === '1';
@@ -53,7 +55,7 @@
     @include('site.partials.head-extra')
     @php do_action('head'); @endphp
 </head>
-<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
+<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($h1Cfg) data-h1="{{ json_encode($h1Cfg) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
 @include('site.partials.after-body')
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
 

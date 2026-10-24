@@ -2,12 +2,12 @@
     $bgs = \App\Support\Design::backgrounds();
     $bgIds = collect($bgs)->flatMap(fn ($c) => [$c['image_id'], $c['video_id'], $c['poster_id']])->filter()->unique()->all();
     $bgMedia = $bgIds ? \App\Models\Media::whereIn('id', $bgIds)->get()->keyBy('id') : collect();
-    $bv = fn ($k, $f) => old("bg.$k.$f", $bgs[$k][$f] ?? '');
+    $bv = fn ($k, $f) => old("ebg.$k.$f", $bgs[$k][$f] ?? '');
     $bgColor = function ($k, $f, $label) use ($bv) {
         $val = $bv($k, $f);
         return '<label>'.e($label).'<span class="colorfield">'
             .'<input type="color" data-color-pick value="'.e($val ?: '#888888').'" aria-label="'.e($label).'">'
-            .'<input type="text" name="bg['.$k.']['.$f.']" data-color-text value="'.e($val).'" maxlength="7" placeholder="'.__('няма').'" pattern="#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?" autocomplete="off">'
+            .'<input type="text" name="ebg['.$k.']['.$f.']" data-color-text value="'.e($val).'" maxlength="7" placeholder="'.__('няма').'" pattern="#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?" autocomplete="off">'
             .'<button type="button" class="btn sm" data-color-clear title="'.__('Изчисти').'">✕</button></span></label>';
     };
     $bgSelect = function ($k, $f, $label, array $opts) use ($bv) {
@@ -15,9 +15,9 @@
         foreach ($opts as $val => $l) {
             $o .= '<option value="'.e($val).'"'.((string) $bv($k, $f) === (string) $val ? ' selected' : '').'>'.e(__($l)).'</option>';
         }
-        return '<label>'.e($label).'<select name="bg['.$k.']['.$f.']">'.$o.'</select></label>';
+        return '<label>'.e($label).'<select name="ebg['.$k.']['.$f.']">'.$o.'</select></label>';
     };
-    $bgNum = fn ($k, $f, $label, $min, $max) => '<label>'.e($label).' <input type="number" name="bg['.$k.']['.$f.']" min="'.$min.'" max="'.$max.'" value="'.e($bv($k, $f)).'"></label>';
+    $bgNum = fn ($k, $f, $label, $min, $max) => '<label>'.e($label).' <input type="number" name="ebg['.$k.']['.$f.']" min="'.$min.'" max="'.$max.'" value="'.e($bv($k, $f)).'"></label>';
 
     $bgTargets = [];
     foreach (\App\Support\Design::BG_TARGETS as $k => [$l, $s]) { $bgTargets[$k] = [__($l), $s, true]; }
@@ -43,7 +43,7 @@
             @unless($fixed)
                 <div class="grid-form">
                     <label>{{ __('CSS селектор') }} <small class="muted">{{ __('напр. .hero, #about, section.cta') }}</small>
-                        <input type="text" name="bg[{{ $k }}][selector]" value="{{ $bv($k, 'selector') }}" maxlength="120" autocomplete="off" spellcheck="false">
+                        <input type="text" name="ebg[{{ $k }}][selector]" value="{{ $bv($k, 'selector') }}" maxlength="120" autocomplete="off" spellcheck="false">
                     </label>
                 </div>
             @endunless
@@ -55,7 +55,7 @@
             </div>
 
             <h3>{{ __('Градиент') }}</h3>
-            <label class="check"><input type="checkbox" name="bg[{{ $k }}][grad]" value="1" @checked($bv($k, 'grad') === '1')> {{ __('Включи градиент') }}</label>
+            <label class="check"><input type="checkbox" name="ebg[{{ $k }}][grad]" value="1" @checked($bv($k, 'grad') === '1')> {{ __('Включи градиент') }}</label>
             <div class="grid-form">
                 {!! $bgSelect($k, 'grad_type', __('Вид'), \App\Support\Design::BG_GRAD) !!}
                 {!! $bgNum($k, 'grad_angle', __('Ъгъл (°, за линеен и конусен)'), 0, 360) !!}
@@ -68,7 +68,7 @@
             </div>
 
             <h3>{{ __('Картинка') }}</h3>
-            @include('admin.partials.media-field', ['name' => "bg[$k][image_id]", 'label' => __('Фонова картинка'), 'm' => $mImg, 'kind' => 'image'])
+            @include('admin.partials.media-field', ['name' => "ebg[$k][image_id]", 'label' => __('Фонова картинка'), 'm' => $mImg, 'kind' => 'image'])
             <div class="grid-form">
                 {!! $bgSelect($k, 'size', __('Размер'), \App\Support\Design::BG_SIZE) !!}
                 {!! $bgSelect($k, 'pos', __('Позиция'), \App\Support\Design::BG_POS) !!}
@@ -79,8 +79,8 @@
             @unless($noVideo)
                 <h3>{{ __('Видео (WebM / MP4)') }}</h3>
                 <div class="grid-form">
-                    @include('admin.partials.media-field', ['name' => "bg[$k][video_id]", 'label' => __('Фоново видео'), 'm' => $mVid, 'kind' => 'video'])
-                    @include('admin.partials.media-field', ['name' => "bg[$k][poster_id]", 'label' => __('Постер (картинка преди/вместо видеото)'), 'm' => $mPos, 'kind' => 'image'])
+                    @include('admin.partials.media-field', ['name' => "ebg[$k][video_id]", 'label' => __('Фоново видео'), 'm' => $mVid, 'kind' => 'video'])
+                    @include('admin.partials.media-field', ['name' => "ebg[$k][poster_id]", 'label' => __('Постер (картинка преди/вместо видеото)'), 'm' => $mPos, 'kind' => 'image'])
                 </div>
                 <small class="muted">{{ __('Видеото е без звук, на цикъл и спира, когато не се вижда. На телефони и при „намалено движение“ се показва постерът.') }}</small>
             @endunless

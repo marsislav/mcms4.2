@@ -167,6 +167,28 @@
         <small class="muted">{{ __('Високата плътност натоварва слабите устройства. Изключва се при „намалено движение“.') }}</small>
     </section>
 
+    <section class="card" id="gdpr-look">
+        <h2>{{ __('Банер за бисквитки (GDPR) — външен вид') }}</h2>
+        <p class="muted">{{ __('Текстовете, позицията и категориите се задават в Настройки → Бисквитки (GDPR). Тук е само видът. Фон (цвят, градиент, картинка) и цвят на текста: „Фонове на елементи“ → „Банер за бисквитки“.') }}</p>
+        <div class="grid-form">
+            {!! $color('gd_btn_bg', __('Основен бутон — фон')) !!}
+            {!! $color('gd_btn_fg', __('Основен бутон — текст')) !!}
+            {!! $color('gd_btn2_bg', __('Втори бутон — фон')) !!}
+            {!! $color('gd_btn2_fg', __('Втори бутон — текст и рамка')) !!}
+            {!! $color('gd_link', __('Цвят на връзките')) !!}
+            {!! $color('gd_reopen_bg', __('Малкият бутон 🍪 — фон')) !!}
+            <label>{{ __('Закръгление (px)') }} <input type="number" name="gd_radius" min="0" max="40" value="{{ $v('gd_radius') }}" placeholder="{{ __('по подразбиране') }}"></label>
+            <label>{{ __('Ширина на кутията (px)') }} <input type="number" name="gd_width" min="280" max="900" value="{{ $v('gd_width') }}" placeholder="{{ __('по подразбиране') }}"></label>
+            <label>{{ __('Размер на текста (px)') }} <input type="number" name="gd_font" min="12" max="20" value="{{ $v('gd_font') }}" placeholder="{{ __('по подразбиране') }}"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="gd_btn2_ghost" value="1" @checked($v('gd_btn2_ghost') === '1')> {{ __('Вторият бутон без фон (само рамка)') }}</label>
+        <label class="check"><input type="checkbox" name="gd_glass" value="1" @checked($v('gd_glass') === '1')> {{ __('Стъклен ефект (полупрозрачен фон с размазване)') }}</label>
+        <label class="check"><input type="checkbox" name="gd_dim" value="1" @checked($v('gd_dim') === '1')> {{ __('Затъмнявай сайта зад банера (посетителят трябва да избере)') }}</label>
+        <small class="muted">{{ __('За да видиш банера след избор, изтрий бисквитката mcms_consent или включи малкия бутон 🍪 в Настройки → Бисквитки.') }}</small>
+    </section>
+
+    @include('admin.partials.design-effects')
+
     @include('admin.partials.design-backgrounds')
 
     <div class="btn-row">

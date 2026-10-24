@@ -12,7 +12,7 @@
         @if($content->category && ($ct = $content->category->tr()))
             <a class="kicker" href="{{ $ct->url() }}">{{ $ct->name }}</a>
         @endif
-        <h1>{{ $tr->title }}</h1>
+        <h1 @if(($hl = \App\Support\Design::h1Word($content->id, $tr->locale)) !== '') data-hl="{{ $hl }}" @endif>{{ $tr->title }}</h1>
         <p class="meta"><time datetime="{{ ($content->publish_at ?? $content->created_at)->toAtomString() }}">{{ mcms_date(($content->publish_at ?? $content->created_at)) }}</time>@if(\App\Support\Options::on('show_author') && $content->author && ($an = $content->author->name)) · {{ t('site.by', __('от')) }} @if($au = \App\Support\Members::authorUrl($content->author))<a href="{{ $au }}" rel="author">{{ $an }}</a>@else{{ $an }}@endif @endif @if(\App\Support\Discussion::enabled() && ($cn = \App\Support\Discussion::approvedCount($content))) · <a href="#comments">{{ t('comments.n', __('Коментари: :n'), ['n' => $cn]) }}</a>@endif @if(\App\Support\Options::on('reading_time')) · {{ t('site.read_time', __(':n мин четене'), ['n' => \App\Support\Options::readingMinutes($tr->body)]) }}@endif @if(\App\Support\Options::on('show_updated') && $content->updated_at && $content->updated_at->diffInHours($content->publish_at ?? $content->created_at) >= 24) · {{ t('site.updated', __('Обновено')) }} <time datetime="{{ $content->updated_at->toAtomString() }}">{{ mcms_date($content->updated_at) }}</time>@endif</p>
     </header>
     @if($content->featured)

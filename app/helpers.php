@@ -233,6 +233,6 @@ if (! function_exists('mcms_body')) {
     /** Final HTML of a page/post body: plugin filters + <oembed> → responsive iframe. */
     function mcms_body(?string $html, mixed $content = null): string
     {
-        return \App\Support\Sanitizer::renderEmbeds(\App\Support\Blocks::expand((string) apply_filters('content.body', (string) $html, $content)));
+        return \App\Support\Fx::expand(\App\Support\Sanitizer::renderEmbeds(\App\Support\Blocks::expand((string) apply_filters('content.body', (string) $html, $content))));
     }
 }

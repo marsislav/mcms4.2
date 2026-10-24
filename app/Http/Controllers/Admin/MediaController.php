@@ -20,7 +20,7 @@ class MediaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate(['files' => 'required|array|max:20', 'files.*' => 'file']);
+        $request->validate(['files' => 'required|array|max:20']);
 
         $ok = 0;
         $errors = [];
@@ -50,7 +50,7 @@ class MediaController extends Controller
     /** AJAX upload from the media picker / featured-image field. Accepts files[] (or a single file). */
     public function upload(Request $request)
     {
-        $request->validate(['files' => 'required|array|max:20', 'files.*' => 'file']);
+        $request->validate(['files' => 'required|array|max:20']);
 
         $items = [];
         $errors = [];

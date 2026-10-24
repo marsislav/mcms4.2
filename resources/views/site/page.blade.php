@@ -7,7 +7,7 @@
 <article class="entry-page">
     @if($preview)<div class="preview-banner">{{ __('Преглед — тази страница още не е публично видима.') }}</div>@endif
     <header>
-        <h1>{{ $tr->title }}</h1>
+        <h1 @if(($hl = \App\Support\Design::h1Word($content->id, $tr->locale)) !== '') data-hl="{{ $hl }}" @endif>{{ $tr->title }}</h1>
     </header>
     @if($content->featured)
         <img class="hero" src="{{ $content->featured->url() }}" alt="{{ $content->featured->alt ?: $tr->title }}" @if($content->featured->width) width="{{ $content->featured->width }}" height="{{ $content->featured->height }}" @endif>

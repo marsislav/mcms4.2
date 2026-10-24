@@ -85,6 +85,115 @@
     });
   }
 
+  /* ---- content effects: progress bars, animated H1, rotating text (Settings > Design) ---- */
+  (function () {
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var hasIO = 'IntersectionObserver' in window;
+    function watch(el, cb, threshold) {
+      if (!hasIO) { cb(el); return; }
+      var o = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { o.unobserve(e.target); cb(e.target); } });
+      }, { threshold: threshold || 0.3 });
+      o.observe(el);
+    }
+
+    // progress bars: fill from 0 and count up when scrolled into view
+    var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
+    document.querySelectorAll('[data-pbars]').forEach(function (set) {
+      set.classList.add('pb-ready');
+      watch(set, function () {
+        set.classList.add('is-in');
+        if (reduce) { return; }
+        var ms = parseInt(getComputedStyle(set).getPropertyValue('--pb-ms'), 10) || 1400;
+        set.querySelectorAll('.pb-val[data-to]').forEach(function (v, i) {
+          var to = parseInt(v.getAttribute('data-to'), 10) || 0, t0 = null;
+          v.textContent = '0%';
+          setTimeout(function () {
+            (function step(ts) {
+              if (t0 === null) { t0 = ts; }
+              var k = Math.min(1, (ts - t0) / ms);
+              v.textContent = Math.round(to * ease(k)) + '%';
+              if (k < 1) { requestAnimationFrame(step); }
+            })(performance.now());
+          }, i * 120);
+        });
+      }, 0.25);
+    });
+
+    // which words get the underline: the word typed for this page (text or number), else the global rule
+    function hlRange(words, hl, mode) {
+      var n = words.length;
+      var norm = function (s) { return s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); };
+      if (hl) {
+        if (/^-?\d+$/.test(hl)) {
+          var k = parseInt(hl, 10);
+          if (k > 0 && k <= n) { return [k - 1, k - 1]; }
+          if (k < 0 && -k <= n) { return [n + k, n + k]; }
+        } else {
+          var pw = hl.split(/\s+/).map(norm).filter(Boolean);
+          for (var s = 0; pw.length && s + pw.length <= n; s++) {
+            var ok = true;
+            for (var j = 0; j < pw.length; j++) { if (norm(words[s + j]) !== pw[j]) { ok = false; break; } }
+            if (ok) { return [s, s + pw.length - 1]; }
+          }
+        }
+      }
+      if (mode === 'first') { return [0, 0]; }
+      if (mode === 'last2') { return [Math.max(0, n - 2), n - 1]; }
+      return [n - 1, n - 1];
+    }
+
+    // animated H1: split a plain-text title into words, underline the chosen word(s)
+    var cfg = null;
+    try { cfg = JSON.parse(document.body.getAttribute('data-h1') || 'null'); } catch (e) { cfg = null; }
+    if (cfg) {
+      document.querySelectorAll(cfg.s === 'all' ? 'h1' : '.entry h1, .entry-page h1').forEach(function (h) {
+        if (h.children.length) { return; }
+        var text = h.textContent.replace(/\s+/g, ' ').trim();
+        if (!text) { return; }
+        var words = text.split(' '), box = document.createElement('span');
+        box.setAttribute('aria-hidden', 'true');
+        var r = hlRange(words, (h.getAttribute('data-hl') || '').trim(), cfg.w), wrap = null;
+        words.forEach(function (word, i) {
+          var node;
+          if (cfg.a) {
+            node = document.createElement('span'); node.className = 'mw';
+            var inner = document.createElement('span'); inner.style.setProperty('--i', i); inner.textContent = word; node.appendChild(inner);
+          } else { node = document.createTextNode(word); }
+          var inHl = cfg.u && i >= r[0] && i <= r[1];
+          if (inHl) {
+            if (!wrap) { wrap = document.createElement('span'); wrap.className = 'h1-hl'; box.appendChild(wrap); }
+            wrap.appendChild(node);
+            if (i < r[1]) { wrap.appendChild(document.createTextNode(' ')); }
+          } else { box.appendChild(node); }
+          if (i < words.length - 1 && !(inHl && i < r[1])) { box.appendChild(document.createTextNode(' ')); }
+        });
+        h.setAttribute('aria-label', text);
+        h.textContent = '';
+        h.appendChild(box);
+        h.classList.add('h1-fx');
+        if (cfg.a) { h.classList.add('h1-words'); }
+        if (cfg.u) { h.classList.add('h1-under'); }
+        watch(h, function () { h.classList.add('is-in'); }, 0.2);
+      });
+    }
+
+    // rotating text
+    document.querySelectorAll('[data-fx-rotate]').forEach(function (box) {
+      var items = Array.prototype.slice.call(box.children), cur = 0;
+      if (items.length < 2 || reduce) { return; }
+      setInterval(function () {
+        if (document.hidden) { return; }
+        var prev = items[cur]; cur = (cur + 1) % items.length; var next = items[cur];
+        prev.classList.remove('is-active'); prev.classList.add('is-prev');
+        next.classList.remove('is-prev'); next.classList.add('is-active');
+        setTimeout(function () {
+          prev.style.transition = 'none'; prev.classList.remove('is-prev'); void prev.offsetWidth; prev.style.transition = '';
+        }, 750);
+      }, parseInt(box.getAttribute('data-interval'), 10) || 2600);
+    });
+  })();
+
   /* ---- animated grain: 10 pre-rendered noise frames played at 25 fps (Settings > Design) ---- */
   (function () {
     var canvas = document.querySelector('[data-mgrain]');
@@ -174,6 +283,10 @@
       smoothWheel: true
     });
     window.mcmsLenis = lenis;
+    // keep Lenis' scroll limit in step with the real page height (images, fonts, animated headings change it)
+    var relimit = function () { lenis.resize(); };
+    window.addEventListener('load', relimit);
+    if ('ResizeObserver' in window) { new ResizeObserver(relimit).observe(document.body); }
     var raf = function (time) { lenis.raf(time); requestAnimationFrame(raf); };
     requestAnimationFrame(raf);
 

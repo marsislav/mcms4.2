@@ -38,6 +38,9 @@
                 <div class="tab-panel" data-panel="{{ $loc }}" @if($i !== 0) hidden @endif>
                     <label>{{ __('Заглавие') }} @if($loc === $default)<em class="req">*</em>@endif
                         <input name="tr[{{ $loc }}][title]" value="{{ $fv($loc, 'title') }}" maxlength="190" data-slug-source="{{ $loc }}" @if($loc === $default) required @endif>
+                        <label class="hl-field">{{ __('Подчертана дума') }} <small class="muted">{{ __('по желание: дума или фраза от заглавието, или номер (1 = първата, -1 = последната)') }}</small>
+                            <input name="tr[{{ $loc }}][hl]" value="{{ old("tr.$loc.hl", $exists ? \App\Support\Design::h1Word($content->id, $loc) : '') }}" maxlength="60" autocomplete="off">
+                        </label>
                     </label>
                     <label>{!! __('Адрес (slug) <small class="muted">— автоматично, ако е празно</small>') !!}
                         <input name="tr[{{ $loc }}][slug]" value="{{ $fv($loc, 'slug') }}" maxlength="150" data-slug-target="{{ $loc }}" pattern="[a-z0-9\-]*">

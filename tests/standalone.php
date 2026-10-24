@@ -7,6 +7,7 @@ require __DIR__.'/../app/Support/Sanitizer.php';
 require __DIR__.'/../app/Support/EnvWriter.php';
 require __DIR__.'/../app/Support/Taxonomy.php';
 require __DIR__.'/../app/Support/Design.php';
+require __DIR__.'/../app/Support/Fx.php';
 require __DIR__.'/../app/Support/Discussion.php';
 require __DIR__.'/../app/Support/Widgets.php';
 require __DIR__.'/../app/Support/Options.php';
@@ -20,7 +21,7 @@ require __DIR__.'/../app/Support/ErrorLog.php';
 require __DIR__.'/../app/Support/Stats.php';
 require __DIR__.'/../app/Support/NotFoundLog.php';
 
-use App\Support\{Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members, ContactFields, Breadcrumbs, StructuredData, Diff, Blocks, ErrorLog, Stats, NotFoundLog};
+use App\Support\{Fx, Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members, ContactFields, Breadcrumbs, StructuredData, Diff, Blocks, ErrorLog, Stats, NotFoundLog};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -141,7 +142,45 @@ $check('bg: unsafe custom selectors dropped', ! str_contains($o, '#123456') && !
 $check('bg: validSelector', Design::validSelector('.a  .b') === '.a .b' && Design::validSelector('a;b') === null && Design::validSelector('') === null && Design::validSelector(str_repeat('a', 121)) === null);
 $n = Design::normalizeBg(['page' => ['grad_angle' => '999', 'grad_a1' => '-5', 'color' => 'red']]);
 $check('bg: numbers clamped, bad colour dropped', $n['page']['grad_angle'] === '360' && $n['page']['grad_a1'] === '0' && $n['page']['color'] === '');
+$GLOBALS['S'] = ['design.gd_radius' => '18', 'design.gd_width' => '9999', 'design.gd_font' => '16', 'design.gd_btn_bg' => '#112233', 'design.gd_btn_fg' => '#ffffff', 'design.gd_link' => 'red;}', 'design.gd_glass' => '1', 'design.gd_dim' => '1', 'design.gd_reopen_bg' => '#abcdef'];
+$o = Design::css();
+$check('gdpr: radius, font, buttons, reopen', str_contains($o, '.cc{border-radius:18px}') && str_contains($o, '.cc .cc-box{font-size:16px}') && str_contains($o, '.cc .btn.primary{background:#112233;border-color:#112233;color:#ffffff}') && str_contains($o, '.cc-reopen{background:#abcdef}'));
+$GLOBALS['S'] = ['design.gd_btn2_ghost' => '1', 'design.gd_btn2_fg' => '#ffffff'];
+$check('gdpr: ghost second button', str_contains(Design::css(), '.cc .btn:not(.primary):not(.link){background:transparent;color:#ffffff;border-color:#ffffff}'));
+$GLOBALS['S'] = ['design.gd_radius' => '18', 'design.gd_width' => '9999', 'design.gd_font' => '16', 'design.gd_btn_bg' => '#112233', 'design.gd_btn_fg' => '#ffffff', 'design.gd_link' => 'red;}', 'design.gd_glass' => '1', 'design.gd_dim' => '1', 'design.gd_reopen_bg' => '#abcdef'];
+$o = Design::css();
+$check('gdpr: width out of range + bad link colour ignored', ! str_contains($o, 'min(9999px') && ! str_contains($o, 'red;}'));
+$check('gdpr: glass + dim', str_contains($o, 'backdrop-filter:blur(14px)') && str_contains($o, 'body:has(#cc-banner:not([hidden]))::before'));
+$GLOBALS['S'] = ['design.backgrounds' => json_encode(['cc' => ['color' => '#101010', 'text' => '#eeeeee']])];
+$check('gdpr: banner is a background target (.cc), no video', str_contains(Design::css(), '.cc{background-color:#101010;color:#eeeeee;--fg:#eeeeee}') && Design::normalizeBg(['cc' => ['video_path' => '2026/10/aaaaaaaaaaaaaaaaaaaaaaaa.webm']])['cc']['video_path'] === '');
 $check('bg: bgUsed', ! Design::bgUsed($n['footer']) && Design::bgUsed(['color' => '', 'text' => '', 'grad' => '1', 'image_path' => '', 'video_path' => '', 'poster_path' => '']));
+
+// progress bars + rotating text ------------------------------------------
+$rows = Fx::parseRows("HTML & CSS | 95\nWordPress | 90% | #f60 | 10 години\n  \nbad | abc\nToo high | 250 | red\n<b>Tag</b> | -5");
+$check('fx: rows parsed', count($rows) === 5 && $rows[0] === ['label' => 'HTML & CSS', 'pct' => '95', 'color' => '', 'note' => '']
+    && $rows[1]['pct'] === '90' && $rows[1]['color'] === '#ff6600' && $rows[1]['note'] === '10 години');
+$check('fx: non-numeric -> 0, clamp 0..100, bad colour dropped, tags stripped', $rows[2]['pct'] === '0' && $rows[3]['pct'] === '100' && $rows[3]['color'] === '' && $rows[4]['label'] === 'Tag' && $rows[4]['pct'] === '0');
+$check('fx: row cap', count(Fx::parseRows(str_repeat("a | 1\n", 50))) === Fx::MAX_ROWS);
+$check('fx: rowsText round-trip', Fx::parseRows(Fx::rowsText($rows)) === $rows);
+$sets = Fx::normalizeBars(['1' => ['slug' => 'My Skills!', 'style' => 'ring', 'speed' => '99999', 'rows_text' => "A | 50\nB | 80", 'counter' => '1', 'color' => 'x;}'], '2' => ['slug' => 'x', 'style' => 'evil']]);
+$check('fx: slug / style / speed / colour sanitised', $sets['1']['slug'] === 'my-skills' && $sets['1']['style'] === 'ring' && $sets['1']['speed'] === '5000' && $sets['1']['color'] === '' && $sets['2']['style'] === 'bar');
+$check('fx: counter on by default, off only when posted 0', Fx::normalizeBars([])['1']['counter'] === '1' && Fx::normalizeBars(['1' => ['counter' => '0']])['1']['counter'] === '0' && Fx::normalizeBars(['1' => ['counter' => '1']])['1']['counter'] === '1');
+$check('fx: used()', Fx::used($sets['1']) && ! Fx::used($sets['2']) && count($sets) === Fx::SETS);
+$h = Fx::renderBars($sets['1']);
+$check('fx: bar html', str_contains($h, 'class="pbars pbs-ring"') && str_contains($h, 'aria-valuenow="50"') && str_contains($h, 'data-to="80"') && str_contains($h, '--p:80'));
+$xss = Fx::normalizeBars(['1' => ['slug' => 'a', 'title' => '<script>alert(1)</script>T', 'rows_text' => '<img src=x onerror=alert(1)> | 10 | | "><b>n']]);
+$hx = Fx::renderBars($xss['1']);
+$check('fx: output escaped', ! str_contains($hx, '<script') && ! str_contains($hx, '<img') && ! str_contains($hx, '"><b>'));
+$GLOBALS['S'] = ['design.fx_bars' => json_encode(['1' => $sets['1']])];
+$o = Fx::expand('<p>Hi</p>[bars my-skills]<p>x</p>[bars nope]');
+$check('fx: [bars slug] expands, unknown removed', str_contains($o, 'pbars') && ! str_contains($o, '[bars') && str_contains($o, '<p>x</p>'));
+$check('fx: no shortcode -> untouched', Fx::expand('<p>[blocks]</p>') === '<p>[blocks]</p>');
+$GLOBALS['S'] = ['design.rotate_interval' => '3500'];
+$o = Fx::expand('<p>[rotate One | Two &amp; Three | <b>Four</b>]</p>');
+$check('fx: [rotate] items, first active, interval, escaped', str_contains($o, 'data-interval="3500"') && substr_count($o, '<span') === 4 && str_contains($o, '<span class="is-active">One</span>') && str_contains($o, 'Two &amp; Three') && ! str_contains($o, '<b>'));
+$check('fx: empty rotate removed', Fx::expand('[rotate  |  ]') === '');
+$GLOBALS['S'] = ['design.h1_underline_color' => '#97e14d'];
+$check('h1 underline colour var', str_contains(Design::css(), ':root{--h1u:#97e14d}'));
 
 $GLOBALS['S'] = ['design.anim_page_type' => 'zoom'];
 $check('page anim on by default', Design::pageAnim() === 'zoom');

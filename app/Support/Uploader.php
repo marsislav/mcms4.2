@@ -26,10 +26,20 @@ class Uploader
         'video/x-m4v' => 'mp4',   // some libmagic builds name MP4 this way
     ];
 
+    /** Clear message when PHP itself refused the upload (upload_max_filesize / post_max_size), else null. */
+    public static function phpLimitError(UploadedFile $file): ?string
+    {
+        if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            return __('Файлът надвишава лимита на сървъра (upload_max_filesize = :v). Увеличи го в php.ini / cPanel → MultiPHP INI Editor.', ['v' => ini_get('upload_max_filesize')]);
+        }
+
+        return null;
+    }
+
     public static function store(UploadedFile $file, ?int $userId = null): Media
     {
         if (! $file->isValid()) {
-            throw new RuntimeException(__('Качването е неуспешно.'));
+            throw new RuntimeException(self::phpLimitError($file) ?? __('Качването е неуспешно.'));
         }
 
         $real = $file->getRealPath();

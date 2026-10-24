@@ -238,6 +238,13 @@ class SettingController extends Controller
             'progress_height' => 'required|integer|min:1|max:12',
             'blur_height' => 'required|integer|min:5|max:50',
             'grain_opacity' => 'required|integer|min:1|max:40',
+            'h1_anim' => ['required', 'in:'.implode(',', array_keys(Design::H1_ANIMS))],
+            'h1_scope' => ['required', 'in:'.implode(',', array_keys(Design::H1_SCOPE))],
+            'h1_word' => ['required', 'in:'.implode(',', array_keys(Design::H1_WORD))],
+            'gd_radius' => 'nullable|integer|min:0|max:40',
+            'gd_width' => 'nullable|integer|min:280|max:900',
+            'gd_font' => 'nullable|integer|min:12|max:20',
+            'rotate_interval' => 'required|integer|min:1000|max:10000',
             'grain_density' => 'required|integer|min:5|max:100',
             'smooth_duration' => 'required|numeric|min:0.4|max:3',
             'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
@@ -287,7 +294,7 @@ class SettingController extends Controller
         }
 
         // Per-element backgrounds: resolve picked media ids to stored paths (image/poster must be images, video must be a video)
-        $bgIn = array_filter((array) $request->input('bg', []), 'is_array');
+        $bgIn = array_filter((array) $request->input('ebg', []), 'is_array');
         $ids = [];
         foreach ($bgIn as $row) {
             foreach (['image_id', 'video_id', 'poster_id'] as $f) {
@@ -305,6 +312,10 @@ class SettingController extends Controller
         }
         $bg = array_filter(Design::normalizeBg($bgIn), fn ($c) => Design::bgUsed($c));
         $values['design.backgrounds'] = $bg ? json_encode($bg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+
+        // Progress-bar sets ([bars slug] in content): only sets with a slug and at least one row are kept
+        $fx = array_filter(\App\Support\Fx::normalizeBars((array) $request->input('pbars', [])), fn ($s) => \App\Support\Fx::used($s));
+        $values['design.fx_bars'] = $fx ? json_encode($fx, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
 
         Setting::putMany($values);
         audit('settings.design');

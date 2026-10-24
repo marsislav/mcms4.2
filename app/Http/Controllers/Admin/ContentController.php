@@ -88,6 +88,7 @@ class ContentController extends Controller
             $this->notifyPending($content, $request->user());
         }
         $this->saveTaxonomy($request, $content);
+        $this->saveH1Word($request, $content);
         \App\Support\Newsletter::notifyPost($content);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
@@ -116,6 +117,7 @@ class ContentController extends Controller
             $this->notifyPending($content, $request->user());
         }
         $this->saveTaxonomy($request, $content);
+        $this->saveH1Word($request, $content);
         \App\Support\Newsletter::notifyPost($content);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
@@ -278,6 +280,22 @@ class ContentController extends Controller
         }
     }
 
+    /** Per-language "underlined word" of the H1 (kept in settings, no migration needed). */
+    private function saveH1Word(Request $request, Content $content): void
+    {
+        $values = [];
+        foreach ((array) $request->input('tr', []) as $loc => $row) {
+            if (! is_array($row) || ! preg_match('/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/', (string) $loc)) {
+                continue;
+            }
+            $w = mb_substr(trim(strip_tags((string) ($row['hl'] ?? ''))), 0, 60);
+            $values['h1hl.'.$content->id.'.'.$loc] = $w === '' ? null : $w;
+        }
+        if ($values) {
+            \App\Models\Setting::putMany($values);
+        }
+    }
+
     private function validated(Request $request): array
     {
         $data = $request->validate([
@@ -294,6 +312,7 @@ class ContentController extends Controller
             'tr.*.slug' => 'nullable|string|max:150',
             'tr.*.excerpt' => 'nullable|string|max:1000',
             'tr.*.body' => 'nullable|string|max:500000',
+            'tr.*.hl' => 'nullable|string|max:60',
             'tr.*.meta_title' => 'nullable|string|max:190',
             'tr.*.meta_description' => 'nullable|string|max:300',
         ]);
