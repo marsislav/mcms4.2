@@ -14,6 +14,7 @@ return [
 
     'idle_minutes' => (int) env('MCMS_ADMIN_IDLE_MINUTES', 30),
     'max_upload_mb' => (int) env('MCMS_MAX_UPLOAD_MB', 8),
+    'max_video_mb' => (int) env('MCMS_MAX_VIDEO_MB', 30),   // WebM / MP4 backgrounds (also limited by PHP upload_max_filesize)
     'image_max_px' => 2560,
     'thumb_px' => 480,
 

@@ -254,3 +254,10 @@ textarea.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem
 .settings-nav button{text-align:left;border:0;border-left:3px solid transparent;border-radius:4px;padding:.4rem .6rem}
 .settings-nav button.active{border-left-color:var(--accent);background:rgba(127,127,127,.12)}
 @media (max-width:860px){.settings-layout{grid-template-columns:1fr}.settings-nav.tabs{position:static}}
+
+/* element backgrounds (Settings > Design) */
+.bg-box{border:1px solid var(--line);border-radius:8px;padding:.6rem .9rem;margin:.6rem 0;background:var(--bg)}
+.bg-box>summary{cursor:pointer;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.bg-box h3{font-size:.95rem;margin:1rem 0 .4rem}
+video.media-preview{background:#000}
+.media-item .media-vid{display:block;width:100%;aspect-ratio:4/3;background:#000;object-fit:cover}

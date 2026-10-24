@@ -34,8 +34,17 @@ Options -ExecCGI -Indexes
     </IfModule>
 </FilesMatch>
 
+# WebM / MP4 backgrounds: no sandbox CSP (it would block playback when opened directly)
+<FilesMatch "(?i)\.(webm|mp4)$">
+    <IfModule mod_headers.c>
+        Header always unset Content-Security-Policy
+    </IfModule>
+</FilesMatch>
+
 # Only these types may be served
 <IfModule mod_mime.c>
+    AddType video/webm .webm
+    AddType video/mp4 .mp4
     RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phps
     RemoveType .php .phtml
 </IfModule>

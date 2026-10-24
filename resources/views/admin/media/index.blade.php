@@ -5,9 +5,9 @@
 <section class="card">
     <form method="post" action="{{ route('admin.media.store') }}" enctype="multipart/form-data" class="upload-form">
         @csrf
-        <input type="file" name="files[]" multiple required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf">
+        <input type="file" name="files[]" multiple required accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,video/webm,video/mp4">
         <button class="btn primary">{{ __('Качи') }}</button>
-        {!! __('<small class="muted">JPG, PNG, WebP, GIF, PDF · до :p1 MB · изображенията се обработват и почистват от метаданни</small>', ['p1' => e(config('mcms.max_upload_mb'))]) !!}
+        {!! __('<small class="muted">JPG, PNG, WebP, GIF, PDF · до :p1 MB · WebM, MP4 · до :p2 MB · изображенията се обработват и почистват от метаданни</small>', ['p1' => e(config('mcms.max_upload_mb')), 'p2' => e(config('mcms.max_video_mb', 30))]) !!}
     </form>
 </section>
 
@@ -21,6 +21,8 @@
         <figure class="media-item">
             @if($m->isImage())
                 <a href="{{ $m->url() }}" target="_blank" rel="noopener"><img src="{{ $m->thumbUrl() }}" alt="{{ $m->alt }}" loading="lazy"></a>
+            @elseif($m->isVideo())
+                <video class="media-vid" src="{{ $m->url() }}#t=0.1" muted preload="metadata" controls playsinline></video>
             @else
                 <a class="file-ico" href="{{ $m->url() }}" target="_blank" rel="noopener">PDF</a>
             @endif

@@ -14,6 +14,7 @@
     $pageAnim = \App\Support\Design::pageAnim();
     $elAnim = \App\Support\Design::elementAnims();
     $hasAnim = $pageAnim !== 'none' || $elAnim;
+    $bgVideos = \App\Support\Design::bgVideos();
     $footerW = \App\Support\Widgets::footer();
     $sidebarW = \App\Support\Widgets::sidebar();
     $showSidebar = $sidebarW['on'] && $sidebarW['widgets'] !== [] && trim($__env->yieldContent('has_sidebar')) === '1';
@@ -52,7 +53,7 @@
     @include('site.partials.head-extra')
     @php do_action('head'); @endphp
 </head>
-<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
+<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
 @include('site.partials.after-body')
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
 
@@ -174,6 +175,9 @@
 
 @if(\App\Support\Design::get('blur_on') === '1')
     <div class="pblur" data-pblur aria-hidden="true"></div>
+@endif
+@if(\App\Support\Design::get('grain_on') === '1')
+    <canvas class="mgrain" data-mgrain data-color="{{ \App\Support\Design::normalizeColor(\App\Support\Design::get('grain_color')) ?: '#ffffff' }}" data-opacity="{{ max(1, min(40, (int) \App\Support\Design::get('grain_opacity'))) / 100 }}" data-density="{{ max(5, min(100, (int) \App\Support\Design::get('grain_density'))) / 100 }}" aria-hidden="true"></canvas>
 @endif
 @include('site.partials.before-close')
 @if(\App\Support\Design::get('smooth_on') === '1')

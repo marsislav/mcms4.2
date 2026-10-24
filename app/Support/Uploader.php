@@ -21,6 +21,9 @@ class Uploader
         'image/webp' => 'webp',
         'image/gif' => 'gif',
         'application/pdf' => 'pdf',
+        'video/webm' => 'webm',
+        'video/mp4' => 'mp4',
+        'video/x-m4v' => 'mp4',   // some libmagic builds name MP4 this way
     ];
 
     public static function store(UploadedFile $file, ?int $userId = null): Media
@@ -29,17 +32,20 @@ class Uploader
             throw new RuntimeException(__('Качването е неуспешно.'));
         }
 
-        $max = config('mcms.max_upload_mb') * 1024 * 1024;
-        if ($file->getSize() > $max) {
-            throw new RuntimeException(__('Файлът е твърде голям (макс. :max MB).', ['max' => config('mcms.max_upload_mb')]));
-        }
-
         $real = $file->getRealPath();
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($real);
         if (! isset(self::TYPES[$mime])) {
-            throw new RuntimeException(__('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF.'));
+            throw new RuntimeException(__('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF, WebM, MP4.'));
         }
         $ext = self::TYPES[$mime];
+        if ($mime === 'video/x-m4v') {
+            $mime = 'video/mp4';
+        }
+
+        $maxMb = str_starts_with($mime, 'video/') ? config('mcms.max_video_mb', 30) : config('mcms.max_upload_mb');
+        if ($file->getSize() > $maxMb * 1024 * 1024) {
+            throw new RuntimeException(__('Файлът е твърде голям (макс. :max MB).', ['max' => $maxMb]));
+        }
 
         // JPEG / PNG / static GIF -> WebP (smaller files); original format is kept if conversion is off or not possible
         $outMime = self::webpTarget($mime, $real) ? 'image/webp' : $mime;
@@ -75,6 +81,11 @@ class Uploader
                 [$w, $h] = self::reencode($real, $abs, $mime, $outMime);
                 $thumbRel = self::thumbnail($abs, $outMime, "$sub/{$name}_t.$ext", $dir);
                 $mime = $outMime;
+            }
+        } elseif (str_starts_with($mime, 'video/')) { // WebM / MP4: stored as-is after a signature + code scan
+            self::assertVideo($real, $mime);
+            if (! @move_uploaded_file($real, $abs) && ! @copy($real, $abs)) {
+                throw new RuntimeException(__('Файлът не може да бъде записан.'));
             }
         } else { // pdf
             if (! str_starts_with((string) file_get_contents($real, false, null, 0, 5), '%PDF-')) {
@@ -147,6 +158,32 @@ class Uploader
             }
         }
         $media->delete();
+    }
+
+    /** Container signature (EBML for WebM, "ftyp" for MP4) and a chunked scan for embedded PHP / script tags. */
+    private static function assertVideo(string $path, string $mime): void
+    {
+        $fh = @fopen($path, 'rb');
+        if (! $fh) {
+            throw new RuntimeException(__('Файлът не може да бъде прочетен.'));
+        }
+        $head = (string) fread($fh, 12);
+        $ok = $mime === 'video/webm' ? str_starts_with($head, "\x1A\x45\xDF\xA3") : substr($head, 4, 4) === 'ftyp';
+        if (! $ok) {
+            fclose($fh);
+            throw new RuntimeException(__('Невалиден видео файл.'));
+        }
+        rewind($fh);
+        $tail = '';
+        while (! feof($fh)) {
+            $chunk = $tail.(string) fread($fh, 1048576);
+            if (preg_match('/<\?(php|=)|<script/i', $chunk)) {
+                fclose($fh);
+                throw new RuntimeException(__('Файлът съдържа забранено съдържание.'));
+            }
+            $tail = substr($chunk, -8);
+        }
+        fclose($fh);
     }
 
     private static function passThrough(string $from, string $to): void

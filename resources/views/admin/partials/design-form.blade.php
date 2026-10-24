@@ -156,6 +156,19 @@
         </div>
     </section>
 
+    <section class="card">
+        <h2>{{ __('Анимиран шум (grain)') }}</h2>
+        <label class="check"><input type="checkbox" name="grain_on" value="1" @checked($v('grain_on') === '1')> {{ __('Показвай анимиран шум върху целия сайт') }}</label>
+        <div class="grid-form">
+            {!! $color('grain_color', __('Цвят на точките'), __('празно = бяло')) !!}
+            <label>{{ __('Плътност на шума (%)') }} <input type="number" name="grain_density" min="5" max="100" value="{{ $v('grain_density') }}" required></label>
+            <label>{{ __('Видимост (%)') }} <input type="number" name="grain_opacity" min="1" max="40" value="{{ $v('grain_opacity') }}" required></label>
+        </div>
+        <small class="muted">{{ __('Високата плътност натоварва слабите устройства. Изключва се при „намалено движение“.') }}</small>
+    </section>
+
+    @include('admin.partials.design-backgrounds')
+
     <div class="btn-row">
         <button class="btn primary">{{ __('Запази дизайна') }}</button>
         {!! __('<a class="btn" href=":p1" target="_blank" rel="noopener">Виж сайта ↗</a>', ['p1' => e(url('/'))]) !!}

@@ -25,6 +25,11 @@ class Media extends Model
         return str_starts_with($this->mime, 'image/');
     }
 
+    public function isVideo(): bool
+    {
+        return str_starts_with($this->mime, 'video/');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

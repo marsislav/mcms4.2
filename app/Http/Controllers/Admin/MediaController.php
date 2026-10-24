@@ -44,7 +44,7 @@ class MediaController extends Controller
 
     private function item(Media $m): array
     {
-        return ['id' => $m->id, 'name' => $m->original_name, 'url' => $m->url(), 'thumb' => $m->thumbUrl(), 'image' => $m->isImage(), 'alt' => $m->alt];
+        return ['id' => $m->id, 'name' => $m->original_name, 'url' => $m->url(), 'thumb' => $m->thumbUrl(), 'image' => $m->isImage(), 'video' => $m->isVideo(), 'alt' => $m->alt];
     }
 
     /** AJAX upload from the media picker / featured-image field. Accepts files[] (or a single file). */
@@ -109,6 +109,7 @@ class MediaController extends Controller
     {
         $items = Media::latest('id')
             ->when($request->boolean('images'), fn ($q) => $q->where('mime', 'like', 'image/%'))
+            ->when($request->boolean('videos'), fn ($q) => $q->where('mime', 'like', 'video/%'))
             ->when($request->filled('q'), fn ($q) => $q->where('original_name', 'like', '%'.addcslashes($request->string('q')->limit(80), '%_\\').'%'))
             ->paginate(30);
 
@@ -119,6 +120,7 @@ class MediaController extends Controller
                 'url' => $m->url(),
                 'thumb' => $m->thumbUrl(),
                 'image' => $m->isImage(),
+                'video' => $m->isVideo(),
                 'alt' => $m->alt,
             ]),
             'next' => $items->nextPageUrl(),

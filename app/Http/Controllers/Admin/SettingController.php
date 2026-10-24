@@ -237,6 +237,8 @@ class SettingController extends Controller
             'topbar_cols' => 'required|integer|min:1|max:'.Design::MAX_COLS,
             'progress_height' => 'required|integer|min:1|max:12',
             'blur_height' => 'required|integer|min:5|max:50',
+            'grain_opacity' => 'required|integer|min:1|max:40',
+            'grain_density' => 'required|integer|min:5|max:100',
             'smooth_duration' => 'required|numeric|min:0.4|max:3',
             'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
             'progress_scope' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_SCOPE))],
@@ -283,6 +285,26 @@ class SettingController extends Controller
                 }
             }
         }
+
+        // Per-element backgrounds: resolve picked media ids to stored paths (image/poster must be images, video must be a video)
+        $bgIn = array_filter((array) $request->input('bg', []), 'is_array');
+        $ids = [];
+        foreach ($bgIn as $row) {
+            foreach (['image_id', 'video_id', 'poster_id'] as $f) {
+                if (isset($row[$f]) && is_scalar($row[$f]) && ctype_digit((string) $row[$f])) {
+                    $ids[] = (int) $row[$f];
+                }
+            }
+        }
+        $media = $ids ? Media::whereIn('id', array_unique($ids))->get()->keyBy('id') : collect();
+        foreach ($bgIn as $key => $row) {
+            foreach (['image' => 'image/', 'video' => 'video/', 'poster' => 'image/'] as $f => $mimePrefix) {
+                $m = $media[(int) ($row[$f.'_id'] ?? 0)] ?? null;
+                $bgIn[$key][$f.'_path'] = ($m && str_starts_with((string) $m->mime, $mimePrefix)) ? $m->path : '';
+            }
+        }
+        $bg = array_filter(Design::normalizeBg($bgIn), fn ($c) => Design::bgUsed($c));
+        $values['design.backgrounds'] = $bg ? json_encode($bg, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
 
         Setting::putMany($values);
         audit('settings.design');

@@ -112,6 +112,37 @@ $check('sticky off', str_contains($css(['design.sticky_header' => '0']), '.site-
 $check('sticky on by default', ! str_contains($css([]), 'position:static'));
 $check('header bg scoped text colour', str_contains($css(['design.header_bg' => '#111111']), '.site-header{background:#111111;color:#f0ebe3'));
 $check('topbar hidden on mobile when off', str_contains($css(['design.topbar_mobile' => '0']), '.topbar{display:none}'));
+// element backgrounds ---------------------------------------------------
+$bgcss = fn (array $bg) => (function () use ($bg) { $GLOBALS['S'] = ['design.backgrounds' => json_encode($bg)]; return Design::css(); })();
+$P = '2026/10/aaaaaaaaaaaaaaaaaaaaaaaa';
+$check('bg: nothing set -> no rules', ! str_contains($css([]), 'background-image'));
+$o = $bgcss(['footer' => ['color' => '#112233', 'text' => '#ffffff']]);
+$check('bg: colour + text colour on footer', str_contains($o, '.site-footer{background-color:#112233;color:#ffffff;--fg:#ffffff}') && str_contains($o, '.site-footer :is(h1,'));
+$o = $bgcss(['header' => ['grad' => '1', 'grad_type' => 'linear', 'grad_angle' => '90', 'grad_c1' => '#ff0000', 'grad_c2' => '#0000ff', 'grad_a1' => '100', 'grad_a2' => '50']]);
+$check('bg: linear gradient 2 stops with alpha', str_contains($o, 'linear-gradient(90deg,rgba(255,0,0,1) 0%,rgba(0,0,255,0.5) 100%)'));
+$o = $bgcss(['page' => ['grad' => '1', 'grad_type' => 'radial', 'grad_c1' => '#000000', 'grad_c3' => '#ff00ff', 'grad_c2' => '#ffffff']]);
+$check('bg: radial gradient, 3 stops (middle between)', str_contains($o, 'radial-gradient(circle at center,rgba(0,0,0,1) 0%,rgba(255,0,255,1) 50%,rgba(255,255,255,1) 100%)'));
+$check('bg: gradient without 2 colours ignored', ! str_contains($bgcss(['page' => ['grad' => '1', 'grad_c1' => '#000000']]), 'gradient'));
+$o = $bgcss(['main' => ['image_path' => $P.'.webp', 'size' => 'contain', 'pos' => 'top left', 'repeat' => 'repeat-x', 'attach' => 'fixed', 'overlay' => '#000000', 'overlay_op' => '40']]);
+$check('bg: image layer, overlay on top, fixed attachment', str_contains($o, "main.main{background-image:linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.4)),url('/uploads/$P.webp')")
+    && str_contains($o, 'background-size:auto,contain') && str_contains($o, 'background-position:0 0,top left') && str_contains($o, 'background-attachment:fixed,fixed'));
+$check('bg: bad media path rejected (no CSS injection)', ! str_contains($bgcss(['main' => ['image_path' => "x');}body{display:none;/*"]]), 'display:none'));
+$check('bg: path outside uploads pattern rejected', ! str_contains($bgcss(['main' => ['image_path' => '../../.env']]), '.env'));
+$check('bg: enum fields fall back', str_contains($bgcss(['main' => ['image_path' => $P.'.png', 'size' => 'evil;}']]), 'background-size:cover'));
+$check('bg: cards cannot take a video', Design::bgVideos() === [] && ($GLOBALS['S'] = ['design.backgrounds' => json_encode(['cards' => ['video_path' => $P.'.webm']])]) && Design::bgVideos() === []);
+$GLOBALS['S'] = ['design.backgrounds' => json_encode(['footer' => ['video_path' => $P.'.webm', 'poster_path' => $P.'.jpg', 'overlay' => '#000000', 'overlay_op' => '30']])];
+$v = Design::bgVideos();
+$check('bg: footer video + poster for the script', count($v) === 1 && $v[0]['s'] === '.site-footer' && $v[0]['v'] === "/uploads/$P.webm" && $v[0]['p'] === "/uploads/$P.jpg");
+$check('bg: video overlay rule', str_contains(Design::css(), '.site-footer > .mbg-video::after{background:rgba(0,0,0,0.3)}'));
+$GLOBALS['S'] = ['design.backgrounds' => json_encode(['c1' => ['selector' => '.hero, #about > .x', 'color' => '#abcdef'], 'c2' => ['selector' => 'a{}body{x:y', 'color' => '#123456'], 'c3' => ['selector' => '/* x */ .a', 'color' => '#654321']])];
+$o = Design::css();
+$check('bg: custom selector works', str_contains($o, '.hero, #about > .x{background-color:#abcdef}'));
+$check('bg: unsafe custom selectors dropped', ! str_contains($o, '#123456') && ! str_contains($o, '#654321'));
+$check('bg: validSelector', Design::validSelector('.a  .b') === '.a .b' && Design::validSelector('a;b') === null && Design::validSelector('') === null && Design::validSelector(str_repeat('a', 121)) === null);
+$n = Design::normalizeBg(['page' => ['grad_angle' => '999', 'grad_a1' => '-5', 'color' => 'red']]);
+$check('bg: numbers clamped, bad colour dropped', $n['page']['grad_angle'] === '360' && $n['page']['grad_a1'] === '0' && $n['page']['color'] === '');
+$check('bg: bgUsed', ! Design::bgUsed($n['footer']) && Design::bgUsed(['color' => '', 'text' => '', 'grad' => '1', 'image_path' => '', 'video_path' => '', 'poster_path' => '']));
+
 $GLOBALS['S'] = ['design.anim_page_type' => 'zoom'];
 $check('page anim on by default', Design::pageAnim() === 'zoom');
 $GLOBALS['S'] = ['design.anim_page_type' => 'zoom', 'design.anim_page_on' => '0'];

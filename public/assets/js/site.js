@@ -85,6 +85,83 @@
     });
   }
 
+  /* ---- animated grain: 10 pre-rendered noise frames played at 25 fps (Settings > Design) ---- */
+  (function () {
+    var canvas = document.querySelector('[data-mgrain]');
+    if (!canvas) { return; }
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { canvas.remove(); return; }
+    var ctx = canvas.getContext('2d'), frames = [], frame = 0, timer = 0, resizeT = 0;
+    function rgb(hex) {
+      hex = String(hex || '#ffffff').replace('#', '');
+      if (hex.length === 3) { hex = hex.split('').map(function (x) { return x + x; }).join(''); }
+      var n = parseInt(hex, 16) || 0xffffff;
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    function setup() {
+      clearTimeout(timer);
+      var c = rgb(canvas.getAttribute('data-color'));
+      var opacity = parseFloat(canvas.getAttribute('data-opacity')) || 0.09;
+      var density = parseFloat(canvas.getAttribute('data-density')) || 0.6;
+      var w = canvas.width = window.innerWidth, h = canvas.height = window.innerHeight;
+      frames = [];
+      for (var f = 0; f < 10; f++) {
+        var img = ctx.createImageData(w, h), px = new Uint32Array(img.data.buffer);
+        for (var i = 0; i < px.length; i++) {
+          if (Math.random() < density) { px[i] = (Math.floor(Math.random() * opacity * 255) << 24) | (c.b << 16) | (c.g << 8) | c.r; }
+        }
+        frames.push(img);
+      }
+      (function loop() {
+        frame = (frame + 1) % frames.length;
+        ctx.putImageData(frames[frame], 0, 0);
+        timer = setTimeout(function () { requestAnimationFrame(loop); }, 1000 / 25);
+      })();
+    }
+    setup();
+    window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(setup, 200); });
+  })();
+
+  /* ---- background videos: WebM / MP4 behind an element (Settings > Design > Element backgrounds) ---- */
+  (function () {
+    var cfg = null;
+    try { cfg = JSON.parse(document.body.getAttribute('data-mbg') || 'null'); } catch (e) { cfg = null; }
+    if (!cfg || !cfg.i || !cfg.i.length) { return; }
+    // reduced motion, data saver, or a phone (unless allowed in settings) -> still poster only
+    var still = (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) ||
+                (navigator.connection && navigator.connection.saveData) ||
+                (!cfg.m && window.matchMedia && matchMedia('(max-width: 767px)').matches);
+    var io = (!still && 'IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var v = e.target.querySelector('video');
+        if (!v) { return; }
+        if (e.isIntersecting) { var p = v.play(); if (p && p.catch) { p.catch(function () {}); } } else { v.pause(); }
+      });
+    }) : null;
+    cfg.i.forEach(function (it) {
+      var els;
+      try { els = document.querySelectorAll(it.s); } catch (e) { return; }
+      Array.prototype.slice.call(els, 0, 6).forEach(function (el) {
+        if (el.querySelector(':scope > .mbg-video')) { return; }
+        var w = document.createElement('div');
+        w.className = 'mbg-video'; w.setAttribute('aria-hidden', 'true');
+        if (it.p) { w.style.backgroundImage = 'url("' + it.p + '")'; }
+        if (!still) {
+          var v = document.createElement('video');
+          v.muted = true; v.defaultMuted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+          v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('disablepictureinpicture', '');
+          v.preload = 'auto';
+          if (it.p) { v.poster = it.p; }
+          v.src = it.v;
+          w.appendChild(v);
+        }
+        el.classList.add('has-mbg');
+        if (getComputedStyle(el).position === 'static') { el.classList.add('has-mbg-rel'); }
+        el.insertBefore(w, el.firstChild);
+        if (io) { io.observe(w); }
+      });
+    });
+  })();
+
   /* ---- smooth scroll (Lenis, Settings > Design) ---- */
   (function () {
     var me = document.currentScript || document.querySelector('script[data-smooth]');

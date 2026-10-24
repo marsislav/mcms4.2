@@ -148,7 +148,7 @@
       T('<div class="modal-foot"><button type="button" class="btn sm picker-more" hidden>Още…</button></div></div>');
     document.body.appendChild(wrap);
 
-    var state = { next: null, onPick: null, imagesOnly: false, timer: null };
+    var state = { next: null, onPick: null, kind: null, timer: null };   // kind: null (any) | 'image' | 'video'
     var grid = $('.picker-grid', wrap), more = $('.picker-more', wrap), q = $('.picker-q', wrap);
 
     function load(url, replace) {
@@ -160,6 +160,7 @@
             var b = document.createElement('button');
             b.type = 'button'; b.className = 'picker-item'; b.title = m.name;
             if (m.image) { var im = document.createElement('img'); im.src = m.thumb; im.alt = ''; im.loading = 'lazy'; b.appendChild(im); }
+            else if (m.video) { b.textContent = '▶ ' + (m.name.split('.').pop() || 'VIDEO').toUpperCase(); }
             else { b.textContent = 'PDF'; }
             b.addEventListener('click', function () { var cb = state.onPick; close(); if (cb) { cb(m); } });
             grid.appendChild(b);
@@ -170,7 +171,7 @@
         .catch(function () { grid.textContent = T('Грешка при зареждане.'); });
     }
     function query() {
-      var u = adminBase + '/media/picker?q=' + encodeURIComponent(q.value) + (state.imagesOnly ? '&images=1' : '');
+      var u = adminBase + '/media/picker?q=' + encodeURIComponent(q.value) + (state.kind === 'image' ? '&images=1' : state.kind === 'video' ? '&videos=1' : '');
       load(u, true);
     }
     function close() { wrap.hidden = true; document.body.classList.remove('modal-open'); }
@@ -179,8 +180,8 @@
     var msg = $('.picker-msg', wrap), fileIn = $('.picker-file', wrap), upBtn = $('.picker-upload', wrap), box = $('.modal-box', wrap);
     function say(text, bad) { msg.hidden = !text; msg.textContent = text || ''; msg.className = 'picker-msg' + (bad ? ' bad' : ''); }
     function doUpload(files) {
-      files = Array.prototype.filter.call(files, function (f) { return !state.imagesOnly || /^image\//.test(f.type); });
-      if (!files.length) { say(state.imagesOnly ? T('Тук се качват само изображения.') : '', true); return; }
+      files = Array.prototype.filter.call(files, function (f) { return !state.kind || f.type.indexOf(state.kind + '/') === 0; });
+      if (!files.length) { say(state.kind === 'video' ? T('Тук се качват само видеа (WebM, MP4).') : state.kind === 'image' ? T('Тук се качват само изображения.') : '', true); return; }
       say(T('Качване…')); upBtn.disabled = true;
       uploadFiles(files).then(function (res) {
         upBtn.disabled = false;
@@ -202,24 +203,26 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !wrap.hidden) { close(); } });
 
     return {
-      open: function (onPick, imagesOnly) {
-        state.onPick = onPick; state.imagesOnly = !!imagesOnly; q.value = ''; say('');
+      open: function (onPick, kind) {
+        state.onPick = onPick; state.kind = kind === true ? 'image' : (kind || null);   // legacy: true = images only q.value = ''; say('');
         wrap.hidden = false; document.body.classList.add('modal-open'); query(); q.focus();
       }
     };
   }
-  function openPicker(cb, imagesOnly) { picker = picker || buildPicker(); picker.open(cb, imagesOnly); }
+  function openPicker(cb, kind) { picker = picker || buildPicker(); picker.open(cb, kind); }
 
   $$('[data-media-field]').forEach(function (f) {
     var input = $('input[type=hidden]', f), img = $('.media-preview', f);
+    var kind = f.getAttribute('data-media-kind') || 'image';
+    var preview = function (m) { img.src = (img.tagName === 'VIDEO' ? m.url + '#t=0.1' : m.thumb); img.hidden = false; };
     $('[data-media-choose]', f).addEventListener('click', function () {
-      openPicker(function (m) { input.value = m.id; img.src = m.thumb; img.hidden = false; input.dispatchEvent(new Event('input', { bubbles: true })); }, true);
+      openPicker(function (m) { input.value = m.id; preview(m); input.dispatchEvent(new Event('input', { bubbles: true })); }, kind);
     });
     var up = $('[data-media-upload]', f);
     if (up) {
-      var fi = document.createElement('input'); fi.type = 'file'; fi.accept = 'image/jpeg,image/png,image/webp,image/gif'; fi.hidden = true; f.appendChild(fi);
+      var fi = document.createElement('input'); fi.type = 'file'; fi.accept = kind === 'video' ? 'video/webm,video/mp4' : 'image/jpeg,image/png,image/webp,image/gif'; fi.hidden = true; f.appendChild(fi);
       var note = document.createElement('small'); note.className = 'muted'; note.hidden = true; f.appendChild(note);
-      var set = function (m) { input.value = m.id; img.src = m.thumb; img.hidden = false; input.dispatchEvent(new Event('input', { bubbles: true })); };
+      var set = function (m) { input.value = m.id; preview(m); input.dispatchEvent(new Event('input', { bubbles: true })); };
       var go = function (file) {
         if (!file) { return; }
         note.hidden = false; note.textContent = T('Качване…'); up.disabled = true;
@@ -235,11 +238,11 @@
       f.addEventListener('drop', function (e) {
         e.preventDefault(); f.classList.remove('drop');
         var file = e.dataTransfer && e.dataTransfer.files[0];
-        if (file && /^image\//.test(file.type)) { go(file); }
+        if (file && file.type.indexOf(kind + '/') === 0) { go(file); }
       });
     }
     $('[data-media-clear]', f).addEventListener('click', function () {
-      input.value = ''; img.hidden = true; img.removeAttribute('src');
+      input.value = ''; img.hidden = true; img.removeAttribute('src'); if (img.tagName === 'VIDEO') { img.load(); }
     });
   });
 
