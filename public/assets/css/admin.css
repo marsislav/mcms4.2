@@ -261,3 +261,4 @@ textarea.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem
 .bg-box h3{font-size:.95rem;margin:1rem 0 .4rem}
 video.media-preview{background:#000}
 .media-item .media-vid{display:block;width:100%;aspect-ratio:4/3;background:#000;object-fit:cover}
+.bg-sub{margin:.5rem 0;padding:.4rem .7rem;border:1px solid var(--line,#ddd);border-radius:8px}.bg-sub>summary{cursor:pointer;font-weight:600}

@@ -12,6 +12,9 @@
         foreach (\App\Support\Design::FONTS as $k => $f) {
             $o .= '<option value="'.e($k).'"'.($v($name) === (string) $k ? ' selected' : '').'>'.e(__($f[0])).'</option>';
         }
+        foreach (\App\Support\Design::customFonts() as $slot => $cf) {
+            $o .= '<option value="f'.$slot.'"'.($v($name) === 'f'.$slot ? ' selected' : '').'>'.e($cf['name']).' ('.e(__('мой шрифт')).')</option>';
+        }
         return '<label>'.e($label).'<select name="'.$name.'">'.$o.'</select></label>';
     };
     $animSel = function ($name, $label) use ($v) {
@@ -24,7 +27,7 @@
     $maxCols = \App\Support\Design::MAX_COLS;
 @endphp
 
-<form method="post" action="{{ route('admin.settings.design') }}" class="settings-form">
+<form method="post" action="{{ route('admin.settings.design') }}" class="settings-form" enctype="multipart/form-data">
     @csrf @method('PUT')
 
     <section class="card">
@@ -51,6 +54,24 @@
             <label>{!! __('Базов размер на текста (px) <small class="muted">14–22, празно = 16</small>') !!}
                 <input type="number" name="font_size" min="14" max="22" value="{{ $v('font_size') }}"></label>
         </div>
+
+        <h3>{{ __('Свои шрифтове') }}</h3>
+        <p class="muted">{!! __('Качи шрифт във формат <code>.woff2</code> (или <code>.woff</code>), даваш му име и после го избираш в списъците по-горе. Файловете се зареждат от твоя сървър — без Google Fonts. Готови WOFF2 файлове: google-webfonts-helper.herokuapp.com или fonts.google.com → изтегли → конвертирай TTF в WOFF2.') !!}</p>
+        @error('fonts')<p class="error">{{ $message }}</p>@enderror
+        @for ($i = 1; $i <= \App\Support\Design::CUSTOM_FONTS; $i++)
+            @php($cf = \App\Support\Design::customFonts()[$i] ?? null)
+            <details class="bg-sub" @if($cf) open @endif>
+                <summary>{{ __('Шрифт') }} {{ $i }} @if($cf)— <strong>{{ $cf['name'] }}</strong>@endif</summary>
+                <div class="grid-form">
+                    <label>{{ __('Име (както ще се вижда в списъка)') }} <input type="text" name="fonts[{{ $i }}][name]" maxlength="40" value="{{ old("fonts.$i.name", $cf['name'] ?? '') }}" autocomplete="off"></label>
+                    <label>{{ __('Обикновен (400) — .woff2 / .woff') }} @if($cf)<small class="muted">✓ {{ basename($cf['regular']) }}</small>@endif
+                        <input type="file" name="fonts[{{ $i }}][regular]" accept=".woff2,.woff"></label>
+                    <label>{{ __('Удебелен (700) — по желание') }} @if($cf && $cf['bold'] !== '')<small class="muted">✓ {{ basename($cf['bold']) }}</small>@endif
+                        <input type="file" name="fonts[{{ $i }}][bold]" accept=".woff2,.woff"></label>
+                </div>
+                @if($cf)<label class="check"><input type="checkbox" name="fonts[{{ $i }}][remove]" value="1"> {{ __('Премахни този шрифт') }}</label>@endif
+            </details>
+        @endfor
     </section>
 
     <section class="card">
@@ -187,6 +208,7 @@
         <small class="muted">{{ __('За да видиш банера след избор, изтрий бисквитката mcms_consent или включи малкия бутон 🍪 в Настройки → Бисквитки.') }}</small>
     </section>
 
+    @include('admin.partials.design-onepage')
     @include('admin.partials.design-effects')
 
     @include('admin.partials.design-backgrounds')

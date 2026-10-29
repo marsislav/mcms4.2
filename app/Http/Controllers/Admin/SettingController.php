@@ -222,7 +222,7 @@ class SettingController extends Controller
     public function updateDesign(Request $request)
     {
         $color = ['nullable', 'regex:/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/'];
-        $font = ['nullable', 'in:'.implode(',', array_keys(Design::FONTS))];
+        $font = ['nullable', 'in:'.implode(',', Design::fontKeys())];
         $anim = ['required', 'in:'.implode(',', array_keys(Design::ANIMS))];
         $align = ['required', 'in:left,center,right'];
         $rules = [
@@ -245,6 +245,10 @@ class SettingController extends Controller
             'gd_width' => 'nullable|integer|min:280|max:900',
             'gd_font' => 'nullable|integer|min:12|max:20',
             'rotate_interval' => 'required|integer|min:1000|max:10000',
+            'op_anim' => ['required', 'in:'.implode(',', array_keys(\App\Support\OnePage::ANIMS))],
+            'op_title' => ['required', 'in:'.implode(',', array_keys(\App\Support\OnePage::TITLE))],
+            'op_duration' => 'required|integer|min:200|max:2000',
+            'op_stagger' => 'required|integer|min:0|max:400',
             'grain_density' => 'required|integer|min:5|max:100',
             'smooth_duration' => 'required|numeric|min:0.4|max:3',
             'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
@@ -297,7 +301,7 @@ class SettingController extends Controller
         $bgIn = array_filter((array) $request->input('ebg', []), 'is_array');
         $ids = [];
         foreach ($bgIn as $row) {
-            foreach (['image_id', 'video_id', 'poster_id'] as $f) {
+            foreach (self::bgIdFields() as $f) {
                 if (isset($row[$f]) && is_scalar($row[$f]) && ctype_digit((string) $row[$f])) {
                     $ids[] = (int) $row[$f];
                 }
@@ -305,7 +309,7 @@ class SettingController extends Controller
         }
         $media = $ids ? Media::whereIn('id', array_unique($ids))->get()->keyBy('id') : collect();
         foreach ($bgIn as $key => $row) {
-            foreach (['image' => 'image/', 'video' => 'video/', 'poster' => 'image/'] as $f => $mimePrefix) {
+            foreach (self::bgMediaKinds() as $f => $mimePrefix) {
                 $m = $media[(int) ($row[$f.'_id'] ?? 0)] ?? null;
                 $bgIn[$key][$f.'_path'] = ($m && str_starts_with((string) $m->mime, $mimePrefix)) ? $m->path : '';
             }
@@ -317,10 +321,70 @@ class SettingController extends Controller
         $fx = array_filter(\App\Support\Fx::normalizeBars((array) $request->input('pbars', [])), fn ($s) => \App\Support\Fx::used($s));
         $values['design.fx_bars'] = $fx ? json_encode($fx, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
 
+        // Own fonts: name + WOFF2/WOFF files (regular, optional bold), uploaded here; slot 1..6
+        $cur = Design::customFonts();
+        $fonts = [];
+        $fin = (array) $request->input('fonts', []);
+        $ffiles = (array) $request->file('fonts', []);
+        for ($i = 1; $i <= Design::CUSTOM_FONTS; $i++) {
+            $row = is_array($fin[$i] ?? null) ? $fin[$i] : [];
+            $f = $cur[$i] ?? ['name' => '', 'regular' => '', 'bold' => ''];
+            $f['name'] = Design::fontName($row['name'] ?? $f['name']);
+            if (! empty($row['remove'])) {
+                $f = ['name' => '', 'regular' => '', 'bold' => ''];
+            }
+            foreach (['regular', 'bold'] as $w) {
+                $up = $ffiles[$i][$w] ?? null;
+                if ($up instanceof \Illuminate\Http\UploadedFile) {
+                    try {
+                        $m = \App\Support\Uploader::store($up, $request->user()->id);
+                    } catch (\RuntimeException $e) {
+                        throw \Illuminate\Validation\ValidationException::withMessages(['fonts' => $e->getMessage()]);
+                    }
+                    if (! str_starts_with((string) $m->mime, 'font/')) {
+                        \App\Support\Uploader::delete($m);
+                        throw \Illuminate\Validation\ValidationException::withMessages(['fonts' => __('Шрифтът трябва да е WOFF2 или WOFF файл.')]);
+                    }
+                    $f[$w] = $m->path;
+                }
+            }
+            if ($f['name'] !== '' && $f['regular'] !== '') {
+                $fonts[$i] = $f;
+            }
+        }
+        $values['design.fonts'] = $fonts ? json_encode($fonts, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+
+        // One-page sections: only existing pages, unique, whitelisted animation
+        $opIn = array_values(array_filter((array) $request->input('ops', []), 'is_array'));
+        $opIds = \App\Models\Content::where('type', 'page')->pluck('id')->map(fn ($i) => (int) $i)->all();
+        $op = \App\Support\OnePage::normalize($opIn, $opIds);
+        $values['design.op_sections'] = $op ? json_encode($op) : null;
+
         Setting::putMany($values);
         audit('settings.design');
 
         return redirect(route('admin.settings').'#design')->with('status', __('Дизайнът е записан.'));
+    }
+
+    /** Media-id fields of a background box: main image/video/poster plus the extra image layers. */
+    private static function bgIdFields(): array
+    {
+        $f = ['image_id', 'video_id', 'poster_id'];
+        for ($n = 1; $n <= Design::BG_EXTRAS; $n++) {
+            $f[] = "x{$n}_image_id";
+        }
+
+        return $f;
+    }
+
+    private static function bgMediaKinds(): array
+    {
+        $k = ['image' => 'image/', 'video' => 'video/', 'poster' => 'image/'];
+        for ($n = 1; $n <= Design::BG_EXTRAS; $n++) {
+            $k["x{$n}_image"] = 'image/';
+        }
+
+        return $k;
     }
 
     public function resetDesign()

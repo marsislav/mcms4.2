@@ -45,6 +45,8 @@ Options -ExecCGI -Indexes
 <IfModule mod_mime.c>
     AddType video/webm .webm
     AddType video/mp4 .mp4
+    AddType font/woff2 .woff2
+    AddType font/woff .woff
     RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phps
     RemoveType .php .phtml
 </IfModule>

@@ -24,6 +24,8 @@ class Uploader
         'video/webm' => 'webm',
         'video/mp4' => 'mp4',
         'video/x-m4v' => 'mp4',   // some libmagic builds name MP4 this way
+        'font/woff2' => 'woff2',  // web fonts (Settings > Design > Own fonts); detected by signature, libmagic names vary
+        'font/woff' => 'woff',
     ];
 
     /** Clear message when PHP itself refused the upload (upload_max_filesize / post_max_size), else null. */
@@ -44,8 +46,14 @@ class Uploader
 
         $real = $file->getRealPath();
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($real);
+        $sig = (string) @file_get_contents($real, false, null, 0, 4);
+        if ($sig === 'wOF2') {
+            $mime = 'font/woff2';
+        } elseif ($sig === 'wOFF') {
+            $mime = 'font/woff';
+        }
         if (! isset(self::TYPES[$mime])) {
-            throw new RuntimeException(__('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF, WebM, MP4.'));
+            throw new RuntimeException(__('Неразрешен тип файл. Позволени: JPG, PNG, WebP, GIF, PDF, WebM, MP4, WOFF2, WOFF.'));
         }
         $ext = self::TYPES[$mime];
         if ($mime === 'video/x-m4v') {
@@ -92,7 +100,7 @@ class Uploader
                 $thumbRel = self::thumbnail($abs, $outMime, "$sub/{$name}_t.$ext", $dir);
                 $mime = $outMime;
             }
-        } elseif (str_starts_with($mime, 'video/')) { // WebM / MP4: stored as-is after a signature + code scan
+        } elseif (str_starts_with($mime, 'video/') || str_starts_with($mime, 'font/')) { // WebM / MP4 / WOFF: stored as-is after a signature + code scan
             self::assertVideo($real, $mime);
             if (! @move_uploaded_file($real, $abs) && ! @copy($real, $abs)) {
                 throw new RuntimeException(__('Файлът не може да бъде записан.'));
@@ -178,10 +186,15 @@ class Uploader
             throw new RuntimeException(__('Файлът не може да бъде прочетен.'));
         }
         $head = (string) fread($fh, 12);
-        $ok = $mime === 'video/webm' ? str_starts_with($head, "\x1A\x45\xDF\xA3") : substr($head, 4, 4) === 'ftyp';
+        $ok = match ($mime) {
+            'video/webm' => str_starts_with($head, "\x1A\x45\xDF\xA3"),
+            'font/woff2' => str_starts_with($head, 'wOF2'),
+            'font/woff' => str_starts_with($head, 'wOFF'),
+            default => substr($head, 4, 4) === 'ftyp',
+        };
         if (! $ok) {
             fclose($fh);
-            throw new RuntimeException(__('Невалиден видео файл.'));
+            throw new RuntimeException(__('Невалиден видео или шрифт файл.'));
         }
         rewind($fh);
         $tail = '';

@@ -34,6 +34,63 @@ class Design
         'mono' => ['Monospace', 'ui-monospace,"Cascadia Code","Source Code Pro",Menlo,Consolas,"DejaVu Sans Mono",monospace'],
     ];
 
+    public const CUSTOM_FONTS = 6;
+    private const FONT_PATH = '#^\d{4}/\d{2}/[0-9a-f]{24}\.woff2?$#';
+
+    /** Clean family name (letters, digits, space, hyphen), '' when empty. */
+    public static function fontName($v): string
+    {
+        return is_string($v) ? trim(mb_substr((string) preg_replace('/[^\p{L}\p{N} \-]/u', '', $v), 0, 40)) : '';
+    }
+
+    /** Own fonts saved in Settings: slot (1..6) => ['name', 'regular', 'bold'] (paths relative to /uploads). */
+    public static function customFonts(): array
+    {
+        $raw = function_exists('setting') ? setting('design.fonts') : null;
+        $arr = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+        $out = [];
+        foreach (is_array($arr) ? $arr : [] as $slot => $f) {
+            $slot = (int) $slot;
+            if ($slot < 1 || $slot > self::CUSTOM_FONTS || ! is_array($f)) {
+                continue;
+            }
+            $name = self::fontName($f['name'] ?? '');
+            $reg = (isset($f['regular']) && is_string($f['regular']) && preg_match(self::FONT_PATH, $f['regular'])) ? $f['regular'] : '';
+            $bold = (isset($f['bold']) && is_string($f['bold']) && preg_match(self::FONT_PATH, $f['bold'])) ? $f['bold'] : '';
+            if ($name !== '' && $reg !== '') {
+                $out[$slot] = ['name' => $name, 'regular' => $reg, 'bold' => $bold];
+            }
+        }
+
+        return $out;
+    }
+
+    /** Keys a font select may post: the built-in stacks plus f1..f6. */
+    public static function fontKeys(): array
+    {
+        $k = array_keys(self::FONTS);
+        for ($i = 1; $i <= self::CUSTOM_FONTS; $i++) {
+            $k[] = 'f'.$i;
+        }
+
+        return $k;
+    }
+
+    private static function fontFaceCss(): array
+    {
+        $r = [];
+        foreach (self::customFonts() as $f) {
+            $fam = '"'.$f['name'].'"';
+            $face = fn (string $path, int $w) => '@font-face{font-family:'.$fam.';src:url("'.self::uploadUrl($path).'") format("'.(str_ends_with($path, '.woff2') ? 'woff2' : 'woff').'");font-weight:'.$w.';font-style:normal;font-display:swap}';
+            $r[] = $face($f['regular'], 400);
+            if ($f['bold'] !== '') {
+                $r[] = $face($f['bold'], 700);
+            }
+        }
+
+        return $r;
+    }
+
     /** key => [label shown in the panel] ; the selector map lives in assets/js/site.js */
     public const ELEMENTS = [
         'header' => 'Хедър',
@@ -54,6 +111,7 @@ class Design
         'el_images' => 'none', 'el_headings' => 'none', 'el_footer' => 'none',
         'topbar_on' => '0', 'topbar_cols' => '2', 'topbar_bg' => '', 'topbar_fg' => '', 'topbar_mobile' => '1',
         'progress_on' => '0', 'progress_color' => '', 'progress_bg' => '', 'progress_height' => '3', 'progress_pos' => 'top', 'progress_scope' => 'posts',
+        'op_on' => '0', 'op_anim' => 'fade-up', 'op_title' => 'none', 'op_duration' => '800', 'op_stagger' => '90', 'op_children' => '1', 'op_dots' => '1', 'op_snap' => '0', 'op_parallax' => '0', 'op_full' => '0',
         'blur_on' => '0', 'blur_height' => '15', 'bg_video_mobile' => '0',
         'grain_on' => '0', 'grain_color' => '', 'grain_opacity' => '9', 'grain_density' => '60',
         'h1_anim' => 'none', 'h1_scope' => 'entry', 'h1_underline' => '0', 'h1_word' => 'last', 'h1_underline_color' => '', 'rotate_interval' => '2600',
@@ -64,7 +122,7 @@ class Design
     ];
 
     public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg', 'grain_color', 'h1_underline_color', 'gd_btn_bg', 'gd_btn_fg', 'gd_btn2_bg', 'gd_btn2_fg', 'gd_link', 'gd_reopen_bg'];
-    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on', 'bg_video_mobile', 'grain_on', 'h1_underline', 'gd_glass', 'gd_dim', 'gd_btn2_ghost'];
+    public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on', 'bg_video_mobile', 'grain_on', 'h1_underline', 'gd_glass', 'gd_dim', 'gd_btn2_ghost', 'op_on', 'op_children', 'op_dots', 'op_snap', 'op_parallax', 'op_full'];
     public const PROGRESS_POS = ['top' => 'Най-горе', 'bottom' => 'Най-долу'];
     public const PROGRESS_SCOPE = ['posts' => 'Само публикации', 'content' => 'Публикации и страници', 'all' => 'Навсякъде'];
     public const MAX_COLS = 4;
@@ -83,6 +141,17 @@ class Design
         'sidebar' => ['Страничен панел', '.sidebar'],
         'footer' => ['Футър', '.site-footer'],
         'cc' => ['Банер за бисквитки (GDPR)', '.cc'],
+        'op1' => ['One-page секция 1', '.op > .op-sec:nth-child(1)'],
+        'op2' => ['One-page секция 2', '.op > .op-sec:nth-child(2)'],
+        'op3' => ['One-page секция 3', '.op > .op-sec:nth-child(3)'],
+        'op4' => ['One-page секция 4', '.op > .op-sec:nth-child(4)'],
+        'op5' => ['One-page секция 5', '.op > .op-sec:nth-child(5)'],
+        'op6' => ['One-page секция 6', '.op > .op-sec:nth-child(6)'],
+        'op7' => ['One-page секция 7', '.op > .op-sec:nth-child(7)'],
+        'op8' => ['One-page секция 8', '.op > .op-sec:nth-child(8)'],
+        'op9' => ['One-page секция 9', '.op > .op-sec:nth-child(9)'],
+        'op10' => ['One-page секция 10', '.op > .op-sec:nth-child(10)'],
+        'op11' => ['One-page секция 11', '.op > .op-sec:nth-child(11)'],
     ];
     public const H1_ANIMS = ['none' => 'Без анимация', 'words' => 'Думите излизат една по една'];
     public const H1_WORD = ['last' => 'Последната дума', 'first' => 'Първата дума', 'last2' => 'Последните две думи'];
@@ -103,6 +172,19 @@ class Design
         'top left' => 'Горе вляво', 'top right' => 'Горе вдясно', 'bottom left' => 'Долу вляво', 'bottom right' => 'Долу вдясно',
     ];
     public const BG_REPEAT = ['no-repeat' => 'Без повторение', 'repeat' => 'Повтаря се', 'repeat-x' => 'По хоризонтала', 'repeat-y' => 'По вертикала'];
+    public const BG_EXTRAS = 3;
+    public const BG_BLEND = ['normal' => 'Нормално', 'multiply' => 'Умножение (multiply)', 'screen' => 'Осветляване (screen)', 'overlay' => 'Overlay', 'soft-light' => 'Soft light', 'darken' => 'Потъмняване', 'lighten' => 'Изсветляване', 'luminosity' => 'Luminosity'];
+    public const BG_ANIM = [
+        'none' => 'Без анимация',
+        'kenburns' => 'Ken Burns (бавно приближаване) — картинка',
+        'pan' => 'Бавно движение наляво-надясно — картинка',
+        'drift' => 'Плаващо по диагонал — картинка',
+        'parallax' => 'Паралакс при скрол — картинка',
+        'gradient-shift' => 'Движещ се градиент — градиент',
+    ];
+    public const BG_ANIM_MODE = ['time' => 'По време (върви сама)', 'scroll' => 'При скрол (върви със скрола)'];
+    public const BG_ANIM_LOOP = ['infinite' => 'Безкрайно (напред-назад)', 'once' => 'Веднъж (когато се покаже)'];
+    public const BG_IMG_ANIMS = ['kenburns', 'pan', 'drift', 'parallax'];
     public const BG_ATTACH = ['scroll' => 'Скролира със страницата', 'fixed' => 'Фиксиран'];
     public const BG_GRAD = ['linear' => 'Линеен', 'radial' => 'Радиален', 'conic' => 'Конусен'];
 
@@ -143,6 +225,9 @@ class Design
         $hex = fn ($v) => self::normalizeColor(is_scalar($v) ? (string) $v : '') ?? '';
         $num = fn ($v, int $min, int $max, int $def) => (string) max($min, min($max, is_numeric($v) ? (int) $v : $def));
         $path = fn ($v) => (is_string($v) && preg_match(self::BG_PATH, $v)) ? $v : '';
+        // background-size: a keyword, or one/two lengths such as 50%, 200px, 100% auto
+        $len = '(?:auto|\d{1,4}(?:\.\d{1,2})?(?:px|%|vw|vh|rem|em))';
+        $size = fn ($v) => (is_string($v) && (isset(self::BG_SIZE[trim($v)]) || preg_match('#^'.$len.'(?: '.$len.')?$#', trim($v)))) ? trim($v) : 'cover';
         $id = fn ($v) => (is_scalar($v) && ctype_digit((string) $v) && (int) $v > 0) ? (string) (int) $v : '';
 
         $out = [];
@@ -159,14 +244,30 @@ class Design
                 'grad_c2' => $hex($c['grad_c2'] ?? ''), 'grad_a2' => $num($c['grad_a2'] ?? 100, 0, 100, 100),
                 'grad_c3' => $hex($c['grad_c3'] ?? ''), 'grad_a3' => $num($c['grad_a3'] ?? 100, 0, 100, 100),
                 'image_id' => $id($c['image_id'] ?? ''), 'image_path' => $path($c['image_path'] ?? ''),
-                'size' => $pick($c['size'] ?? '', array_keys(self::BG_SIZE), 'cover'),
+                'size' => $size($c['size'] ?? ''),
                 'pos' => $pick($c['pos'] ?? '', array_keys(self::BG_POS), 'center'),
                 'repeat' => $pick($c['repeat'] ?? '', array_keys(self::BG_REPEAT), 'no-repeat'),
                 'attach' => $pick($c['attach'] ?? '', array_keys(self::BG_ATTACH), 'scroll'),
                 'video_id' => $id($c['video_id'] ?? ''), 'video_path' => $path($c['video_path'] ?? ''),
                 'poster_id' => $id($c['poster_id'] ?? ''), 'poster_path' => $path($c['poster_path'] ?? ''),
+                'anim' => $pick($c['anim'] ?? '', array_keys(self::BG_ANIM), 'none'),
+                'anim_mode' => $pick($c['anim_mode'] ?? '', array_keys(self::BG_ANIM_MODE), 'time'),
+                'anim_loop' => $pick($c['anim_loop'] ?? '', array_keys(self::BG_ANIM_LOOP), 'infinite'),
+                'anim_speed' => $num($c['anim_speed'] ?? 20, 3, 120, 20),
                 'overlay' => $hex($c['overlay'] ?? ''), 'overlay_op' => $num($c['overlay_op'] ?? 40, 0, 100, 40),
             ];
+            for ($n = 1; $n <= self::BG_EXTRAS; $n++) {
+                $row["x{$n}_image_id"] = $id($c["x{$n}_image_id"] ?? '');
+                $row["x{$n}_image_path"] = $path($c["x{$n}_image_path"] ?? '');
+                $row["x{$n}_size"] = $size($c["x{$n}_size"] ?? '');
+                $row["x{$n}_pos"] = $pick($c["x{$n}_pos"] ?? '', array_keys(self::BG_POS), 'center');
+                $row["x{$n}_repeat"] = $pick($c["x{$n}_repeat"] ?? '', array_keys(self::BG_REPEAT), 'no-repeat');
+                $row["x{$n}_attach"] = $pick($c["x{$n}_attach"] ?? '', array_keys(self::BG_ATTACH), 'scroll');
+                $row["x{$n}_blend"] = $pick($c["x{$n}_blend"] ?? '', array_keys(self::BG_BLEND), 'normal');
+                if ($row["x{$n}_image_path"] === '') {
+                    $row["x{$n}_image_id"] = '';
+                }
+            }
             if (in_array($key, self::BG_NO_VIDEO, true)) {
                 $row['video_id'] = $row['video_path'] = $row['poster_id'] = $row['poster_path'] = '';
             }
@@ -188,6 +289,12 @@ class Design
     /** Does this row set anything at all? (empty rows are not stored) */
     public static function bgUsed(array $c): bool
     {
+        for ($n = 1; $n <= self::BG_EXTRAS; $n++) {
+            if (($c["x{$n}_image_path"] ?? '') !== '') {
+                return true;
+            }
+        }
+
         return $c['color'] !== '' || $c['text'] !== '' || $c['grad'] === '1' || $c['image_path'] !== ''
             || $c['video_path'] !== '' || $c['poster_path'] !== '';
     }
@@ -257,24 +364,42 @@ class Design
                 $d[] = 'background-color:'.$c['color'];
             }
             $grad = self::bgGradient($c);
+            $gs = $grad && $c['anim'] === 'gradient-shift';   // moving gradient lives in its own script-made layer (.mbg-grad)
+            $hasOv = $c['overlay'] !== '' && $c['overlay_op'] !== '0';
             $img = $c['image_path'] !== '' ? "url('".self::uploadUrl($c['image_path'])."')" : null;
-            if ($grad || $img) {
+            $extras = [];
+            for ($n = 1; $n <= self::BG_EXTRAS; $n++) {
+                if ($c["x{$n}_image_path"] !== '') {
+                    $extras[] = ["url('".self::uploadUrl($c["x{$n}_image_path"])."')", $c["x{$n}_size"], $c["x{$n}_pos"], $c["x{$n}_repeat"], $c["x{$n}_attach"], $c["x{$n}_blend"]];
+                }
+            }
+            if ($grad || $img || $extras) {
                 $layers = $sizes = $poss = $reps = [];
-                if ($c['overlay'] !== '' && $c['overlay_op'] !== '0') {
+                if ($hasOv && ! $gs) {
                     $o = self::rgba($c['overlay'], $c['overlay_op']);
                     $layers[] = "linear-gradient($o,$o)"; $sizes[] = 'auto'; $poss[] = '0 0'; $reps[] = 'no-repeat';
                 }
-                if ($grad) {
+                if ($grad && ! $gs) {
                     $layers[] = $grad; $sizes[] = 'auto'; $poss[] = '0 0'; $reps[] = 'no-repeat';
                 }
-                if ($img) {
-                    $layers[] = $img; $sizes[] = $c['size']; $poss[] = $c['pos']; $reps[] = $c['repeat'];
+                $atts = array_fill(0, count($layers), $c['attach']);
+                $blends = array_fill(0, count($layers), 'normal');
+                foreach ($extras as [$u, $sz, $ps, $rp, $at, $bl]) {
+                    $layers[] = $u; $sizes[] = $sz; $poss[] = $ps; $reps[] = $rp; $atts[] = $at; $blends[] = $bl;
                 }
+                if ($img) {
+                    $layers[] = $img; $sizes[] = $c['size']; $poss[] = $c['pos']; $reps[] = $c['repeat']; $atts[] = $c['attach']; $blends[] = 'normal';
+                }
+                if ($layers) {
                 $d[] = 'background-image:'.implode(',', $layers);
                 $d[] = 'background-size:'.implode(',', $sizes);
                 $d[] = 'background-position:'.implode(',', $poss);
                 $d[] = 'background-repeat:'.implode(',', $reps);
-                $d[] = 'background-attachment:'.implode(',', array_fill(0, count($layers), $c['attach']));
+                $d[] = 'background-attachment:'.implode(',', $atts);
+                if (array_diff($blends, ['normal'])) {
+                    $d[] = 'background-blend-mode:'.implode(',', $blends);
+                }
+                }
             }
             if ($c['text'] !== '') {
                 $d[] = 'color:'.$c['text'];
@@ -285,6 +410,35 @@ class Design
             }
             if ($c['text'] !== '') {
                 $r[] = self::sfx($sel, ' :is(h1,h2,h3,h4,h5,h6,p,li,small,strong,label,span,a):not(.btn):not(.on)').'{color:'.$c['text'].'}';
+            }
+            if ($gs) {
+                $kf = 'mbg-ga-'.preg_replace('/[^a-z0-9]/i', '', $key);
+                $once = $c['anim_loop'] === 'once';
+                $r[] = self::sfx($sel, ' > .mbg-grad').'{background-image:'.$grad.';background-size:300% 300%}';
+                if ($hasOv) {
+                    $r[] = self::sfx($sel, ' > .mbg-grad::after').'{background:'.self::rgba($c['overlay'], $c['overlay_op']).'}';
+                }
+                if ($c['anim_mode'] !== 'scroll') {
+                    $r[] = '@keyframes '.$kf.'{from{background-position:0% 0%}to{background-position:100% 100%}}';
+                    $r[] = '@media (prefers-reduced-motion:no-preference){'.self::sfx($sel, ' > .mbg-grad:not(.mbg-scroll)').'{animation:'.$kf.' '.(int) $c['anim_speed'].'s ease-in-out '.($once ? '1 normal forwards' : 'infinite alternate').'}'
+                        .self::sfx($sel, ' > .mbg-grad.mbg-wait').'{animation-play-state:paused}}';
+                }
+            }
+            if (self::imgAnimated($c)) {
+                // the JS layer .mbg-img carries the image; gradient and overlay move onto it so they stay above the image
+                $g1 = $grad && ! $gs;
+                $bl = $g1 ? [$grad] : [];
+                $bs = $g1 ? ['auto'] : []; $bp = $g1 ? ['0 0'] : []; $br = $g1 ? ['no-repeat'] : []; $bb = $g1 ? ['normal'] : [];
+                foreach ($extras as [$u, $sz, $ps, $rp, $at, $bm]) {
+                    $bl[] = $u; $bs[] = $sz; $bp[] = $ps; $br[] = $rp; $bb[] = $bm;
+                }
+                if ($bl) {
+                    $r[] = self::sfx($sel, ' > .mbg-img::before').'{background-image:'.implode(',', $bl).';background-size:'.implode(',', $bs).';background-position:'.implode(',', $bp).';background-repeat:'.implode(',', $br).(array_diff($bb, ['normal']) ? ';background-blend-mode:'.implode(',', $bb) : '').'}';
+                }
+                if ($hasOv && ! $gs) {
+                    $r[] = self::sfx($sel, ' > .mbg-img::after').'{background:'.self::rgba($c['overlay'], $c['overlay_op']).'}';
+                }
+                $r[] = self::sfx($sel, '.has-mbg-img').'{background-image:none!important}';
             }
             if ($c['video_path'] !== '' && $c['overlay'] !== '' && $c['overlay_op'] !== '0') {
                 $r[] = self::sfx($sel, ' > .mbg-video::after').'{background:'.self::rgba($c['overlay'], $c['overlay_op']).'}';
@@ -336,12 +490,30 @@ class Design
         return $r;
     }
 
+    /** Does this background use an animated image layer (Ken Burns, pan, drift, parallax)? */
+    public static function imgAnimated(array $c): bool
+    {
+        return $c['image_path'] !== '' && in_array($c['anim'], self::BG_IMG_ANIMS, true) && $c['video_path'] === '';
+    }
+
     /** Video backgrounds for the front-end script: [{s: selector, v: url, p: poster url}]. */
     public static function bgVideos(): array
     {
         $out = [];
         foreach (self::backgrounds() as $key => $c) {
-            if ($c['video_path'] === '' || ($sel = self::bgSelector($key, $c)) === null) {
+            if (($sel = self::bgSelector($key, $c)) === null) {
+                continue;
+            }
+            if (self::imgAnimated($c)) {
+                $out[] = ['s' => $sel, 'g' => self::uploadUrl($c['image_path']), 'a' => $c['anim'], 'd' => (int) $c['anim_speed'], 'z' => $c['size'], 'o' => $c['pos'], 'sc' => $c['anim_mode'] === 'scroll' ? 1 : 0, 'l' => $c['anim_loop'] === 'once' ? 1 : 0];
+            }
+            if ($c['anim'] === 'gradient-shift' && self::bgGradient($c)) {
+                $out[] = ['s' => $sel, 'a' => 'gradient-shift', 'sc' => $c['anim_mode'] === 'scroll' ? 1 : 0, 'l' => $c['anim_loop'] === 'once' ? 1 : 0];
+            }
+            if ($c['video_path'] === '') {
+                continue;
+            }
+            if ($c['video_path'] === '') {
                 continue;
             }
             $out[] = ['s' => $sel, 'v' => self::uploadUrl($c['video_path']), 'p' => $c['poster_path'] !== '' ? self::uploadUrl($c['poster_path']) : ''];
@@ -551,6 +723,14 @@ class Design
             $r[] = ':root{--pblur-h:'.max(5, min(50, (int) self::get('blur_height'))).'vh}';
         }
 
+        // one-page mode ----------------------------------------------------
+        if (self::get('op_on') === '1') {
+            $r[] = ':root{--op-ms:'.max(200, min(2000, (int) self::get('op_duration'))).'ms;--op-stagger:'.max(0, min(400, (int) self::get('op_stagger'))).'ms}';
+        }
+
+        // own fonts (@font-face) ------------------------------------------
+        array_unshift($r, ...self::fontFaceCss());
+
         // animation speed -------------------------------------------------
         $r[] = ':root{--anim-ms:'.self::speed().'ms}';
 
@@ -590,6 +770,11 @@ class Design
     private static function stack(string $key): ?string
     {
         $k = self::get($key);
+        if (preg_match('/^f([1-6])$/', $k, $m)) {
+            $f = self::customFonts()[(int) $m[1]] ?? null;
+
+            return $f ? '"'.$f['name'].'",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif' : null;
+        }
 
         return ($k !== '' && isset(self::FONTS[$k]) && self::FONTS[$k][1] !== '') ? self::FONTS[$k][1] : null;
     }

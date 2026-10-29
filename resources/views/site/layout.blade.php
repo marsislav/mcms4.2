@@ -83,11 +83,11 @@
             <ul>
                 @foreach ($headerMenu as $item)
                     <li @class(['has-sub' => ! empty($item['children']), ($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif>
-                        <a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif @if(url()->current() === $item['url']) aria-current="page" @endif>{{ $item['label'] }}</a>
+                        <a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif @if(url()->current() === $item['url']) aria-current="page" @endif>{{ $item['label'] }}</a>
                         @if(! empty($item['children']))
                             <ul class="sub">
                                 @foreach ($item['children'] as $child)
-                                    <li @class([($child['css_class'] ?? '') => ! empty($child['css_class'])]) @if(! empty($child['css_id'])) id="{{ $child['css_id'] }}" @endif><a href="{{ $child['url'] }}" @if($child['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $child['label'] }}</a></li>
+                                    <li @class([($child['css_class'] ?? '') => ! empty($child['css_class'])]) @if(! empty($child['css_id'])) id="{{ $child['css_id'] }}" @endif><a href="{{ \App\Support\OnePage::href($child['url']) }}" @if($child['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $child['label'] }}</a></li>
                                 @endforeach
                             </ul>
                         @endif
@@ -134,7 +134,7 @@
         <nav class="foot-links" aria-label="Footer">
             <ul>
                 @unless(in_array('menu', $fTypes, true))
-                    @foreach ($footerMenu as $item)<li><a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>@endforeach
+                    @foreach ($footerMenu as $item)<li><a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>@endforeach
                 @endunless
                 @unless(in_array('social', $fTypes, true))
                     @foreach ($socials as $k => $label)<li><a href="{{ setting('social_'.$k) }}" rel="noopener noreferrer me" target="_blank">{{ $label }}</a></li>@endforeach
@@ -157,7 +157,7 @@
         <nav aria-label="Footer">
             <ul>
                 @foreach ($footerMenu as $item)
-                    <li @class([($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif><a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>
+                    <li @class([($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif><a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>
                 @endforeach
                 <li><a href="{{ lroute('feed') }}">RSS</a></li>
             </ul>

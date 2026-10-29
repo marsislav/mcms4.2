@@ -30,6 +30,10 @@ class SiteController extends Controller
         if ($home) {
             $tr = $home->tr() ?? $home->tr(mcms_default_locale());
             if ($tr) {
+                if (\App\Support\OnePage::active()) {
+                    return $this->renderContent($home, $tr, 'site.onepage', ['sections' => \App\Support\OnePage::sections()]);
+                }
+
                 return $this->renderContent($home, $tr, 'site.page');
             }
         }

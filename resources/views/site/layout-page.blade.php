@@ -16,6 +16,9 @@
     $pageAnim = \App\Support\Design::pageAnim();
     $elAnim = \App\Support\Design::elementAnims();
     $hasAnim = $pageAnim !== 'none' || $elAnim;
+    $bgVideos = \App\Support\Design::bgVideos();
+    $h1Cfg = (\App\Support\Design::get('h1_anim') === 'words' || \App\Support\Design::get('h1_underline') === '1')
+        ? ['a' => \App\Support\Design::get('h1_anim') === 'words' ? 1 : 0, 'u' => \App\Support\Design::get('h1_underline') === '1' ? 1 : 0, 'w' => \App\Support\Design::get('h1_word'), 's' => \App\Support\Design::get('h1_scope')] : null;
     $footerW = \App\Support\Widgets::footer();
     $sidebarW = \App\Support\Widgets::sidebar();
     $showSidebar = $sidebarW['on'] && $sidebarW['widgets'] !== [] && trim($__env->yieldContent('has_sidebar')) === '1';
@@ -54,7 +57,7 @@
     @include('site.partials.head-extra')
     @php do_action('head'); @endphp
 </head>
-<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif>
+<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($h1Cfg) data-h1="{{ json_encode($h1Cfg) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
 @include('site.partials.after-body')
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
 
@@ -82,11 +85,11 @@
             <ul>
                 @foreach ($headerMenu as $item)
                     <li @class(['has-sub' => ! empty($item['children']), ($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif>
-                        <a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif @if(url()->current() === $item['url']) aria-current="page" @endif>{{ $item['label'] }}</a>
+                        <a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif @if(url()->current() === $item['url']) aria-current="page" @endif>{{ $item['label'] }}</a>
                         @if(! empty($item['children']))
                             <ul class="sub">
                                 @foreach ($item['children'] as $child)
-                                    <li @class([($child['css_class'] ?? '') => ! empty($child['css_class'])]) @if(! empty($child['css_id'])) id="{{ $child['css_id'] }}" @endif><a href="{{ $child['url'] }}" @if($child['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $child['label'] }}</a></li>
+                                    <li @class([($child['css_class'] ?? '') => ! empty($child['css_class'])]) @if(! empty($child['css_id'])) id="{{ $child['css_id'] }}" @endif><a href="{{ \App\Support\OnePage::href($child['url']) }}" @if($child['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $child['label'] }}</a></li>
                                 @endforeach
                             </ul>
                         @endif
@@ -126,7 +129,7 @@
         <nav class="foot-links" aria-label="Footer">
             <ul>
                 @unless(in_array('menu', $fTypes, true))
-                    @foreach ($footerMenu as $item)<li><a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>@endforeach
+                    @foreach ($footerMenu as $item)<li><a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>@endforeach
                 @endunless
                 @unless(in_array('social', $fTypes, true))
                     @foreach ($socials as $k => $label)<li><a href="{{ setting('social_'.$k) }}" rel="noopener noreferrer me" target="_blank">{{ $label }}</a></li>@endforeach
@@ -149,7 +152,7 @@
         <nav aria-label="Footer">
             <ul>
                 @foreach ($footerMenu as $item)
-                    <li @class([($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif><a href="{{ $item['url'] }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>
+                    <li @class([($item['css_class'] ?? '') => ! empty($item['css_class'])]) @if(! empty($item['css_id'])) id="{{ $item['css_id'] }}" @endif><a href="{{ \App\Support\OnePage::href($item['url']) }}" @if($item['new_tab']) target="_blank" rel="noopener noreferrer" @endif>{{ $item['label'] }}</a></li>
                 @endforeach
                 <li><a href="{{ lroute('feed') }}">RSS</a></li>
             </ul>
@@ -168,7 +171,17 @@
 
 
 @include('site.partials.before-close')
-<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer></script>
+@if(\App\Support\Design::get('blur_on') === '1')
+    <div class="pblur" data-pblur aria-hidden="true"></div>
+@endif
+@if(\App\Support\Design::get('grain_on') === '1')
+    <canvas class="mgrain" data-mgrain data-color="{{ \App\Support\Design::normalizeColor(\App\Support\Design::get('grain_color')) ?: '#ffffff' }}" data-opacity="{{ max(1, min(40, (int) \App\Support\Design::get('grain_opacity'))) / 100 }}" data-density="{{ max(5, min(100, (int) \App\Support\Design::get('grain_density'))) / 100 }}" aria-hidden="true"></canvas>
+@endif
+
+@if(\App\Support\Design::get('smooth_on') === '1')
+<script src="{{ asset('assets/vendor/lenis/lenis.min.js') }}?v=1.1.18" nonce="{{ csp_nonce() }}" defer></script>
+@endif
+<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer @if(\App\Support\Design::get('smooth_on') === '1') data-smooth="{{ (float) \App\Support\Design::get('smooth_duration') }}" @endif></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php do_action('footer'); @endphp
 </body>
