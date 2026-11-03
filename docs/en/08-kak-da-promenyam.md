@@ -383,3 +383,18 @@ Tabs in **Settings** (administrator only). No migration — `opt.*` keys in `set
 - **Quick create**: “＋ New” menu in the panel top bar and an admin bar on the public site (Settings → Administration).
 - **Error log** (admin only): reads `storage/logs/*.log`, filter by level, download, clear (`ErrorLog`).
 - **Settings** now has a grouped side navigation (Site, Content, Appearance, Visitors, SEO & statistics, System).
+
+## 31. Extended statistics (needs "Update the database")
+
+Migration `2026_11_04_000001_extend_statistics.php` adds columns to `visits` and the tables `search_terms` and `click_log`. Run it from System → Migrations.
+
+- **Range:** the Statistics page has presets (today/7/30/90/365) and a custom range; it compares with the previous period of the same length (`Stats::resolveRange`, `Stats::delta`).
+- **Sources:** `Stats::classifyReferrer` sets the type (direct/search/social/AI/email/paid/referral) and name; UTM parameters are stored in `visits`.
+- **Bots:** with "Log bots separately" they are written to the log by name (`Stats::botName`) and never counted as visitors.
+- **Returning visitors:** option `stats_returning`; a pseudonymous hash (`vid`) is stored.
+- **Time on page, scroll, clicks:** `public/assets/js/site.js` sends `sendBeacon` requests to `/stats/ping` and `/stats/click`. Custom click: `data-track="Name"` on a link/button (allowed by the Sanitizer).
+- **Search terms:** `Stats::searchTerm` is called from `SiteController::search()`; zero-result searches are counted separately.
+- **Cities:** only from CDN headers (`HTTP_CF_IPCITY` / `HTTP_X_CITY`). Without a CDN the column stays empty.
+- **CSV:** `/admin/stats/export?type=pages|sources|search|clicks|visits` (the raw log is admin-only).
+- **Weekly email:** options `stats_digest*`; sent on the first visit of the chosen day, or by cron on `/stats/digest/<token>` (token shown in Settings → Statistics). Logic: `App\Support\StatsDigest`.
+- New strings are English; Bulgarian translations live in `lang/bg.json`.

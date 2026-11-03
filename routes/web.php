@@ -125,7 +125,11 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::delete('{id}', [Admin\BlockController::class, 'destroy'])->whereNumber('id')->name('destroy');
         });
 
-        Route::get('stats', [Admin\StatsController::class, 'index'])->middleware('admin:stats')->name('stats.index');
+        Route::middleware('admin:stats')->prefix('stats')->name('stats.')->group(function () {
+            Route::get('/', [Admin\StatsController::class, 'index'])->name('index');
+            Route::get('export', [Admin\StatsController::class, 'export'])->name('export');
+            Route::match(['post', 'put'], 'digest', [Admin\StatsController::class, 'digest'])->name('digest');
+        });
 
         Route::middleware('admin:subscribers')->prefix('subscribers')->name('subscribers.')->group(function () {
             Route::get('/', [Admin\SubscriberController::class, 'index'])->name('index');
@@ -198,6 +202,19 @@ Route::get('design.css', [SiteController::class, 'designCss'])->name('site.desig
 Route::get('robots.txt', [SiteController::class, 'robots'])->name('site.robots');
 
 /* ------------------------------------------------------------- public site */
+// Statistics beacons (time on page / scroll, clicks). They arrive via navigator.sendBeacon without a CSRF token and only
+// touch aggregate counters, so they are exempt from CSRF and rate limited.
+Route::post('stats/ping', fn (\Illuminate\Http\Request $r) => tap(response('', 204), fn () => \App\Support\Stats::ping($r)))
+    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('stats.ping');
+Route::post('stats/click', fn (\Illuminate\Http\Request $r) => tap(response('', 204), fn () => \App\Support\Stats::click($r)))
+    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('stats.click');
+// Weekly summary trigger for a cron job (token is shown in Settings > Statistics)
+Route::get('stats/digest/{token}', function (string $token) {
+    abort_unless(hash_equals(\App\Support\StatsDigest::token(), $token), 404);
+
+    return response(\App\Support\StatsDigest::maybeSend() ? 'sent' : 'skipped', 200)->header('Content-Type', 'text/plain');
+})->where('token', '[a-f0-9]{32}')->middleware('throttle:10,1')->name('stats.digest.cron');
+
 // Public registration (Settings > Users); 'register' is a reserved slug
 Route::get('register', [\App\Http\Controllers\RegisterController::class, 'show'])->name('register');
 Route::post('register', [\App\Http\Controllers\RegisterController::class, 'store'])->middleware('throttle:20,1')->name('register.store');

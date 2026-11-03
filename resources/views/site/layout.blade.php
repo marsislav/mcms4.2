@@ -185,7 +185,7 @@
 @if(\App\Support\Design::get('smooth_on') === '1')
 <script src="{{ asset('assets/vendor/lenis/lenis.min.js') }}?v=1.1.18" nonce="{{ csp_nonce() }}" defer></script>
 @endif
-<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer @if(\App\Support\Design::get('smooth_on') === '1') data-smooth="{{ (float) \App\Support\Design::get('smooth_duration') }}" @endif></script>
+<script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer @if(\App\Support\Options::on('stats_on') && ! (\App\Support\Options::on('stats_skip_logged') && auth()->check())) @if(\App\Support\Options::on('stats_engage') && \App\Support\Options::on('stats_log')) data-stats-ping="{{ route('site.stats.ping') }}" @endif @if(\App\Support\Options::on('stats_clicks')) data-stats-click="{{ route('site.stats.click') }}" @endif @endif @if(\App\Support\Design::get('smooth_on') === '1') data-smooth="{{ (float) \App\Support\Design::get('smooth_duration') }}" @endif></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php do_action('footer'); @endphp
 </body>

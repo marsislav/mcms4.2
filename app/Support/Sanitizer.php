@@ -28,7 +28,7 @@ class Sanitizer
     ];
 
     private const ATTRS = [
-        '*' => ['class', 'style'],
+        '*' => ['class', 'style', 'data-track'],
         'a' => ['href', 'title', 'target'],
         'img' => ['src', 'alt', 'title', 'width', 'height', 'loading'],
         'td' => ['colspan', 'rowspan'],
@@ -165,6 +165,7 @@ class Sanitizer
                 'href' => $this->safeUrl($value, ['http', 'https', 'mailto', 'tel']),
                 'src' => $tag === 'iframe' ? $this->safeEmbed($value) : $this->safeUrl($value, ['http', 'https'], false),
                 'class' => (bool) preg_match('/^[A-Za-z0-9_\- ]{1,100}$/', $value),
+                'data-track' => (bool) preg_match('/^[A-Za-z0-9 _\-.]{1,60}$/', $value),
                 'width', 'height', 'colspan', 'rowspan', 'start' => (bool) preg_match('/^\d{1,4}$/', $value),
                 'target' => $value === '_blank',
                 'aria-hidden' => $value === 'true',

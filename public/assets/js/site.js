@@ -609,4 +609,56 @@
     document.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== li) { box.hidden = true; } });
     li.addEventListener('keydown', function (e) { if (e.key === 'Escape') { box.hidden = true; } });
   }
+  // Statistics beacons (only when enabled in Settings > Statistics): time on page, scroll depth and tracked clicks.
+  // Everything is sent with navigator.sendBeacon; no cookies are used and nothing is stored in the browser.
+  (function () {
+    var me = document.currentScript || document.querySelector('script[data-stats-ping], script[data-stats-click]');
+    if (!me || !navigator.sendBeacon) { return; }
+    var send = function (url, data) {
+      var f = new FormData();
+      for (var k in data) { if (Object.prototype.hasOwnProperty.call(data, k)) { f.append(k, data[k]); } }
+      try { navigator.sendBeacon(url, f); } catch (e) { /* ignore */ }
+    };
+
+    var pingUrl = me.getAttribute('data-stats-ping');
+    if (pingUrl) {
+      var shown = 0, visibleSince = document.visibilityState === 'visible' ? Date.now() : 0, maxScroll = 0, sent = false;
+      var measure = function () {
+        var h = document.documentElement, total = Math.max(h.scrollHeight, document.body ? document.body.scrollHeight : 0) - window.innerHeight;
+        var pct = total <= 0 ? 100 : Math.round(((window.pageYOffset || h.scrollTop) / total) * 100);
+        if (pct > maxScroll) { maxScroll = Math.min(100, pct); }
+      };
+      window.addEventListener('scroll', measure, { passive: true });
+      measure();
+      var flush = function () {
+        if (visibleSince) { shown += Date.now() - visibleSince; visibleSince = 0; }
+        var sec = Math.round(shown / 1000);
+        if (sec < 1 && sent) { return; }
+        sent = true;
+        send(pingUrl, { p: location.pathname + location.search, t: sec, s: maxScroll });
+      };
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') { flush(); } else { visibleSince = Date.now(); }
+      });
+      window.addEventListener('pagehide', flush);
+    }
+
+    var clickUrl = me.getAttribute('data-stats-click');
+    if (clickUrl) {
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest ? e.target.closest('[data-track], a[href]') : null;
+        if (!el) { return; }
+        var kind = 'custom', label = el.getAttribute('data-track');
+        if (!label) {
+          var href = el.getAttribute('href') || '';
+          if (/^mailto:/i.test(href)) { kind = 'mailto'; label = href.slice(7).split('?')[0]; }
+          else if (/^tel:/i.test(href)) { kind = 'tel'; label = href.slice(4); }
+          else if (/\.(pdf|docx?|xlsx?|pptx?|zip|rar|7z|csv|txt|mp3|mp4)(\?|#|$)/i.test(href)) { kind = 'download'; label = href.split('#')[0].split('?')[0].split('/').pop(); }
+          else if (el.hostname && el.hostname !== location.hostname && /^https?:$/.test(el.protocol)) { kind = 'external'; label = el.hostname; }
+          else { return; }
+        }
+        send(clickUrl, { k: kind, l: label });
+      }, true);
+    }
+  })();
 })();

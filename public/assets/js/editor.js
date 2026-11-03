@@ -17,8 +17,8 @@
       var editor = this.editor;
       editor.ui.componentFactory.add('mediaLibrary', function (locale) {
         var view = new ButtonView(locale);
-        view.set({ label: T('Медия'), tooltip: true, withText: true });
-        if (CK.icons && CK.icons.IconImage) { view.set({ icon: CK.icons.IconImage, withText: false, label: T('Медия (библиотека)') }); }
+        view.set({ label: T('Media'), tooltip: true, withText: true });
+        if (CK.icons && CK.icons.IconImage) { view.set({ icon: CK.icons.IconImage, withText: false, label: T('Media library') }); }
         view.on('execute', function () {
           if (typeof window.mcmsOpenPicker !== 'function') { return; }
           window.mcmsOpenPicker(function (m) {
@@ -39,7 +39,7 @@
 
   /* ---- plugin list: everything free in the ckeditor5 package that makes sense here ----
    * Not included on purpose: Emoji (loads its data from a CDN), premium/cloud (CKBox, EasyImage, AI, comments…), upload adapters
-   * (replaced by SimpleUploadAdapter -> our own /media/editor-upload endpoint), HtmlEmbed / GeneralHtmlSupport (raw HTML is sanitised server-side anyway),
+   * (replaced by SimpleUploadAdapter -> our own /media/editor-upload endpoint), HtmlEmbed (raw HTML is sanitised server-side anyway; GeneralHtmlSupport is on and mirrors the server allow-list),
    * TodoList / Bookmark (need <input> / id which the sanitiser strips), Markdown. */
   var names = [
     'Essentials', 'Paragraph', 'Heading', 'Autoformat', 'TextTransformation', 'PasteFromOffice', 'SelectAll', 'Undo',
@@ -55,7 +55,7 @@
     'MediaEmbed', 'AutoMediaEmbed',
     'SpecialCharacters', 'SpecialCharactersEssentials', 'SpecialCharactersArrows', 'SpecialCharactersCurrency',
     'SpecialCharactersLatin', 'SpecialCharactersMathematical', 'SpecialCharactersText',
-    'FindAndReplace', 'ShowBlocks', 'SourceEditing', 'WordCount', 'AccessibilityHelp', 'Fullscreen'
+    'GeneralHtmlSupport', 'FindAndReplace', 'ShowBlocks', 'SourceEditing', 'WordCount', 'AccessibilityHelp', 'Fullscreen'
   ];
   var plugins = [];
   var missing = [];
@@ -63,7 +63,7 @@
   plugins.push(MediaLibrary);
   if (window.McmsGridLayout) { plugins.push(window.McmsGridLayout); }
   if (window.McmsFontAwesome) { plugins.push(window.McmsFontAwesome); }
-  if (missing.length && window.console) { console.warn(T('CKEditor: липсват плъгини:'), missing.join(', ')); }
+  if (missing.length && window.console) { console.warn(T('CKEditor: missing plugins:'), missing.join(', ')); }
 
   var meta = function (n) { var m = document.querySelector('meta[name="' + n + '"]'); return m ? m.content : ''; };
   var cls = function (name, className, title) { return { name: name, className: className, title: title }; };
@@ -72,6 +72,18 @@
     licenseKey: 'GPL',
     language: T.lang,
     plugins: plugins,
+    /* General HTML Support: without it CKEditor silently drops every tag/class/attribute it has no feature for (div/span classes, iframes,
+       custom markup typed in "Source"). This list mirrors App\Support\Sanitizer, which stays the real security gate on save. */
+    htmlSupport: {
+      allow: [
+        { name: /^(div|span|p|h[2-5]|ul|ol|li|blockquote|pre|code|figure|figcaption|table|thead|tbody|tfoot|tr|th|td|hr|mark|caption|colgroup|col|a|img|iframe)$/, classes: true, styles: true },
+        { name: 'a', attributes: ['target', 'title'] },
+        { name: /^(a|span|div|p)$/, attributes: ['data-track'] },
+        { name: 'iframe', attributes: ['src', 'width', 'height', 'title', 'allowfullscreen', 'loading'] },
+        { name: /^(td|th)$/, attributes: ['colspan', 'rowspan', 'scope'] },
+        { name: 'span', attributes: ['aria-hidden'] }
+      ]
+    },
     /* Image upload (drag & drop, paste, toolbar button): stored in the media library by the server (re-encoded, random name) */
     simpleUpload: {
       uploadUrl: meta('mcms-admin') + '/media/editor-upload',
@@ -91,10 +103,10 @@
     },
     heading: {
       options: [
-        { model: 'paragraph', title: T('Параграф'), class: 'ck-heading_paragraph' },
-        { model: 'heading2', view: 'h2', title: T('Заглавие 2'), class: 'ck-heading_heading2' },
-        { model: 'heading3', view: 'h3', title: T('Заглавие 3'), class: 'ck-heading_heading3' },
-        { model: 'heading4', view: 'h4', title: T('Заглавие 4'), class: 'ck-heading_heading4' }
+        { model: 'paragraph', title: T('Pagarrhaph'), class: 'ck-heading_paragraph' },
+        { model: 'heading2', view: 'h2', title: T('H2'), class: 'ck-heading_heading2' },
+        { model: 'heading3', view: 'h3', title: T('H3'), class: 'ck-heading_heading3' },
+        { model: 'heading4', view: 'h4', title: T('H4'), class: 'ck-heading_heading4' }
       ]
     },
     alignment: {
@@ -112,7 +124,7 @@
     link: {
       addTargetToExternalLinks: true,
       defaultProtocol: 'https://',
-      decorators: { openInNewTab: { mode: 'manual', label: T('Отвори в нов прозорец'), attributes: { target: '_blank' } } }
+      decorators: { openInNewTab: { mode: 'manual', label: T('Open in new tab'), attributes: { target: '_blank' } } }
     },
     list: { properties: { styles: true, startIndex: true, reversed: false } },
     image: {
@@ -172,7 +184,7 @@
     host.parentNode.insertBefore(box, host.nextSibling);
     var wc = editor.plugins.has('WordCount') ? editor.plugins.get('WordCount') : null;
     if (!wc) { return; }
-    var upd = function () { box.textContent = T('Думи: ') + wc.words + T(' · Знаци: ') + wc.characters; };
+    var upd = function () { box.textContent = T('Words: ') + wc.words + T(' · Знаци: ') + wc.characters; };
     wc.on('update', upd);
     upd();
   }

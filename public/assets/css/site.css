@@ -323,8 +323,8 @@ body>.mbg-video{position:fixed}
 /* ring */
 .pbs-ring .pb-list{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1.5rem}
 .pbs-ring .pb-item{position:relative;text-align:center}
-.pb-svg{display:block;width:100%;max-width:130px;margin:0 auto;transform:rotate(-90deg)}
-.pb-rt,.pb-rf{fill:none;stroke-width:3}
+.pb-svg{display:block;width:100%;max-width:130px;height:auto;margin:0 auto;overflow:visible;shape-rendering:geometricPrecision}
+.pb-rt,.pb-rf{fill:none;stroke-width:8;shape-rendering:geometricPrecision}
 .pb-rt{stroke:var(--pb-t)}
 .pb-rf{stroke:var(--pb-c);stroke-linecap:round;stroke-dasharray:100 100;stroke-dashoffset:calc(100 - var(--p))}
 .pb-mid{position:absolute;top:0;left:50%;width:100%;max-width:130px;aspect-ratio:1;transform:translateX(-50%);display:grid;place-items:center;font-size:1.5rem}

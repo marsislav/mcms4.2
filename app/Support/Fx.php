@@ -125,7 +125,7 @@ class Fx
             $label = '<span class="pb-label">'.self::e($r['label']).'</span>';
             $h .= '<div class="pb-item" style="'.$item.'" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.$p.'" aria-label="'.self::e($r['label']).'">';
             if ($style === 'ring') {
-                $h .= '<svg class="pb-svg" viewBox="0 0 36 36" aria-hidden="true"><circle class="pb-rt" cx="18" cy="18" r="15.9155"/><circle class="pb-rf" cx="18" cy="18" r="15.9155" pathLength="100"/></svg>'
+                $h .= '<svg class="pb-svg" viewBox="0 0 120 120" aria-hidden="true"><circle class="pb-rt" cx="60" cy="60" r="54"/><circle class="pb-rf" cx="60" cy="60" r="54" pathLength="100" transform="rotate(-90 60 60)"/></svg>'
                     .'<div class="pb-mid">'.$val.'</div><div class="pb-cap">'.$label.$note.'</div>';
             } elseif ($style === 'dots') {
                 $on = (int) round($p / 5);

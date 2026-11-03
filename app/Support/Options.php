@@ -53,10 +53,13 @@ class Options
         // writing (extra)
         'revisions_keep' => '20',
         // seo & navigation
-        'breadcrumbs' => '1', 'bc_separator' => '›', 'bc_show_current' => '1', 'bc_on_pages' => '1', 'bc_on_posts' => '1', 'bc_on_lists' => '1',
+        'breadcrumbs' => '1', 'bc_separator' => '›', 'bc_show_current' => '1', 'bc_on_pages' => '1', 'bc_on_posts' => '1', 'bc_on_lists' => '1', 'bc_home_icon' => '', 'bc_home_icon_only' => '0',
         'jsonld' => '1', 'notfound_log' => '1', 'notfound_keep_days' => '90',
         // stats
         'stats_on' => '1', 'stats_skip_logged' => '1', 'stats_skip_bots' => '1', 'stats_keep_days' => '365', 'popular_days' => '30',
+        'stats_log' => '1', 'stats_log_ip' => '1', 'stats_anon_ip' => '1', 'stats_log_keep_days' => '90',
+        'stats_log_bots' => '1', 'stats_returning' => '0', 'stats_engage' => '1', 'stats_clicks' => '1', 'stats_search_terms' => '1',
+        'stats_digest' => '0', 'stats_digest_dow' => '1', 'stats_digest_to' => '',
         // live search
         'livesearch' => '1', 'live_min' => '2', 'live_max' => '6',
         // newsletter
@@ -366,6 +369,8 @@ class Options
                 foreach (['breadcrumbs', 'bc_show_current', 'bc_on_pages', 'bc_on_posts', 'bc_on_lists', 'jsonld', 'notfound_log'] as $k) {
                     $v[$k] = $bool($k);
                 }
+                $v['bc_home_icon'] = (string) \App\Support\Widgets::cleanIcon($in['bc_home_icon'] ?? null);
+                $v['bc_home_icon_only'] = $bool('bc_home_icon_only');
                 $v['bc_separator'] = $enum('bc_separator', array_keys(self::BC_SEPARATORS), '›');
                 $v['notfound_keep_days'] = $int('notfound_keep_days', 1, 3650, 90);
                 $text(['bc_home'], 60);
@@ -376,6 +381,17 @@ class Options
                     $v[$k] = $bool($k);
                 }
                 $v['stats_keep_days'] = $int('stats_keep_days', 7, 3650, 365);
+                foreach (['stats_log', 'stats_log_ip', 'stats_anon_ip', 'stats_log_bots', 'stats_returning', 'stats_engage', 'stats_clicks', 'stats_search_terms', 'stats_digest'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $v['stats_digest_dow'] = $int('stats_digest_dow', 1, 7, 1);
+                $to = trim((string) ($in['stats_digest_to'] ?? ''));
+                if ($to !== '' && ! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+                    $err[] = __('Invalid email address.');
+                    $to = '';
+                }
+                $v['stats_digest_to'] = mb_substr($to, 0, 190);
+                $v['stats_log_keep_days'] = $int('stats_log_keep_days', 1, 3650, 90);
                 $v['popular_days'] = $int('popular_days', 0, 3650, 30);
                 break;
 

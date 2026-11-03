@@ -102,7 +102,7 @@ class SiteController extends Controller
             }
         }
         $trail[] = [$tr->title, null];
-        $isHome = request()->routeIs('home');
+        $isHome = request()->routeIs('site.home', 'site.l.home') || (bool) $content->is_home;
 
         return response()->view($view, ['content' => $content, 'tr' => $tr, 'seo' => $seo, 'preview' => ! $content->isVisible(), 'switch' => $alternates, 'crumbs' => $isHome ? [] : $this->crumbs($trail)] + $extra);
     }
@@ -268,6 +268,9 @@ class SiteController extends Controller
                 ->whereHas('content', fn ($c) => $c->visible())
                 ->where(fn ($w) => $w->where('title', 'like', $like)->orWhere('excerpt', 'like', $like)->orWhere('body', 'like', $like))
                 ->with(['content.featured'])->orderByDesc('id')->paginate(10)->withQueryString();
+            if ((int) $request->query('page', 1) <= 1) {
+                \App\Support\Stats::searchTerm($q, $results->total());
+            }
         }
 
         return view('site.search', [
