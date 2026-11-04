@@ -2,15 +2,35 @@
 (function () {
   'use strict';
 
-  // Close the mobile menu after choosing a link
+  // Mobile menu: close after choosing a link, on Esc and on a click outside the header; keyboard support for the burger
   var toggle = document.getElementById('menu-toggle');
   if (toggle) {
+    var burger = document.querySelector('label.burger[for="menu-toggle"]');
+    var sync = function () { if (burger) { burger.setAttribute('aria-expanded', toggle.checked ? 'true' : 'false'); } };
+    // the sheet opens as a circle from the burger and fills the rest of the screen below the header
+    var place = function () {
+      var nav = document.querySelector('nav.primary'), head = document.querySelector('.site-header');
+      if (!nav || !head || !burger) { return; }
+      if (head.getBoundingClientRect().top < 0) { window.scrollTo(0, 0); }
+      var hb = head.getBoundingClientRect(), bb = burger.getBoundingClientRect(), nb = nav.getBoundingClientRect();
+      nav.style.setProperty('--ox', (bb.left + bb.width / 2) + 'px');
+      nav.style.setProperty('--oy', (bb.top + bb.height / 2 - hb.bottom) + 'px');
+      nav.style.setProperty('--mh', Math.max(240, window.innerHeight - hb.bottom + 2) + 'px');
+    };
+    if (burger) { burger.addEventListener('click', function () { if (!toggle.checked) { place(); } }); burger.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !toggle.checked) { place(); } }); }
+    toggle.addEventListener('change', sync);
     document.addEventListener('click', function (e) {
-      if (toggle.checked && e.target.closest('.primary a')) { toggle.checked = false; }
+      if (!toggle.checked) { return; }
+      if (e.target.closest('.primary a') || !e.target.closest('.site-header')) { toggle.checked = false; sync(); }
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { toggle.checked = false; }
+      if (e.key === 'Escape' && toggle.checked) { toggle.checked = false; sync(); if (burger) { burger.focus(); } }
     });
+    if (burger) {
+      burger.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.checked = !toggle.checked; sync(); }
+      });
+    }
   }
 
   // Wrap wide tables so they scroll horizontally instead of breaking the layout

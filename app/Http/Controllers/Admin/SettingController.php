@@ -251,6 +251,7 @@ class SettingController extends Controller
             'op_stagger' => 'required|integer|min:0|max:400',
             'grain_density' => 'required|integer|min:5|max:100',
             'smooth_duration' => 'required|numeric|min:0.4|max:3',
+            'menu_style' => ['required', 'in:'.implode(',', array_keys(Design::MENU_STYLES))],
             'progress_pos' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_POS))],
             'progress_scope' => ['required', 'in:'.implode(',', array_keys(Design::PROGRESS_SCOPE))],
             'topbar' => 'nullable|array',

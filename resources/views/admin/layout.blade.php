@@ -6,6 +6,8 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="mcms-admin" content="{{ admin_url() }}">
+    <meta name="mcms-lightbox-default" content="{{ \App\Support\Options::on('lightbox_on') && \App\Support\Options::on('lightbox_default') ? '1' : '0' }}">
+    <meta name="mcms-lightbox-all" content="{{ \App\Support\Options::on('lightbox_on') && \App\Support\Options::on('lightbox_all') ? '1' : '0' }}">
     <title>@yield('title', __('Табло')) — {{ setting('site_name', 'mCMS') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome/css/all.min.css') }}?v=7.3.1">
     <link rel="stylesheet" href="{{ asset_v('assets/css/admin.css') }}">

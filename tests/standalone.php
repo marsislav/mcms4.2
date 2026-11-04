@@ -274,7 +274,11 @@ $check('legacy: locale + category', Options::legacyPath('en/blog/category/x', 'n
 $check('legacy: tag only', Options::legacyPath('blog/tag/x', 'blog', 'category', 'labels') === 'blog/labels/x');
 $check('legacy: unchanged / unrelated -> null', Options::legacyPath('blog/foo', 'blog', 'category', 'tag') === null && Options::legacyPath('about', 'news', 'c', 't') === null);
 $r = $o('media', ['upload_max_mb' => '500', 'image_max_px' => '', 'thumb_px' => '50']);
-$check('media: clamp / empty = default', $r['values'] === ['upload_max_mb' => '64', 'image_max_px' => '', 'thumb_px' => '100']);
+$check('media: clamp / empty = default', $r['values']['upload_max_mb'] === '64' && $r['values']['image_max_px'] === '' && $r['values']['thumb_px'] === '100');
+$r = $o('media', ['lightbox_on' => '1', 'lightbox_fx' => 'evil', 'lightbox_bg' => 'light', 'lightbox_opacity' => '5', 'lightbox_auto' => '99']);
+$check('lightbox: unknown effect -> fade, bg kept', $r['values']['lightbox_fx'] === 'fade' && $r['values']['lightbox_bg'] === 'light');
+$check('lightbox: opacity and interval clamped', $r['values']['lightbox_opacity'] === '30' && $r['values']['lightbox_auto'] === '30');
+$check('lightbox: unchecked boxes = 0', $r['values']['lightbox_loop'] === '0' && $r['values']['lightbox_on'] === '1');
 $r = $o('scripts', ['scripts_head' => '<meta name="x">', 'csp_hosts' => "https://www.googletagmanager.com/\nhttp://evil.com\nhttps://a.b';x\nHTTPS://Www.Google-Analytics.com"]);
 $check('scripts: hosts validated, https only, normalised', $r['values']['csp_hosts'] === "https://www.googletagmanager.com\nhttps://www.google-analytics.com" && count($r['errors']) === 2);
 $GLOBALS['S'] = ['opt.scripts_head' => '<script nonce="evil" src="a.js"></script><SCRIPT>x()</SCRIPT><p>hi</p>'];
@@ -445,6 +449,17 @@ $check('csv: formula injection neutralised', Stats::csvCell('=HYPERLINK("x")') =
 $check('csv: normal text untouched', Stats::csvCell('hello') === 'hello');
 $check('sanitizer: data-track kept', str_contains((new Sanitizer)->clean('<a href="https://a.bg" data-track="Buy now">x</a>'), 'data-track="Buy now"'));
 $check('sanitizer: bad data-track dropped', ! str_contains((new Sanitizer)->clean('<a href="https://a.bg" data-track="&quot;><script>">x</a>'), 'data-track'));
+
+// gallery / lightbox markup survives the sanitiser
+$gal = '<div class="mc-gallery mc-g-grid mc-g-c3 mc-g-gap-m mc-g-r-43 mc-g-cap-below mc-g-ca-l mc-g-h-zoom mc-g-rad-s mc-g-shadow mc-g-lb"><figure class="mc-g-item"><a href="/uploads/a.jpg"><img src="/uploads/a-t.jpg" alt="A" loading="lazy"></a><figcaption>Cap</figcaption></figure></div>';
+$out = (new Sanitizer)->clean($gal);
+$check('gallery: long class list kept', str_contains($out, 'mc-g-shadow mc-g-lb'));
+$check('gallery: figure, link, image and caption kept', str_contains($out, '<figcaption>Cap</figcaption>') && str_contains($out, 'href="/uploads/a.jpg"') && str_contains($out, 'src="/uploads/a-t.jpg"'));
+$check('gallery: script in caption removed', ! str_contains((new Sanitizer)->clean('<div class="mc-gallery"><figure><figcaption><script>alert(1)</script>x</figcaption></figure></div>'), '<script'));
+$check('gallery: javascript: link removed', ! str_contains((new Sanitizer)->clean('<a href="javascript:alert(1)"><img src="/a.jpg"></a>'), 'javascript:'));
+$check('lightbox: data-lightbox 1/0 kept', str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="1">'), 'data-lightbox="1"') && str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="0">'), 'data-lightbox="0"'));
+$check('lightbox: other data-lightbox values dropped', ! str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="x&quot; onerror=alert(1)">'), 'data-lightbox'));
+$check('columns: width classes kept', str_contains((new Sanitizer)->clean('<div class="mc-row mc-cols-3"><div class="mc-col mc-span-1">a</div><div class="mc-col mc-span-2">b</div></div>'), 'mc-cols-3'));
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

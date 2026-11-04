@@ -12,8 +12,9 @@
 .mc-span-9{grid-column:span 9}.mc-span-10{grid-column:span 10}.mc-span-11{grid-column:span 11}.mc-span-12{grid-column:span 12}
 .mc-col img,.mc-col iframe,.mc-col table{max-width:100%}
 @media (max-width:900px){
-  .mc-row:not(.mc-cols-1):not(.mc-cols-2){--n:2}
-  .mc-row:not(.mc-cols-1):not(.mc-cols-2)>.mc-col{grid-column:auto}
+  /* rows with 3+ columns become 2 columns on tablets; two-column rows keep their proportions (e.g. 1/3 + 2/3) */
+  .mc-row:has(>.mc-col:nth-child(3)){--n:2}
+  .mc-row:has(>.mc-col:nth-child(3))>.mc-col{grid-column:auto}
 }
 @media (max-width:640px){
   .mc-row{--n:1!important;gap:1rem}

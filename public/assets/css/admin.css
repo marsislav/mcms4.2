@@ -270,3 +270,18 @@ video.media-preview{background:#000}
 .bars.two .bar.alt{background:#f59e0b;flex:0 0 3px;opacity:1}
 .mini{display:flex;align-items:flex-end;gap:2px;height:70px}.mini span{flex:1;background:var(--accent);min-height:2px;height:calc(var(--h) * 1%);opacity:.85;border-radius:2px 2px 0 0}
 .mini-labels{display:flex;gap:2px;font-size:.65rem;color:var(--muted,#888)}.mini-labels span{flex:1;text-align:center}
+
+/* gallery dialog (editor) */
+.mc-gdlg .modal-box{width:min(1100px,100%)}
+.mc-gdlg-body{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:1rem;padding:1rem;overflow:auto;min-height:0}
+.mc-gdlg-list{display:flex;flex-direction:column;gap:.6rem;min-width:0}
+.mc-gdlg-row{display:grid;grid-template-columns:84px minmax(0,1fr) auto;gap:.7rem;align-items:start;padding:.5rem;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.mc-gdlg-row.drag{opacity:.4}
+.mc-gdlg-row>img{width:84px;height:64px;object-fit:cover;border-radius:4px;cursor:grab}
+.mc-gdlg-fields{display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.mc-gdlg-fields textarea,.mc-gdlg-fields input{width:100%;box-sizing:border-box}
+.mc-gdlg-tools{display:flex;flex-direction:column;gap:.25rem}
+.mc-gdlg-opts{display:flex;flex-direction:column;gap:.7rem;align-content:start}
+.mc-gdlg-opts label{display:flex;flex-direction:column;gap:.2rem;font-size:.9rem}
+.mc-gdlg-opts label.check{flex-direction:row;align-items:center;gap:.4rem}
+@media (max-width:760px){.mc-gdlg-body{grid-template-columns:1fr}}

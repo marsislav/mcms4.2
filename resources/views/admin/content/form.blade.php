@@ -189,6 +189,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset_v('assets/css/grid.css') }}">
+<link rel="stylesheet" href="{{ asset_v('assets/css/gallery.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/vendor/ckeditor5/ckeditor5.css') }}?v=49.0.0">
 @endpush
 @push('scripts')
@@ -196,5 +197,6 @@
 @if(app()->getLocale() === 'bg')<script src="{{ asset('assets/vendor/ckeditor5/translations/bg.umd.js') }}?v=49.0.0" nonce="{{ csp_nonce() }}" defer></script>@endif
 <script src="{{ asset_v('assets/js/editor-fa.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 <script src="{{ asset_v('assets/js/editor-grid.js') }}" nonce="{{ csp_nonce() }}" defer></script>
+<script src="{{ asset_v('assets/js/editor-gallery.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 <script src="{{ asset_v('assets/js/editor.js') }}" nonce="{{ csp_nonce() }}" defer></script>
 @endpush

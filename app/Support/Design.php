@@ -105,7 +105,7 @@ class Design
     public const DEFAULTS = [
         'bg' => '', 'fg' => '', 'heading' => '', 'accent' => '', 'header_bg' => '', 'footer_bg' => '',
         'font_body' => '', 'font_heading' => '', 'font_menu' => '', 'font_logo' => '', 'font_size' => '',
-        'logo_size' => 'auto', 'sticky_header' => '1',
+        'logo_size' => 'auto', 'sticky_header' => '1', 'menu_style' => 'circle',
         'anim_page_type' => 'none', 'anim_page_on' => '1', 'anim_el_on' => '1', 'anim_speed' => '600', 'anim_pause_btn' => '0',
         'el_header' => 'none', 'el_logo' => 'none', 'el_menu' => 'none', 'el_cards' => 'none',
         'el_images' => 'none', 'el_headings' => 'none', 'el_footer' => 'none',
@@ -123,6 +123,8 @@ class Design
 
     public const COLOR_KEYS = ['bg', 'fg', 'heading', 'accent', 'header_bg', 'footer_bg', 'topbar_bg', 'topbar_fg', 'progress_color', 'progress_bg', 'grain_color', 'h1_underline_color', 'gd_btn_bg', 'gd_btn_fg', 'gd_btn2_bg', 'gd_btn2_fg', 'gd_link', 'gd_reopen_bg'];
     public const BOOL_KEYS = ['sticky_header', 'anim_page_on', 'anim_el_on', 'anim_pause_btn', 'topbar_on', 'topbar_mobile', 'progress_on', 'blur_on', 'smooth_on', 'bg_video_mobile', 'grain_on', 'h1_underline', 'gd_glass', 'gd_dim', 'gd_btn2_ghost', 'op_on', 'op_children', 'op_dots', 'op_snap', 'op_parallax', 'op_full'];
+    /** Mobile menu animation (body class mm-<key>, CSS in assets/css/site.css). */
+    public const MENU_STYLES = ['circle' => 'Circle reveal', 'curtain' => 'Split curtains', 'drawer' => 'Side drawer', 'glass' => 'Glass dropdown'];
     public const PROGRESS_POS = ['top' => 'Най-горе', 'bottom' => 'Най-долу'];
     public const PROGRESS_SCOPE = ['posts' => 'Само публикации', 'content' => 'Публикации и страници', 'all' => 'Навсякъде'];
     public const MAX_COLS = 4;

@@ -24,7 +24,10 @@
           window.mcmsOpenPicker(function (m) {
             editor.focus();
             if (m.image) {
-              editor.execute('insertImage', { source: [{ src: m.url, alt: m.alt || '' }] });
+              var src = { src: m.url, alt: m.alt || '' };
+              // lightbox default from Settings > Media (switchable per image in the image toolbar)
+              if (editor.commands.get('mcImageLightbox') && meta('mcms-lightbox-default') === '1') { src.mcLightbox = '1'; }
+              editor.execute('insertImage', { source: [src] });
             } else {
               editor.model.change(function (w) {
                 editor.model.insertContent(w.createText(m.name || m.url, { linkHref: m.url }));
@@ -62,6 +65,8 @@
   names.forEach(function (n) { if (CK[n]) { plugins.push(CK[n]); } else { missing.push(n); } });
   plugins.push(MediaLibrary);
   if (window.McmsGridLayout) { plugins.push(window.McmsGridLayout); }
+  if (window.McmsGallery) { plugins.push(window.McmsGallery); }
+  if (window.McmsImageLightbox) { plugins.push(window.McmsImageLightbox); }
   if (window.McmsFontAwesome) { plugins.push(window.McmsFontAwesome); }
   if (missing.length && window.console) { console.warn(T('CKEditor: missing plugins:'), missing.join(', ')); }
 
@@ -95,7 +100,7 @@
         'undo', 'redo', '|', 'heading', '|',
         'bold', 'italic', 'underline', 'strikethrough', 'subscript', 'superscript', 'code', 'removeFormat', '|',
         'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', 'highlight', '|',
-        'link', 'mediaLibrary', 'uploadImage', 'insertImage', 'mediaEmbed', 'insertTable', 'gridLayout', 'gridColSpan', 'gridAddCol', 'gridRemoveCol', 'gridRemoveRow', '|',
+        'link', 'mediaLibrary', 'uploadImage', 'insertImage', 'mediaEmbed', 'insertTable', 'mcGallery', 'gridLayout', 'gridColSpan', 'gridAddCol', 'gridRemoveCol', 'gridRemoveRow', '|',
         'bulletedList', 'numberedList', 'outdent', 'indent', 'alignment', '|',
         'blockQuote', 'codeBlock', 'horizontalLine', 'pageBreak', 'specialCharacters', 'faIcons', '|',
         'findAndReplace', 'selectAll', 'showBlocks', 'sourceEditing', 'fullscreen', 'accessibilityHelp'
@@ -131,7 +136,7 @@
       toolbar: [
         'imageTextAlternative', 'toggleImageCaption', '|',
         'imageStyle:inline', 'imageStyle:block', 'imageStyle:alignLeft', 'imageStyle:alignRight', 'imageStyle:side', '|',
-        'resizeImage', 'linkImage'
+        'resizeImage', 'linkImage', '|', 'mcImageLightbox'
       ],
       upload: { types: ['jpeg', 'png', 'gif', 'webp'] },
       insert: { integrations: ['upload', 'url'], type: 'auto' }

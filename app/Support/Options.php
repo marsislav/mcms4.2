@@ -46,6 +46,9 @@ class Options
         'blog_base' => 'blog', 'category_base' => 'category', 'tag_base' => 'tag',
         // media
         'upload_max_mb' => '', 'image_max_px' => '', 'thumb_px' => '',
+        'lightbox_on' => '1', 'lightbox_default' => '1', 'lightbox_all' => '0', 'lightbox_fx' => 'fade', 'lightbox_loop' => '1', 'lightbox_count' => '1',
+        'lightbox_caps' => '1', 'lightbox_thumbs' => '0', 'lightbox_bg' => 'dark', 'lightbox_opacity' => '92', 'lightbox_backdrop' => '1',
+        'lightbox_zoom' => '1', 'lightbox_auto' => '0', 'lightbox_dl' => '0',
         // scripts
         'scripts_head' => '', 'scripts_footer' => '', 'csp_hosts' => '', 'custom_css' => '',
         // maintenance
@@ -167,6 +170,17 @@ class Options
     }
 
     /** Admin-supplied HTML for <head> / end of <body>, with the CSP nonce added to every <script>. */
+    /** Lightbox settings for assets/js/gallery.js (JSON in data-lb). */
+    public static function lightboxJson(): string
+    {
+        return json_encode([
+            'fx' => self::get('lightbox_fx'), 'loop' => (int) self::on('lightbox_loop'), 'count' => (int) self::on('lightbox_count'),
+            'caps' => (int) self::on('lightbox_caps'), 'thumbs' => (int) self::on('lightbox_thumbs'), 'bg' => self::get('lightbox_bg'),
+            'op' => (int) self::get('lightbox_opacity'), 'backdrop' => (int) self::on('lightbox_backdrop'), 'zoom' => (int) self::on('lightbox_zoom'),
+            'auto' => (int) self::get('lightbox_auto'), 'dl' => (int) self::on('lightbox_dl'), 'all' => (int) self::on('lightbox_all'), 'off' => (int) ! self::on('lightbox_on'),
+        ], JSON_UNESCAPED_SLASHES);
+    }
+
     public static function scripts(string $where, string $nonce): string
     {
         $html = self::get($where === 'head' ? 'scripts_head' : 'scripts_footer');
@@ -329,6 +343,13 @@ class Options
                 $v['upload_max_mb'] = isset($in['upload_max_mb']) && $in['upload_max_mb'] !== '' ? $int('upload_max_mb', 1, 64, 8) : '';
                 $v['image_max_px'] = isset($in['image_max_px']) && $in['image_max_px'] !== '' ? $int('image_max_px', 800, 6000, 2560) : '';
                 $v['thumb_px'] = isset($in['thumb_px']) && $in['thumb_px'] !== '' ? $int('thumb_px', 100, 1200, 480) : '';
+                foreach (['lightbox_on', 'lightbox_default', 'lightbox_all', 'lightbox_loop', 'lightbox_count', 'lightbox_caps', 'lightbox_thumbs', 'lightbox_backdrop', 'lightbox_zoom', 'lightbox_dl'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $v['lightbox_fx'] = $enum('lightbox_fx', ['fade', 'zoom', 'slide', 'none'], 'fade');
+                $v['lightbox_bg'] = $enum('lightbox_bg', ['dark', 'black', 'light'], 'dark');
+                $v['lightbox_opacity'] = $int('lightbox_opacity', 30, 100, 92);
+                $v['lightbox_auto'] = $int('lightbox_auto', 0, 30, 0);
                 break;
 
             case 'scripts':

@@ -398,3 +398,9 @@ Migration `2026_11_04_000001_extend_statistics.php` adds columns to `visits` and
 - **CSV:** `/admin/stats/export?type=pages|sources|search|clicks|visits` (the raw log is admin-only).
 - **Weekly email:** options `stats_digest*`; sent on the first visit of the chosen day, or by cron on `/stats/digest/<token>` (token shown in Settings → Statistics). Logic: `App\Support\StatsDigest`.
 - New strings are English; Bulgarian translations live in `lang/bg.json`.
+
+## 32. Gallery, lightbox and column widths
+
+- **Gallery:** "Gallery" button in the editor (`public/assets/js/editor-gallery.js`). The dialog collects images from the media library or by upload, with a caption and alt text for each, layout (grid / masonry / mosaic rows / slider), columns, gap, shape, captions, hover effect, corners, shadow and lightbox. It is stored as plain HTML with `mc-gallery mc-g-…` classes (styles: `assets/css/gallery.css`). Double-click or "✎" on the gallery re-opens it.
+- **Lightbox:** `assets/js/gallery.js` (Settings → Media → Lightbox, passed in by `Options::lightboxJson()`). For a single image use "Open in lightbox" in the image toolbar (`<img data-lightbox="1">`; "0" = never). New images follow the default from the settings.
+- **Column widths:** the "Columns (row)" dropdown offers presets (1/3+2/3, 2/3+1/3, 1/4+3/4, 3/4+1/4, 1/5+4/5, 1/4+1/2+1/4 …) and "Custom widths…" (e.g. `1:2:1`). Choosing one inside an existing row re-shapes it. Stored as `mc-cols-N` + `mc-span-K` (N = sum of the parts). Two-column rows keep their proportions on tablets.

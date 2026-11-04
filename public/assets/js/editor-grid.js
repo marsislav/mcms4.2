@@ -2,7 +2,7 @@
  *
  * Stored HTML (plain, sanitiser friendly — only classes):
  *   <div class="mc-row mc-cols-3"><div class="mc-col mc-span-1">…</div> … </div>
- * `mc-cols-N`  = number of grid tracks in the row (1–12)
+ * `mc-cols-N`  = number of grid tracks in the row (1–12; for width presets N = sum of the spans, e.g. 1/3+2/3 = mc-cols-3 with spans 1 and 2)
  * `mc-span-K`  = how many tracks a column occupies (1–N)
  * CSS (assets/css/grid.css) makes it 2 columns on tablets and 1 column on phones.
  *
@@ -35,23 +35,66 @@
   }
 
   /* ---------------- commands ---------------- */
+  /* spec: a number = that many equal columns, or an array of spans, e.g. [1, 2] = 1/3 + 2/3 (tracks = sum of the spans) */
+  function normSpec(spec) {
+    if (Array.isArray(spec)) {
+      var a = spec.map(function (x) { return clamp(x, 1, MAX); }).slice(0, MAX);
+      var total = a.reduce(function (t, x) { return t + x; }, 0);
+      return total <= MAX && a.length ? a : null;
+    }
+    var n = clamp(spec, 1, MAX), out = [];
+    for (var i = 0; i < n; i++) { out.push(1); }
+    return out;
+  }
+
   class InsertGridRowCommand extends Command {
     refresh() {
       var editor = this.editor;
       this.isEnabled = !colOf(editor) &&
         editor.model.schema.findAllowedParent(editor.model.document.selection.getFirstPosition(), 'gridRow') !== null;
     }
-    execute(count) {
-      var editor = this.editor, n = clamp(count, 1, MAX);
+    execute(spec) {
+      var editor = this.editor, spans = normSpec(spec);
+      if (!spans) { return; }
       editor.model.change(function (writer) {
-        var row = writer.createElement('gridRow', { columns: n });
-        for (var i = 0; i < n; i++) {
-          var col = writer.createElement('gridCol', { span: 1 });
+        var row = writer.createElement('gridRow', { columns: spans.reduce(function (t, x) { return t + x; }, 0) });
+        spans.forEach(function (sp) {
+          var col = writer.createElement('gridCol', { span: sp });
           writer.appendElement('paragraph', col);
           writer.append(col, row);
-        }
+        });
         editor.model.insertContent(row);
         placeCursorIn(writer, row.getChild(0));
+      });
+    }
+  }
+
+  /* change the widths of the row the cursor is in (adds columns, or merges the extra ones into the last) */
+  class GridPresetCommand extends Command {
+    refresh() { this.isEnabled = !!rowOf(this.editor); }
+    execute(spec) {
+      var editor = this.editor, row = rowOf(editor), spans = normSpec(spec);
+      if (!row || !spans) { return; }
+      editor.model.change(function (writer) {
+        var cols = Array.from(row.getChildren());
+        while (cols.length < spans.length) {
+          var c = writer.createElement('gridCol', { span: 1 });
+          writer.appendElement('paragraph', c);
+          writer.append(c, row);
+          cols.push(c);
+        }
+        if (cols.length > spans.length) {
+          var keep = cols[spans.length - 1];
+          cols.slice(spans.length).forEach(function (extra) {
+            var first = extra.getChild(0);
+            var empty = extra.childCount === 1 && first && first.is('element', 'paragraph') && !first.childCount;
+            if (!empty) { writer.move(writer.createRangeIn(extra), writer.createPositionAt(keep, 'end')); }
+            writer.remove(extra);
+          });
+          cols = cols.slice(0, spans.length);
+        }
+        writer.setAttribute('columns', spans.reduce(function (t, x) { return t + x; }, 0), row);
+        cols.forEach(function (col, i) { writer.setAttribute('span', spans[i], col); });
       });
     }
   }
@@ -100,7 +143,7 @@
         var idx = col.index, left = (row.getAttribute('columns') || 1) - 1;
         writer.remove(col);
         writer.setAttribute('columns', left, row);
-        Array.prototype.slice.call(row.getChildren()).forEach(function (c) {
+        Array.from(row.getChildren()).forEach(function (c) {
           if ((c.getAttribute('span') || 1) > left) { writer.setAttribute('span', left, c); }
         });
         placeCursorIn(writer, row.getChild(Math.min(idx, row.childCount - 1)));
@@ -198,6 +241,7 @@
 
       editor.commands.add('insertGridRow', new InsertGridRowCommand(editor));
       editor.commands.add('gridColSpan', new GridColSpanCommand(editor));
+      editor.commands.add('gridPreset', new GridPresetCommand(editor));
       editor.commands.add('gridAddCol', new GridAddColCommand(editor));
       editor.commands.add('gridRemoveCol', new GridRemoveColCommand(editor));
       editor.commands.add('gridRemoveRow', new GridRemoveRowCommand(editor));
@@ -221,17 +265,35 @@
         return c;
       }
 
-      /* insert: 1–12 columns */
+      /* insert a row (or re-shape the current one): equal columns, width presets, custom ratio */
+      var PRESETS = [
+        [1], [1, 1], [1, 2], [2, 1], [1, 3], [3, 1], [2, 3], [3, 2], [1, 4], [4, 1], [1, 5], [5, 1],
+        [1, 1, 1], [1, 2, 1], [2, 1, 1], [1, 1, 2], [1, 3, 1], [1, 1, 1, 1], [1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]
+      ];
+      function presetLabel(a) {
+        var total = a.reduce(function (t, x) { return t + x; }, 0);
+        if (a.every(function (x) { return x === a[0]; })) { return a.length === 1 ? T('1 column') : T(':n equal columns', { n: a.length }); }
+        return a.map(function (x) { return x + '/' + total; }).join(' + ');
+      }
       f.add('gridLayout', function (locale) {
-        var dd = CK.createDropdown(locale), cmd = editor.commands.get('insertGridRow');
-        dd.buttonView.set({ label: T('Колони (ред)'), icon: ICON.layout, tooltip: true });
-        dd.bind('isEnabled').to(cmd);
-        var items = [];
-        for (var n = 1; n <= MAX; n++) {
-          items.push({ label: n + (n === 1 ? T(' колона') : n < 5 ? T(' колони') : T(' колони')), commandParam: n });
-        }
-        CK.addListToDropdown(dd, list(items), { ariaLabel: T('Брой колони') });
-        dd.on('execute', function (evt) { editor.execute('insertGridRow', evt.source.commandParam); editor.editing.view.focus(); });
+        var dd = CK.createDropdown(locale), ins = editor.commands.get('insertGridRow'), pre = editor.commands.get('gridPreset');
+        dd.buttonView.set({ label: T('Columns (row)'), icon: ICON.layout, tooltip: true });
+        dd.bind('isEnabled').to(ins, 'isEnabled', pre, 'isEnabled', function (a, b) { return a || b; });
+        var items = PRESETS.map(function (a) { return { label: presetLabel(a), commandParam: a }; });
+        items.push({ label: T('Custom widths…'), commandParam: 'custom' });
+        for (var n = 7; n <= MAX; n += 1) { if (n % 3 === 0 || n === 8 || n === 12) { items.push({ label: T(':n equal columns', { n: n }), commandParam: n }); } }
+        CK.addListToDropdown(dd, list(items), { ariaLabel: T('Column widths') });
+        dd.on('execute', function (evt) {
+          var spec = evt.source.commandParam;
+          if (spec === 'custom') {
+            var txt = window.prompt(T('Column widths as numbers separated by ":" (at most 12 parts in total), e.g. 1:2 = 1/3 + 2/3, 1:3 = 1/4 + 3/4, 1:2:1'), '1:2');
+            var parts = (txt || '').split(/[^0-9]+/).filter(Boolean).map(Number);
+            spec = normSpec(parts);
+            if (!spec) { return; }
+          }
+          if (pre.isEnabled) { editor.execute('gridPreset', spec); } else { editor.execute('insertGridRow', spec); }
+          editor.editing.view.focus();
+        });
         return dd;
       });
 

@@ -52,12 +52,13 @@
     <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome/css/all.min.css') }}?v=7.3.1">
     <link rel="stylesheet" href="{{ asset_v('assets/css/site.css') }}">
     <link rel="stylesheet" href="{{ asset_v('assets/css/grid.css') }}">
+    <link rel="stylesheet" href="{{ asset_v('assets/css/gallery.css') }}">
     <link rel="stylesheet" href="{{ url('design.css') }}?v={{ \App\Support\Design::version() }}{{ substr(md5(\App\Support\Options::get('custom_css')), 0, 6) }}">
     {!! \App\Support\Options::scripts('head', csp_nonce()) !!}
     @include('site.partials.head-extra')
     @php do_action('head'); @endphp
 </head>
-<body @class(['pa-'.$pageAnim => $pageAnim !== 'none']) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($h1Cfg) data-h1="{{ json_encode($h1Cfg) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
+<body @class(['pa-'.$pageAnim => $pageAnim !== 'none', 'mm-'.\App\Support\Design::get('menu_style') => true]) @if($elAnim) data-anim="{{ json_encode($elAnim) }}" @endif @if($h1Cfg) data-h1="{{ json_encode($h1Cfg) }}" @endif @if($bgVideos) data-mbg="{{ json_encode(['m' => \App\Support\Design::get('bg_video_mobile') === '1' ? 1 : 0, 'i' => $bgVideos]) }}" @endif>
 @include('site.partials.after-body')
 <a class="skip" href="#main">{{ t('site.skip') }}</a>
 
@@ -79,7 +80,7 @@
         </a>
 
         <input type="checkbox" id="menu-toggle" class="menu-toggle" hidden>
-        <label for="menu-toggle" class="burger" aria-label="{{ t('site.menu') }}">☰</label>
+        <label for="menu-toggle" class="burger" role="button" tabindex="0" aria-expanded="false" aria-label="{{ t('site.menu') }}"><i></i><i></i><i></i></label>
 
         <nav class="primary" aria-label="{{ t('site.menu') }}">
             <ul>
@@ -96,6 +97,11 @@
                     </li>
                 @endforeach
             </ul>
+            <div class="nav-foot">
+                @if($nm = setting('contact_email'))<a class="nf-mail" href="mailto:{{ $nm }}">{{ $nm }}</a>@endif
+                @php $navSocials = collect(['facebook' => 'Facebook', 'instagram' => 'Instagram', 'linkedin' => 'LinkedIn', 'youtube' => 'YouTube'])->filter(fn ($l, $k) => setting('social_'.$k)); @endphp
+                @if($navSocials->isNotEmpty())<ul>@foreach ($navSocials as $k => $label)<li><a href="{{ setting('social_'.$k) }}" rel="noopener noreferrer me" target="_blank">{{ $label }}</a></li>@endforeach</ul>@endif
+            </div>
         </nav>
 
         @if($languages->count() > 1)
@@ -181,6 +187,7 @@
 @if(\App\Support\Design::get('smooth_on') === '1')
 <script src="{{ asset('assets/vendor/lenis/lenis.min.js') }}?v=1.1.18" nonce="{{ csp_nonce() }}" defer></script>
 @endif
+<script src="{{ asset_v('assets/js/gallery.js') }}" nonce="{{ csp_nonce() }}" defer data-lb="{{ \App\Support\Options::lightboxJson() }}" data-lb-t="{{ json_encode(['close' => __('Close'), 'prev' => __('Previous'), 'next' => __('Next'), 'zoom' => __('Zoom'), 'play' => __('Slideshow'), 'dl' => __('Download')], JSON_UNESCAPED_UNICODE) }}"></script>
 <script src="{{ asset_v('assets/js/site.js') }}" nonce="{{ csp_nonce() }}" defer @if(\App\Support\Design::get('smooth_on') === '1') data-smooth="{{ (float) \App\Support\Design::get('smooth_duration') }}" @endif></script>
 {!! \App\Support\Options::scripts('footer', csp_nonce()) !!}
 @php do_action('footer'); @endphp

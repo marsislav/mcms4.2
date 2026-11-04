@@ -82,6 +82,9 @@
                 <datalist id="logo-sizes"><option value="auto"><option value="32"><option value="40"><option value="56"><option value="80"><option value="120"></datalist>
             </label>
         </div>
+        <label>{{ __('Mobile menu style') }}
+            <select name="menu_style">@foreach (\App\Support\Design::MENU_STYLES as $k => $l)<option value="{{ $k }}" @selected($v('menu_style') === $k)>{{ __($l) }}</option>@endforeach</select>
+        </label>
         <label class="check"><input type="checkbox" name="sticky_header" value="1" @checked($v('sticky_header') === '1')> {{ __('Залепен хедър (sticky) — остава горе при скролиране') }}</label>
     </section>
 
