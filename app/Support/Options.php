@@ -24,6 +24,7 @@ class Options
         'newsletter' => 'Бюлетин',
         'privacy' => 'Бисквитки (GDPR)',
         'admin' => 'Администрация',
+        'listings' => 'Обяви',
     ];
 
     /** Option keys that hold a text per language (stored as opt.<key>.<locale>). */
@@ -34,7 +35,7 @@ class Options
 
     public const DEFAULTS = [
         // reading
-        'front_mode' => 'page', 'feed_count' => '20', 'feed_full' => '0', 'noindex' => '0', 'excerpt_length' => '160', 'show_author' => '1',
+        'front_mode' => 'page', 'feed_count' => '20', 'feed_full' => '0', 'noindex' => '0', 'indexnow_on' => '1', 'excerpt_length' => '160', 'show_author' => '1',
         'reading_time' => '1', 'show_updated' => '0', 'share_buttons' => '0', 'back_to_top' => '0',
         // users
         'registration' => '0', 'default_role' => 'subscriber', 'reg_approval' => '0', 'reg_notify' => '1',
@@ -70,6 +71,8 @@ class Options
         // privacy / cookie consent
         'cc_on' => '0', 'cc_position' => 'bottom', 'cc_policy_url' => '', 'cc_analytics' => '1', 'cc_marketing' => '0', 'cc_days' => '180', 'cc_reopen' => '1',
         'scripts_analytics' => '', 'scripts_marketing' => '',
+        // classified ads
+        'listings_on' => '1', 'listings_approval' => '1', 'listings_notify' => '1', 'listings_days' => '7,14,30,60', 'listings_images' => '5', 'listings_per_page' => '12',
         // administration
         'adminbar' => '1', 'log_tail_kb' => '300',
     ];
@@ -82,7 +85,7 @@ class Options
     public const RESERVED_BASES = [
         'search', 'contact', 'comment', 'install', 'sitemap', 'robots', 'feed', 'uploads', 'assets', 'storage', 'vendor',
         'up', 'admin', 'panel', 'login', 'logout', 'api', 'design', 'app', 'config', 'database', 'resources', 'routes',
-        'plugins', 'lang', 'bootstrap', 'tests', 'public', 'newsletter',
+        'plugins', 'lang', 'bootstrap', 'tests', 'public', 'newsletter', 'obyavi',
     ];
 
     /* ------------------------------------------------------------ reading */
@@ -283,6 +286,17 @@ class Options
                 }
                 break;
 
+            case 'listings':
+                foreach (['listings_on', 'listings_approval', 'listings_notify'] as $k) {
+                    $v[$k] = $bool($k);
+                }
+                $days = array_values(array_unique(array_filter(array_map('intval', preg_split('/[\s,;]+/', (string) ($in['listings_days'] ?? '')) ?: []), fn ($d) => $d >= 1 && $d <= 365)));
+                sort($days);
+                $v['listings_days'] = implode(',', array_slice($days ?: [7, 14, 30, 60], 0, 8));
+                $v['listings_images'] = $int('listings_images', 0, 10, 5);
+                $v['listings_per_page'] = $int('listings_per_page', 3, 48, 12);
+                break;
+
             case 'users':
                 $v['registration'] = $bool('registration');
                 $v['default_role'] = $enum('default_role', ['subscriber', 'contributor', 'author'], 'subscriber');
@@ -387,7 +401,7 @@ class Options
                 break;
 
             case 'seo':
-                foreach (['breadcrumbs', 'bc_show_current', 'bc_on_pages', 'bc_on_posts', 'bc_on_lists', 'jsonld', 'notfound_log'] as $k) {
+                foreach (['breadcrumbs', 'bc_show_current', 'bc_on_pages', 'bc_on_posts', 'bc_on_lists', 'jsonld', 'notfound_log', 'indexnow_on'] as $k) {
                     $v[$k] = $bool($k);
                 }
                 $v['bc_home_icon'] = (string) \App\Support\Widgets::cleanIcon($in['bc_home_icon'] ?? null);

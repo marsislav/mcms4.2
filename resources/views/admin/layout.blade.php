@@ -18,6 +18,7 @@
     $me = auth()->user();
     $unread = $me->allows('messages') ? \App\Models\Message::whereNull('read_at')->count() : 0;
     $pendingComments = ($me->allows('comments') && \App\Support\Discussion::ready()) ? \App\Models\Comment::where('status', 'pending')->count() : 0;
+    $pendingListings = ($me->allows('listings') && \App\Support\Tables::has('listings')) ? \App\Models\Listing::where('status', 'pending')->count() : 0;
     $nav = [
         ['admin.dashboard', 'Табло', null, null],
         ['—', 'Съдържание'],
@@ -29,6 +30,7 @@
         ['admin.menus.index', 'Менюта', 'menus', null],
         ['admin.comments.index', 'Коментари', 'comments', $pendingComments],
         ['admin.messages.index', 'Съобщения', 'messages', $unread],
+        ['admin.listings.index', 'Обяви', 'listings', $pendingListings],
         ['—', 'Сайт'],
         ['admin.translations.index', 'Преводи', 'translations', null],
         ['admin.languages.index', 'Езици', 'languages', null],

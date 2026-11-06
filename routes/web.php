@@ -125,6 +125,22 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::delete('{id}', [Admin\BlockController::class, 'destroy'])->whereNumber('id')->name('destroy');
         });
 
+        Route::middleware('admin:listings')->prefix('listings')->name('listings.')->group(function () {
+            Route::get('/', [Admin\ListingController::class, 'index'])->name('index');
+            Route::get('categories', [Admin\ListingCategoryController::class, 'index'])->name('categories');
+            Route::get('{id}/edit', [Admin\ListingController::class, 'edit'])->whereNumber('id')->name('edit');
+            Route::put('{id}', [Admin\ListingController::class, 'update'])->whereNumber('id')->name('update');
+            Route::post('{id}/approve', [Admin\ListingController::class, 'approve'])->whereNumber('id')->name('approve');
+            Route::post('{id}/reject', [Admin\ListingController::class, 'reject'])->whereNumber('id')->name('reject');
+            Route::delete('{id}', [Admin\ListingController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
+
+        Route::middleware('admin:listings')->prefix('listing-categories')->name('listing-categories.')->group(function () {
+            Route::post('/', [Admin\ListingCategoryController::class, 'store'])->name('store');
+            Route::put('{id}', [Admin\ListingCategoryController::class, 'update'])->whereNumber('id')->name('update');
+            Route::delete('{id}', [Admin\ListingCategoryController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        });
+
         Route::middleware('admin:stats')->prefix('stats')->name('stats.')->group(function () {
             Route::get('/', [Admin\StatsController::class, 'index'])->name('index');
             Route::get('export', [Admin\StatsController::class, 'export'])->name('export');
@@ -175,6 +191,7 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
             Route::put('settings/discussion', [Admin\SettingController::class, 'updateDiscussion'])->name('settings.discussion');
             Route::put('settings/design', [Admin\SettingController::class, 'updateDesign'])->name('settings.design');
             Route::post('settings/design/reset', [Admin\SettingController::class, 'resetDesign'])->name('settings.design-reset');
+            Route::match(['post', 'put'], 'settings/indexnow', [Admin\IndexNowController::class, 'submitAll'])->name('settings.indexnow');
             Route::post('settings/test-mail', [Admin\SettingController::class, 'testMail'])->name('settings.mail-test');
             Route::get('system/migrations', [Admin\SystemController::class, 'migrations'])->name('system.migrations');
             Route::post('system/migrate', [Admin\SystemController::class, 'migrate'])->name('system.migrate');
@@ -200,14 +217,20 @@ Route::prefix(config('mcms.admin_path'))->name('admin.')->group(function () {
 Route::get('sitemap.xml', [SiteController::class, 'sitemap'])->name('site.sitemap');
 Route::get('design.css', [SiteController::class, 'designCss'])->name('site.design');
 Route::get('robots.txt', [SiteController::class, 'robots'])->name('site.robots');
+// IndexNow ownership file: /<key>.txt contains the key (Settings > SEO > IndexNow)
+Route::get('{key}.txt', function (string $key) {
+    abort_unless(\App\Support\Options::on('indexnow_on') && hash_equals(\App\Support\IndexNow::key(), $key), 404);
+
+    return response($key, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->where('key', '[a-f0-9]{32}')->name('site.indexnow-key');
 
 /* ------------------------------------------------------------- public site */
 // Statistics beacons (time on page / scroll, clicks). They arrive via navigator.sendBeacon without a CSRF token and only
 // touch aggregate counters, so they are exempt from CSRF and rate limited.
 Route::post('stats/ping', fn (\Illuminate\Http\Request $r) => tap(response('', 204), fn () => \App\Support\Stats::ping($r)))
-    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('stats.ping');
+    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('site.stats.ping');
 Route::post('stats/click', fn (\Illuminate\Http\Request $r) => tap(response('', 204), fn () => \App\Support\Stats::click($r)))
-    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('stats.click');
+    ->middleware('throttle:120,1')->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class)->name('site.stats.click');
 // Weekly summary trigger for a cron job (token is shown in Settings > Statistics)
 Route::get('stats/digest/{token}', function (string $token) {
     abort_unless(hash_equals(\App\Support\StatsDigest::token(), $token), 404);
@@ -239,6 +262,16 @@ $public = function () use ($blogBase, $catBase, $tagBase) {
     Route::get('contact', [SiteController::class, 'contactForm'])->name('contact');
     Route::post('comment', [CommentController::class, 'store'])->middleware('throttle:20,1')->name('comment');
     Route::post('contact', [SiteController::class, 'contactSend'])->middleware('throttle:10,1')->name('contact.send');
+    // Classified ads (needs the "listings" table: Panel > Миграции)
+    Route::get('obyavi', [\App\Http\Controllers\ListingController::class, 'index'])->name('listings');
+    Route::get('obyavi/nova', [\App\Http\Controllers\ListingController::class, 'create'])->name('listings.create');
+    Route::post('obyavi/nova', [\App\Http\Controllers\ListingController::class, 'store'])->middleware('throttle:8,10')->name('listings.store');
+    Route::get('obyavi/moi', [\App\Http\Controllers\ListingController::class, 'mine'])->name('listings.mine');
+    Route::get('obyavi/{id}/izmeni', [\App\Http\Controllers\ListingController::class, 'edit'])->whereNumber('id')->name('listings.edit');
+    Route::post('obyavi/{id}/izmeni', [\App\Http\Controllers\ListingController::class, 'update'])->middleware('throttle:20,10')->whereNumber('id')->name('listings.update');
+    Route::post('obyavi/{id}/podnovi', [\App\Http\Controllers\ListingController::class, 'renew'])->middleware('throttle:20,10')->whereNumber('id')->name('listings.renew');
+    Route::post('obyavi/{id}/iztrii', [\App\Http\Controllers\ListingController::class, 'destroy'])->middleware('throttle:20,10')->whereNumber('id')->name('listings.destroy');
+    Route::get('obyavi/{id}/{slug?}', [\App\Http\Controllers\ListingController::class, 'show'])->whereNumber('id')->where('slug', '[a-z0-9\-]*')->name('listings.show');
     Route::get('{slug}', [SiteController::class, 'page'])->where('slug', '[a-z0-9\-]+')->name('page');
 };
 

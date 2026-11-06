@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class Tables
 {
-    public const OPTIONAL = ['page_views', 'not_found_log', 'subscribers', 'blocks', 'visits', 'search_terms', 'click_log'];
+    public const OPTIONAL = ['page_views', 'not_found_log', 'subscribers', 'blocks', 'visits', 'search_terms', 'click_log', 'listings', 'listing_categories'];
 
     public static function has(string $table): bool
     {

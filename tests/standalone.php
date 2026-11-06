@@ -20,8 +20,9 @@ require __DIR__.'/../app/Support/Blocks.php';
 require __DIR__.'/../app/Support/ErrorLog.php';
 require __DIR__.'/../app/Support/Stats.php';
 require __DIR__.'/../app/Support/NotFoundLog.php';
+require __DIR__.'/../app/Support/IndexNow.php';
 
-use App\Support\{Fx, Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members, ContactFields, Breadcrumbs, StructuredData, Diff, Blocks, ErrorLog, Stats, NotFoundLog};
+use App\Support\{Fx, Sanitizer, EnvWriter, Taxonomy, Design, Discussion, Widgets, Options, Members, ContactFields, Breadcrumbs, StructuredData, Diff, Blocks, ErrorLog, Stats, NotFoundLog, IndexNow};
 
 // tiny stand-ins for the Laravel helpers Design uses
 $GLOBALS['S'] = [];
@@ -460,6 +461,14 @@ $check('gallery: javascript: link removed', ! str_contains((new Sanitizer)->clea
 $check('lightbox: data-lightbox 1/0 kept', str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="1">'), 'data-lightbox="1"') && str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="0">'), 'data-lightbox="0"'));
 $check('lightbox: other data-lightbox values dropped', ! str_contains((new Sanitizer)->clean('<img src="/a.jpg" data-lightbox="x&quot; onerror=alert(1)">'), 'data-lightbox'));
 $check('columns: width classes kept', str_contains((new Sanitizer)->clean('<div class="mc-row mc-cols-3"><div class="mc-col mc-span-1">a</div><div class="mc-col mc-span-2">b</div></div>'), 'mc-cols-3'));
+
+// IndexNow
+$check('indexnow: key format', IndexNow::validKey(str_repeat('a', 32)) && ! IndexNow::validKey('short') && ! IndexNow::validKey(str_repeat('a', 129)) && ! IndexNow::validKey('bad key with spaces!'));
+$check('indexnow: localhost / IP / .test are not public', ! IndexNow::publicHost('localhost') && ! IndexNow::publicHost('127.0.0.1') && ! IndexNow::publicHost('site.test') && IndexNow::publicHost('marsislav.net'));
+$pl = IndexNow::payload('marsislav.net', 'abc12345', ['https://marsislav.net/a', 'https://marsislav.net/a', 'https://evil.com/x', 'javascript:alert(1)', 'https://MARSISLAV.net/b', 42]);
+$check('indexnow: payload keeps only own http(s) URLs, no duplicates', $pl['urlList'] === ['https://marsislav.net/a', 'https://MARSISLAV.net/b']);
+$check('indexnow: payload key location', $pl['keyLocation'] === 'https://marsislav.net/abc12345.txt' && $pl['host'] === 'marsislav.net');
+$check('indexnow: payload capped at 10000', count(IndexNow::payload('a.bg', 'abc12345', array_map(fn ($i) => "https://a.bg/p$i", range(1, 10500)))['urlList']) === 10000);
 
 echo $fail ? "\n$fail FAILED\n" : "\nAll tests passed\n";
 exit($fail ? 1 : 0);

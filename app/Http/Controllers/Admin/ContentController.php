@@ -90,6 +90,7 @@ class ContentController extends Controller
         $this->saveTaxonomy($request, $content);
         $this->saveH1Word($request, $content);
         \App\Support\Newsletter::notifyPost($content);
+        \App\Support\IndexNow::notify($content);
         audit($type.'.create', (string) $content->id, $content->adminTitle());
 
         return redirect()->route("admin.{$type}s.edit", $content)->with('status', __('Записано.'));
@@ -119,6 +120,7 @@ class ContentController extends Controller
         $this->saveTaxonomy($request, $content);
         $this->saveH1Word($request, $content);
         \App\Support\Newsletter::notifyPost($content);
+        \App\Support\IndexNow::notify($content);
         audit($content->type.'.update', (string) $content->id, $content->adminTitle());
 
         return back()->with('status', __('Промените са записани.'));
@@ -130,7 +132,12 @@ class ContentController extends Controller
         abort_if($content->is_home, 422, __('Началната страница не може да се изтрие. Първо задайте друга.'));
         $title = $content->adminTitle();
         $type = $content->type;
+        $wasPublic = $content->isVisible() && ! $content->noindex;
+        $content->loadMissing('translations');
         $content->delete();
+        if ($wasPublic) {
+            \App\Support\IndexNow::notify($content, true);
+        }
         audit($type.'.delete', (string) $content->id, $title);
 
         return redirect()->route("admin.{$type}s.index")

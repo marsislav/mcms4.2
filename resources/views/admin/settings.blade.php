@@ -12,7 +12,7 @@
     $og = \App\Support\Options::GROUPS;
     $navGroups = [
         'Сайт' => ['general' => __('Общи'), 'permalinks' => __($og['permalinks']), 'datetime' => __($og['datetime']), 'maintenance' => __($og['maintenance'])],
-        'Съдържание' => ['reading' => __($og['reading']), 'writing' => __($og['writing']), 'media' => __($og['media']), 'contact' => __('Контактна форма'), 'discussion' => __('Дискусии')],
+        'Съдържание' => ['reading' => __($og['reading']), 'writing' => __($og['writing']), 'media' => __($og['media']), 'contact' => __('Контактна форма'), 'discussion' => __('Дискусии'), 'listings' => __($og['listings'])],
         'Външен вид' => ['design' => __('Дизайн'), 'footer' => __('Футър'), 'sidebar' => __('Сайдбар'), 'scripts' => __($og['scripts'])],
         'Посетители' => ['search' => __($og['search']), 'newsletter' => __($og['newsletter']), 'privacy' => __($og['privacy']), 'users' => __($og['users'])],
         'SEO и статистика' => ['seo' => __($og['seo']), 'stats' => __($og['stats'])],

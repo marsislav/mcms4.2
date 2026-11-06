@@ -233,10 +233,5 @@
     "addresses": "адреса",
     "Nothing has been sent yet.": "Още нищо не е изпращано.",
     "Send all pages now": "Изпрати всички страници сега",
-    "Google does not use IndexNow – it reads the sitemap. Scheduled posts are sent when saved as visible; use the button above after a scheduled post goes live.": "Google не ползва IndexNow – той чете sitemap-а. Планираните статии се изпращат при записване, ако вече са видими; след като планирана статия излезе, ползвайте бутона по-горе.",
-    "Mobile menu style": "Стил на мобилното меню",
-    "Circle reveal": "Кръг от бургера",
-    "Split curtains": "Разделящи се завеси",
-    "Side drawer": "Страничен панел",
-    "Glass dropdown": "Стъклен панел отгоре"
+    "Google does not use IndexNow – it reads the sitemap. Scheduled posts are sent when saved as visible; use the button above after a scheduled post goes live.": "Google не ползва IndexNow – той чете sitemap-а. Планираните статии се изпращат при записване, ако вече са видими; след като планирана статия излезе, ползвайте бутона по-горе."
 }
